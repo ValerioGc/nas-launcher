@@ -1,0 +1,35 @@
+# Opens the ports of the sync (Syncthing) to the local network while an application has a sync on,
+# through apply-sync-ports.sh and the set `nas_sync` of the base firewall, and closes them when none
+# has. The launcher starts it after a change and at its own start; polkit lets it start nothing else
+# (62-nas-os-sync-ports.rules). Installed by `system/packages/ui_installation/install.sh`.
+
+[Unit]
+Description=Ports of the sync of the NAS on the local network
+After=nas-os-base-firewall.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/lib/nas-os/apply-sync-ports.sh
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=yes
+ReadOnlyPaths=/var/lib/nas-os
+NoNewPrivileges=yes
+# It only puts ports in a set of the base firewall, over netlink.
+CapabilityBoundingSet=CAP_NET_ADMIN
+RestrictAddressFamilies=AF_UNIX AF_NETLINK
+PrivateDevices=yes
+ProtectProc=invisible
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectKernelLogs=yes
+ProtectControlGroups=yes
+ProtectClock=yes
+ProtectHostname=yes
+RestrictNamespaces=yes
+RestrictRealtime=yes
+RestrictSUIDSGID=yes
+LockPersonality=yes
+MemoryDenyWriteExecute=yes
+SystemCallArchitectures=native
+SystemCallFilter=@system-service

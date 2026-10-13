@@ -1,0 +1,30 @@
+# Launcher update: this is what puts a downloaded release in place.
+#
+# It does not start on its own and it is not enabled at boot: the launcher starts it after having
+# fetched the release and checked it against its published checksum. The permission to start it
+# (and only this unit) comes from the polkit rule installed alongside.
+#
+# It runs as root because the installer writes /usr/local, /etc and the polkit rules, and because
+# it stops the service that asked for it, backs up its database and, at the end, reboots the
+# machine. If anything fails it puts the backup back and restarts the previous launcher.
+
+[Unit]
+Description=nas-os: install the downloaded releases of the wizard, the gateway and the launcher
+Documentation=https://github.com/ValerioGc/nas-launcher
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/lib/nas-os/install-launcher-update.sh
+# Backup, installer and the wait for the new launcher to answer.
+TimeoutStartSec=45min
+
+# It writes /usr/local and /etc and manages units, so ProtectSystem cannot be strict here, and it
+# asks the new launcher on 127.0.0.1 whether it answers, so the network cannot be private.
+NoNewPrivileges=yes
+ProtectHome=yes
+PrivateTmp=yes
+RestrictRealtime=yes
+RestrictSUIDSGID=yes
+LockPersonality=yes
+SystemCallArchitectures=native
+SystemCallFilter=@system-service

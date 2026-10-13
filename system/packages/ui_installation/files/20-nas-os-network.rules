@@ -1,0 +1,25 @@
+/*
+ * Network permissions for the launcher: looking for wireless networks and joining one. Without
+ * this rule `nmcli` asks for a password and the backend answers 503 with the reason, instead of
+ * leaving the reader in front of a button that does nothing.
+ *
+ * Installed by `system/packages/ui_installation/install.sh`; by hand, on Debian 13:
+ *   sudo install -m 0644 system/packages/ui_installation/files/20-nas-os-network.rules /etc/polkit-1/rules.d/
+ *   sudo systemctl restart polkit
+ *
+ * Three actions and not one more: looking (`wifi.scan`), bringing a connection up
+ * (`network-control`) and saving the profile of the network that was joined
+ * (`settings.modify.system`). The ones that switch the network off are not granted
+ * (`enable-disable-network`, `enable-disable-wifi`): a NAS that takes its own network away cannot
+ * be reached to put it back.
+ */
+polkit.addRule(function (action, subject) {
+  var allowed = [
+    'org.freedesktop.NetworkManager.wifi.scan',
+    'org.freedesktop.NetworkManager.network-control',
+    'org.freedesktop.NetworkManager.settings.modify.system',
+  ];
+  if (allowed.indexOf(action.id) !== -1 && subject.user === 'nas-os') {
+    return polkit.Result.YES;
+  }
+});

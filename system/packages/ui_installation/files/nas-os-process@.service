@@ -1,0 +1,38 @@
+# Terminates a process, or restarts the service it runs in, for the process widget of the launcher,
+# through act-on-process.sh. The instance is `<terminate|restart>-<pid>-<started>`; the launcher
+# starts it when somebody asks from the widget, and polkit lets it start nothing else of this kind
+# (65-nas-os-processes.rules). Installed by `system/packages/ui_installation/install.sh`.
+
+[Unit]
+Description=Process action %i of the NAS
+# One unit per request: gone once it ends, failed or not.
+CollectMode=inactive-or-failed
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/lib/nas-os/act-on-process.sh %i
+TimeoutStartSec=100
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=yes
+NoNewPrivileges=yes
+# Signalling the processes of every user, and asking systemd over its unix socket to restart a
+# unit: nothing else of root, no network, nothing of the kernel. It reads /proc whole, which is
+# why ProtectProc is left alone.
+CapabilityBoundingSet=CAP_KILL
+PrivateNetwork=yes
+RestrictAddressFamilies=AF_UNIX
+PrivateDevices=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectKernelLogs=yes
+ProtectControlGroups=yes
+ProtectClock=yes
+ProtectHostname=yes
+RestrictNamespaces=yes
+RestrictRealtime=yes
+RestrictSUIDSGID=yes
+LockPersonality=yes
+MemoryDenyWriteExecute=yes
+SystemCallArchitectures=native
+SystemCallFilter=@system-service

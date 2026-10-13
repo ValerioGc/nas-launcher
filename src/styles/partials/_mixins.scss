@@ -1,0 +1,30 @@
+@use './variables' as *;
+
+@mixin focus-ring {
+  outline: $focus_width solid $color_primary;
+  outline-offset: $focus_offset;
+}
+
+@mixin spinning($duration: $duration_spin) {
+  animation: spinning $duration linear infinite;
+
+  @keyframes spinning {
+    to {
+      transform: rotate(1turn);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+  }
+}
+
+// Only the thumb of the scrollbar, as in the applications: Chromium draws the -webkit- scrollbar
+// of main.scss only where the standard properties, inherited from the root, are back to auto.
+// Firefox, without it, keeps the thin standard one of the root.
+@mixin minimal-scrollbar {
+  @supports selector(::-webkit-scrollbar) {
+    scrollbar-color: auto;
+    scrollbar-width: auto;
+  }
+}

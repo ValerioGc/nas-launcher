@@ -1,0 +1,6 @@
+{
+  "version": "0.1.0",
+  "description": "System application manager for applications on the NAS UI Launcher.",
+  "name": "App Manager",
+  "logo": "logo.svg"
+}

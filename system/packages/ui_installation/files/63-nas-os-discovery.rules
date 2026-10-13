@@ -1,0 +1,18 @@
+/*
+ * Lets the launcher open the discovery of NAS Finder to the local network while the option of the
+ * security center is on, and nothing else: the verb `start` of `nas-os-discovery.service`, whose
+ * helper puts only UDP 39877 in the set `nas_discovery` of the base firewall, or empties it.
+ *
+ * Installed by `system/packages/ui_installation/install.sh`. Without it the discovery stays closed,
+ * and the launcher says what polkit refused.
+ */
+polkit.addRule(function (action, subject) {
+  if (
+    action.id === 'org.freedesktop.systemd1.manage-units' &&
+    subject.user === 'nas-os' &&
+    action.lookup('unit') === 'nas-os-discovery.service' &&
+    action.lookup('verb') === 'start'
+  ) {
+    return polkit.Result.YES;
+  }
+});

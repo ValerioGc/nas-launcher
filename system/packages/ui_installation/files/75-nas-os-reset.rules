@@ -1,0 +1,20 @@
+/*
+ * Lets the launcher reset the NAS, and nothing else.
+ *
+ * Removing the data of the launcher, of the gateway and of the applications, and the user of the
+ * terminal, needs root, which the launcher is not: it starts `nas-os-reset.service`, once the
+ * gateway has checked the password of the account. This rule allows exactly that one unit and
+ * exactly the verb `start`.
+ *
+ * Installed by `system/packages/ui_installation/install.sh`.
+ */
+polkit.addRule(function (action, subject) {
+  if (
+    action.id === 'org.freedesktop.systemd1.manage-units' &&
+    subject.user === 'nas-os' &&
+    action.lookup('unit') === 'nas-os-reset.service' &&
+    action.lookup('verb') === 'start'
+  ) {
+    return polkit.Result.YES;
+  }
+});

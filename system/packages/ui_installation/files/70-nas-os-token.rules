@@ -1,0 +1,23 @@
+/*
+ * Lets the launcher store the shared release token it was given, and nothing else.
+ *
+ * The credential store belongs to root, which the launcher is not: it leaves the token in its state
+ * directory and starts `nas-os-token.service`, which encrypts it. This rule allows exactly that one
+ * unit and exactly the verb `start`.
+ *
+ * Installed by `system/packages/ui_installation/install.sh`; by hand, on Debian 13:
+ *   sudo install -m 0644 system/packages/ui_installation/files/70-nas-os-token.rules /etc/polkit-1/rules.d/
+ *   sudo systemctl restart polkit
+ *
+ * Without this rule the token is set with `ui_configuration/install.sh` only.
+ */
+polkit.addRule(function (action, subject) {
+  if (
+    action.id === 'org.freedesktop.systemd1.manage-units' &&
+    subject.user === 'nas-os' &&
+    action.lookup('unit') === 'nas-os-token.service' &&
+    action.lookup('verb') === 'start'
+  ) {
+    return polkit.Result.YES;
+  }
+});

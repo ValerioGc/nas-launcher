@@ -1,0 +1,14 @@
+{
+  "manifest_version": 1,
+  "app": {
+    "id": "fileExplorer",
+    "name": "Esplora file",
+    "version": "1.2.0",
+    "icon": "icon.svg"
+  },
+  "run": {
+    "exec": "bin/file-explorer",
+    "socket": "/run/nas-os/apps/fileExplorer.sock"
+  },
+  "ui": { "protocol": 1 }
+}

@@ -1,0 +1,61 @@
+@use 'themes';
+
+:root {
+  color-scheme: dark;
+
+  --theme-background: #172027;
+  --theme-foreground: #f2f7f5;
+
+  // Shared surfaces for header, menu, dropdowns, and modals
+  --surface: #131f29;
+  --surface-sunken: #0e1922;
+  --surface-hover: #1c2d3b;
+  --surface-border: #24394a;
+  --surface-muted: #a4b6c3;
+  --app-background: color-mix(in srgb, var(--surface) 92%, transparent);
+  --backdrop: #060d1399;
+
+  // Interface accent, and what is written on it
+  --accent: #3fd39b;
+  --on-accent: #0e1922;
+
+  --status-info: #7acdf4;
+  --status-success: #8bdab4;
+  --status-warning: #f0c479;
+  --status-error: #ffa5a5;
+
+  // Background drops
+  --drop-primary: #2cc3ae3d;
+  --drop-secondary: #1a8fa036;
+}
+
+:root[data-theme='light'] {
+  color-scheme: light;
+
+  --theme-background: #f5f7f6;
+  --theme-foreground: #172027;
+
+  --surface: #ffffff;
+  --surface-sunken: #eef3f7;
+  --surface-hover: #dfe9f1;
+  --surface-border: #cbd8e1;
+  --surface-muted: #526776;
+  --backdrop: #1b2b3a4d;
+
+  --accent: #12866f;
+  --on-accent: #ffffff;
+
+  --status-info: #086b9c;
+  --status-success: #217047;
+  --status-warning: #8a5a00;
+  --status-error: #b12838;
+
+  --drop-primary: #2cc3ae47;
+  --drop-secondary: #1a8fa030;
+}
+
+// The themes of `themes/` win over the defaults above by one attribute more, `data-palette`.
+body {
+  background: var(--theme-background);
+  color: var(--theme-foreground);
+}

@@ -1,0 +1,39 @@
+/*
+ * The smallest permissions the launcher needs: reboot and power off only, and only for its own
+ * service user. Without this rule `systemctl reboot` asks for a password and the backend answers
+ * 503 with the reason, instead of powering the machine off behind everybody's back.
+ *
+ * Installed by `system/packages/ui_installation/install.sh`; by hand, on Debian 13:
+ *   sudo install -m 0644 system/packages/ui_installation/files/10-nas-os-power.rules /etc/polkit-1/rules.d/
+ *   sudo systemctl restart polkit
+ *
+ * The `*-multiple-sessions` variants are for when more than one session is open; the
+ * `*-ignore-inhibit` ones are deliberately not granted: if a backup is holding the shutdown back,
+ * the launcher respects it.
+ *
+ * The second rule is for the scheduled shutdown: before powering off, the launcher sets the clock
+ * alarm by starting `nas-os-wake.service`. That is the only unit it can start, and start is
+ * all it can do with it: not stop it, not enable it, not touch any other.
+ */
+polkit.addRule(function (action, subject) {
+  var allowed = [
+    'org.freedesktop.login1.reboot',
+    'org.freedesktop.login1.reboot-multiple-sessions',
+    'org.freedesktop.login1.power-off',
+    'org.freedesktop.login1.power-off-multiple-sessions',
+  ];
+  if (allowed.indexOf(action.id) !== -1 && subject.user === 'nas-os') {
+    return polkit.Result.YES;
+  }
+});
+
+polkit.addRule(function (action, subject) {
+  if (
+    action.id === 'org.freedesktop.systemd1.manage-units' &&
+    subject.user === 'nas-os' &&
+    action.lookup('unit') === 'nas-os-wake.service' &&
+    action.lookup('verb') === 'start'
+  ) {
+    return polkit.Result.YES;
+  }
+});

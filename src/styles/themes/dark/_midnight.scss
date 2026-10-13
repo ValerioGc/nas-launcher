@@ -1,0 +1,15 @@
+// Notte: a deep blue dark theme, close to indigo. The accent stays the one chosen in the settings.
+:root[data-theme='dark'][data-palette='midnight'] {
+  --theme-background: #12152a;
+  --theme-foreground: #eef0fb;
+
+  --surface: #191d36;
+  --surface-sunken: #0d1022;
+  --surface-hover: #232849;
+  --surface-border: #2f3560;
+  --surface-muted: #a7acd0;
+  --backdrop: #05061199;
+
+  --drop-primary: #5b5fd63d;
+  --drop-secondary: #3a2f9a36;
+}

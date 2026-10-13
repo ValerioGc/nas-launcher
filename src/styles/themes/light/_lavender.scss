@@ -1,0 +1,15 @@
+// Lavanda: a soft light theme with lilac surfaces. The accent stays the one chosen in the settings.
+:root[data-theme='light'][data-palette='lavender'] {
+  --theme-background: #f4f2fa;
+  --theme-foreground: #221d33;
+
+  --surface: #ffffff;
+  --surface-sunken: #ece8f6;
+  --surface-hover: #e0daf1;
+  --surface-border: #cfc7e4;
+  --surface-muted: #5f5878;
+  --backdrop: #2a22404d;
+
+  --drop-primary: #9b7fe047;
+  --drop-secondary: #6f8ee030;
+}

@@ -1,0 +1,18 @@
+/*
+ * Lets the launcher open the ports of the sync to the local network while an application has a
+ * sync on, and nothing else: the verb `start` of `nas-os-sync-ports.service`, whose helper puts only
+ * the fixed ports of Syncthing in the set `nas_sync` of the base firewall, or empties it.
+ *
+ * Installed by `system/packages/ui_installation/install.sh`. Without it the sync stays closed, and
+ * the launcher says what polkit refused.
+ */
+polkit.addRule(function (action, subject) {
+  if (
+    action.id === 'org.freedesktop.systemd1.manage-units' &&
+    subject.user === 'nas-os' &&
+    action.lookup('unit') === 'nas-os-sync-ports.service' &&
+    action.lookup('verb') === 'start'
+  ) {
+    return polkit.Result.YES;
+  }
+});

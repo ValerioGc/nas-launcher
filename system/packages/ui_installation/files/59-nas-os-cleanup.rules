@@ -1,0 +1,18 @@
+/*
+ * Lets the launcher run the cleanups the Cleanup app asks for, and nothing else: the verb `start`
+ * of `nas-os-cleanup.service`, whose job checks the request again and does only an item of its
+ * fixed list.
+ *
+ * Installed by `system/packages/ui_installation/install.sh`. Without it nothing is cleaned, and
+ * the launcher says what polkit refused.
+ */
+polkit.addRule(function (action, subject) {
+  if (
+    action.id === 'org.freedesktop.systemd1.manage-units' &&
+    subject.user === 'nas-os' &&
+    action.lookup('unit') === 'nas-os-cleanup.service' &&
+    action.lookup('verb') === 'start'
+  ) {
+    return polkit.Result.YES;
+  }
+});

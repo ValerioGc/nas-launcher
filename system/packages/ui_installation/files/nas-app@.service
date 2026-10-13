@@ -1,0 +1,78 @@
+# One instance of this template runs one installed application: `nas-app@fileExplorer.service`
+# runs what was unpacked into /var/lib/nas-os/apps/fileExplorer. Installed by
+# `system/packages/ui_installation/install.sh`.
+#
+# Nobody enables these at boot by hand and nobody edits one per application: the launcher starts
+# and stops them, and `run-app.sh` reads out of the application's own manifest which program to
+# execute. One unit and one polkit rule, however many applications are installed.
+#
+# The application runs as a user systemd makes up for it (it owns nothing on the machine) with
+# the launcher's group, which is what lets the launcher open the socket it creates.
+
+[Unit]
+Description=NAS application %i
+Documentation=https://github.com/ValerioGc/nas-launcher/blob/master/docs/development/external_apps/APPS.md
+After=nas-os.service nas-os-base-firewall.service
+Requires=nas-os-base-firewall.service
+StopWhenUnneeded=no
+
+[Service]
+NFTSet=cgroup:inet:nas_base:nas_apps_out
+Type=exec
+ExecStart=/usr/local/lib/nas-os/run-app.sh %i
+WorkingDirectory=/var/lib/nas-os/apps/%i
+DynamicUser=yes
+SupplementaryGroups=nas-os
+# The socket is created with the group of its directory, which is setgid: this umask is what makes
+# it group-writable, and connecting to a unix socket needs write permission.
+UMask=0007
+Restart=on-failure
+RestartSec=2
+
+# Somewhere of its own to write, which nothing else can read: /var/lib/nas-app/<id>.
+StateDirectory=nas-app/%i
+StateDirectoryMode=0700
+
+# Everything read-only except the socket directory and the state directory above, no capability,
+# and no socket family beyond unix and IP.
+ReadWritePaths=/run/nas-os/apps
+
+# Hidden unless the launcher grants it in nas-app@<id>.service.d/grants.conf, which
+# apply-app-grants.sh writes from the manifest: the data disks and anything mounted, the logs, the
+# state of the launcher (its database included) except the package of this application, the
+# devices of /sys and udev, and the processes of everybody else.
+TemporaryFileSystem=/srv:ro /mnt:ro /media:ro /var/log:ro /var/lib/nas-os:ro
+BindReadOnlyPaths=/var/lib/nas-os/apps/%i
+InaccessiblePaths=-/sys -/run/udev
+ProtectProc=invisible
+ProcSubset=pid
+CapabilityBoundingSet=
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+# The launcher answers whoever is on the loopback, because the gateway stands in front of it. The
+# process of an application gets no loopback at all, except the stub resolver of systemd-resolved
+# for the machines that use it: it reaches the launcher on its own socket, which knows the
+# application by its cgroup and lets it write only as itself.
+IPAddressDeny=localhost
+IPAddressAllow=127.0.0.53
+Environment=NAS_LAUNCHER_SOCKET=/run/nas-os/launcher/apps.sock
+# An application serves one person through the launcher: two workers of its runtime and two
+# arenas of the allocator are enough, where the defaults grow with the cores of the machine.
+Environment=TOKIO_WORKER_THREADS=2 MALLOC_ARENA_MAX=2
+NoNewPrivileges=yes
+MemoryDenyWriteExecute=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectKernelLogs=yes
+ProtectClock=yes
+ProtectHostname=yes
+ProtectControlGroups=yes
+RestrictNamespaces=yes
+RestrictRealtime=yes
+RestrictSUIDSGID=yes
+LockPersonality=yes
+SystemCallArchitectures=native
+SystemCallFilter=@system-service

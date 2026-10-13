@@ -1,0 +1,192 @@
+# Changelog
+
+All notable changes to nas-os are documented in this file.
+
+The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project
+uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [Unreleased]
+
+- [TODO: describe the next change or pending work.]
+
+### Added
+
+- The release package leaves in `release-assets/` only the version just built and the one before
+  it (`scripts/release/prune_assets.mjs`): older packages, user manuals and the installation
+  manuals left from before the split of the projects go.
+- The discovery of the NAS by NAS Finder (UDP 39877) as an option of the security center, off by
+  default (`GET`/`PUT /settings/discovery`, requests `discovery-settings` and
+  `save-discovery-settings` of the bridge). The wizard keeps the port open while it runs and closes
+  it when it hands over to the gateway; the end of the first configuration records the
+  notification `discoveryOff`, which says the discovery stays off until the system is reset and
+  where to turn it on again. While the option is on, `nas-os-discovery.service`
+  (`apply-discovery.sh`, polkit rule `63-nas-os-discovery.rules`) puts the port in the set
+  `nas_discovery` of the base firewall (nas-wizard), open only to the local IPv4 network, and
+  empties it when the option is turned off; the launcher opens it again at its start, since the set
+  is empty after a boot. Untested on a machine.
+- A notification may name a place in its message: `discoveryOff` opens Security Center on its
+  access section from the words "Security Center, Access section", in the list and in the toast.
+  The notifications written for the first sign-in after them (`discoveryOff`) show as a toast at
+  that sign-in, until closed, and are marked as read. The magnifier that opens nas-log-manager
+  shows only on warnings and errors, the only notifications it holds.
+- The settings of the application manager close once saved, and are a form: Enter saves them, and
+  the token field is no longer a password outside a form for the browser.
+- More room between the name of an open application and the button that closes its tab.
+- The notifications have their levels and their source in a menu on the left, as in
+  nas-log-manager, and the search, the unread switch and the reset of the filters in their header;
+  the list scrolls by itself with only the thumb of its scrollbar. The link of a notice wraps with
+  its sentence.
+- In the settings of the terminal the size of the text and the line height sit on the line of
+  their label.
+- The texts of the interface, in Italian and English, are impersonal and shorter: no ellipsis,
+  colon or semicolon, no names of environment variables, commands or services. The errors of the
+  backend about what an installation does not allow say so without naming the variable.
+- The bridge message `open-https`: from nas-security-center alone, on a console served over HTTP,
+  the launcher loads itself again over HTTPS on the same host. An application cannot navigate the
+  console itself.
+- The overview of the cleanup (nas-cleanup-manager) lists only the internal data disks: external
+  disks, as USB ones, are left out like the network shares. The cleanup itself never crossed into
+  another filesystem.
+- Settings. The general settings save themselves a moment after the last change, with no save
+  button; a NAS name or a color that is not valid is not saved. The desktop icon size and the
+  direction of the gradient are cards, the sliders show their value, and the color field sits on
+  the line of its label. Saving several settings in a row gives one notification, refreshed while
+  unread for 30 seconds, instead of one each. The page and its menu scroll with only the thumb of
+  the scrollbar.
+- Settings, Account. The buttons are labelled "Salva" and sit on the right; the username hint is
+  "Da 3 a 25 caratteri" and a name out of the rule is reported before sending. The button that
+  opens the Email app has its icon.
+- Settings, Updates. Each section has a short description and, on the right of its title, the
+  button that checks for updates, replaced by the one that installs them when there are some. The
+  components of the launcher are a list with a green dot before the new version; the repository
+  row is gone and the token shows as configured or not. The table of the system updates no longer
+  scrolls by itself.
+- Settings, Power. With the rules off the add button is disabled and the table is faded and
+  locked; the screen-off minutes sit on the line of their label.
+- Settings, "Ripristino e reset" (formerly "Recupero e reset"). The export and import windows have
+  a field for each step with its hint, a file chooser that shows the file chosen, and the effects
+  of an import as a list. The reset window lists what is deleted and what is kept in two banners,
+  with real bullets.
+- Applications that work without their window: one declares `run.background` in its manifest and
+  says by itself, on its socket (`PUT /api/apps/self/background`), whether it has work to do. While
+  it has, the launcher starts it at boot and closing its window (`POST /apps/<id>/close`, now sent
+  by the shell) leaves it running; it runs at a lower priority (`Nice=10`, `CPUWeight=50`, I/O
+  `best-effort` 7). Used by nas-backup-manager and nas-mail-client.
+- `7zip` among the Debian packages an application may ask for.
+- Folders shared on the local network with Samba: an application with the data disks that declares
+  `permissions.shares` sends its list on its socket (`GET`/`PUT /api/apps/self/shares`);
+  `nas-os-smb-shares.service` (`apply-smb-shares.sh`, polkit rule `58-nas-os-smb-shares.rules`)
+  writes `smb.conf`, keeps `smbd` running only while a folder is shared and opens TCP 445 to the
+  local network meanwhile, through the set `nas_shares` of the base firewall (nas-wizard). The
+  launcher applies the list at its start and after installing an application that shares, and
+  takes it back when the application goes. `samba` among the Debian packages an application may
+  ask for. Untested on a machine: nothing is shared until someone shares a folder.
+- The size of the icons of the desktop in the general settings: small, medium, large (the size
+  they had) or extra large (`desktopIconSize`, also in the exported configuration).
+- `POST /apps/close`: at the sign-in and at the sign-out the shell closes every window, and the
+  launcher stops the applications they started, except those working in background. A new session
+  starts from the desktop, not from the tabs of the last one.
+- The automatic check of the application updates also posts `appUpdatesAvailable` to the mail
+  application (`count`, `apps`); a check asked for answers only on screen.
+- Incremental antivirus scans: the files ClamAV found clean are recorded (path, device, inode,
+  size, mtime, ctime and the scan options) in `/var/lib/nas-os-antivirus/scan-cache.sqlite3`, and
+  the quick scan, or a custom one asked with `skipUnchanged`, sends to ClamAV only what changed
+  since (`--file-list`). A result holds for 30 days, a file found infected is never recorded. The
+  report adds `skipped` and `planned`, the status a real percentage while such a scan runs, and
+  `POST /api/antivirus/scanned/forget` (`antivirus-forget` for the Security Center) drops the list.
+- `permissions.cleanup`: an application may ask, on its socket, for an overview of the system disk
+  and the preview or the cleanup of one item of a fixed list (`POST /api/apps/self/cleanup`: APT
+  archives, obsolete archives, orphan packages, leftover configurations, old kernels, rotated
+  logs, journal, temporary files, update backups but the newest, update leftovers), and read and
+  empty the caches of the NAS. `nas-os-cleanup.service` runs it as root
+  (`nas-os-axum --cleanup-job`, polkit rule `59-nas-os-cleanup.rules`), from the request the
+  launcher writes; it needs no network. The catalogue lists nas-cleanup-manager ("Pulizia"), not
+  preinstalled until its first release.
+- `network:sync` among the grants: the application joins the set `nas_apps_sync` of the base
+  firewall (local network only, on the ports of Syncthing). It says on its socket whether it has a
+  sync on (`PUT /api/apps/self/sync`), and `nas-os-sync-ports.service` (`apply-sync-ports.sh`,
+  polkit rule `62-nas-os-sync-ports.rules`) opens TCP and UDP 22000 and UDP 21027 to the local
+  network meanwhile, through the set `nas_sync`. `syncthing` joins the Debian packages an
+  application may ask for. The catalogue lists nas-sync-manager ("Sincronizzazione"), installed
+  on request, not before its first release.
+- The trash of the applications (`trash` capability, `GET { label, bytes, items }` and `DELETE` on
+  an endpoint under `/internal/`) is listed in `GET /api/caches` beside the caches, with
+  `kind: "trash"`, and emptied with `DELETE /api/caches/{app}/trash`.
+- A shared folder may name its `trash` (`<disk>/.nas-trash/<folder>`, checked to be the trash of
+  its own disk): `apply-smb-shares.sh` gives the share the `recycle` module of Samba, keeping the
+  tree and one version for each path. `GET /api/apps/self/shares` says `recycle: true`; the request
+  file gains a fifth field, `-` for none.
+- The `cache` capability: an application declares an endpoint under `/internal/` that lists its
+  caches (`{ caches: [{ id, label, bytes, items }] }`) and empties one (`DELETE <endpoint>/<id>`).
+  `GET /api/caches` gathers them, with the archive of the antivirus scans (its files and bytes now
+  in the report of the antivirus job), and `DELETE /api/caches/{app}/{id}` empties one.
+- `GET /api/system/inotify` on the socket of the applications: the inotify watch limit of each
+  user (`maxUserWatches`), which an application cannot read under its sandbox. Used by the search
+  index of nas-file-manager, whose two warnings (`searchWatchesNear`, `searchWatchesOver`) the
+  notifications translate.
+
+### Changed
+
+- The proxy no longer reads and parses the manifest of an application for every request it
+  forwards: the manifest is kept in memory with the inode, size and time of its file, and read
+  again only when the file changed (an update, a new install).
+- A new application gets its desktop shortcut by default: the switch of the Application manager
+  starts on, and a NAS whose settings never said otherwise creates it.
+- The applications of the menu of the header have slightly larger logos and text.
+- Hovering a tab of the open applications only lightens one behind: no edge grows, and the active
+  one stays as it is.
+- The notifications open again without the filters of the last time.
+- Email is filed under the system applications in the catalogue.
+- The window of the file picker has no bar of its own: the picker draws its title and its cross.
+  Escape, or a click beside the window, still cancels it.
+- The migrations start over in their final form, one per table (12 files become 8): `setup_steps`
+  with all its kinds, `installed_apps` with `background`, the starting desktop with the new
+  identifiers and without the terminal (no more removed after the migrations), no renaming of old
+  identifiers. Two indexes nothing used are gone (`notifications_by_time`, the id already orders
+  them; `tasks_by_state`; `settings_by_position`). An existing database does not open: install
+  from scratch.
+- The system upgrades and the Debian packages of the applications end with
+  `apt-get autoremove --purge` and `apt-get clean`: the old kernels, the libraries nothing uses
+  and the downloaded archives do not pile up. A clean-up that fails is a warning, not a failure.
+
+### Fixed
+
+- The frames of the applications (and of the file picker) have no `sandbox` any more: on the
+  origin of the console one that runs scripts and keeps the origin is no wall, and the browser
+  warned about it on every application. Each application keeps the same rules by itself
+  (`frameGuard.ts`, see APPS.md): what an application can do is unchanged.
+- The name of the NAS in the settings: its pattern now compiles with the `v` flag the browsers
+  use for the `pattern` attribute (a `-` at the end of a class is written `\-`), so the browser no
+  longer refuses it, and checks it again.
+- Every form field of the interface has a name (or an id), and the forms with a password carry the
+  account (or the network) it belongs to in a field hidden to the eye: the browser no longer warns
+  about either. A test of the repository keeps both true.
+- Opening an application no longer leaves a 503 in the console of the browser: the interface
+  asks the launcher to start it, which answers at once, without systemd, for one whose socket
+  already answers, instead of asking the page of a stopped application to find out.
+- The antivirus downloads its signatures: `nas-os-antivirus.service` and a drop-in of
+  `clamav-freshclam.service` put their cgroup in the set `nas_apps_out` of the base firewall,
+  which let the web out to root and the launcher only, not to the user clamav of freshclam.
+- A failed antivirus command reports what it wrote on either stream (freshclam writes its errors
+  on stdout), and writes it in the journal of the unit as an error.
+- The errors and the warnings that had no diagnostic log (antivirus, failed tasks, applications
+  not started, power, schedule, power-on, network, access rules, NAS updates) write their reason,
+  and the last lines of the journal of the unit involved, in `/var/log/nas-os/<name>.log`, which
+  nas-log-manager shows.
+
+### Removed
+
+- Unused development dependencies: `@vitest/eslint-plugin`, `@vue/eslint-config-typescript`,
+  `eslint-config-prettier` and `vite-plugin-vue-devtools`.
+
+## [0.1.0] - 2026-09-22
+
+### Fixed
+
+- Build the backend before end-to-end tests and validate release metadata consistently.
+
+## [1.0.0] - YYYY-MM-DD
+
+### Added
+
+First beta release

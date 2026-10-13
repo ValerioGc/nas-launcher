@@ -1,0 +1,13 @@
+[Unit]
+Description=Initialize one empty NAS data disk
+After=local-fs.target nas-os.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/nas-os-axum --initialize-storage /var/lib/nas-os/storage-initialize.json
+TimeoutStartSec=10min
+CapabilityBoundingSet=CAP_SYS_ADMIN CAP_CHOWN CAP_FOWNER CAP_DAC_OVERRIDE
+NoNewPrivileges=yes
+PrivateMounts=no
+ProtectHome=yes
+RestrictAddressFamilies=AF_UNIX

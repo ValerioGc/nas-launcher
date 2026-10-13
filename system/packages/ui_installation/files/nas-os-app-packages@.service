@@ -1,0 +1,22 @@
+# Installs the Debian packages the application %i asks for, and purges those no application needs
+# any more, through app-packages.sh. The launcher starts it before putting a new application in
+# place and after removing one; polkit lets it start nothing else (56-nas-os-app-packages.rules).
+# Installed by `system/packages/ui_installation/install.sh`.
+#
+# It runs as root with little sandboxing on purpose, like nas-os-apt@.service: apt writes /usr,
+# /var and /etc, fetches from the network and runs the maintainer scripts of the packages. The
+# packages it may install are a fixed list in the script, whatever the request says.
+
+[Unit]
+Description=System packages of the NAS application %i
+Documentation=https://github.com/ValerioGc/nas-launcher
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/lib/nas-os/app-packages.sh %i
+StateDirectory=nas-os-app-packages
+TimeoutStartSec=15min
+ProtectHome=yes
+PrivateTmp=yes

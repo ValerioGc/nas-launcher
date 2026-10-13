@@ -1,0 +1,18 @@
+# The shells of the terminal. The launcher connects here and systemd starts one
+# nas-os-terminal@.service per connection, as the user of the terminal. Only the group of the
+# launcher may connect. terminal-user.sh enables it once that user exists.
+
+[Unit]
+Description=nas-os: shells of the terminal
+Documentation=https://github.com/ValerioGc/nas-launcher
+
+[Socket]
+ListenStream=/run/nas-os-terminal.sock
+Accept=yes
+SocketUser=root
+SocketGroup=nas-os
+SocketMode=0660
+MaxConnections=4
+
+[Install]
+WantedBy=sockets.target

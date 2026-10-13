@@ -1,0 +1,196 @@
+@use '@/styles/global' as *;
+
+// Namespaced once: native apps and modal content share controls without styling the shell.
+.app_surface {
+  color: var(--theme-foreground);
+  font: #{$text_base}/ 1.5 $font_ui;
+  min-width: 0;
+
+  h1,
+  h2 {
+    font-size: $text_large;
+    font-weight: 650;
+  }
+
+  h3 {
+    font-size: $text_base;
+  }
+
+  button {
+    @extend %button;
+  }
+
+  input:not([type='checkbox']):not([type='range']):not([type='color']),
+  select,
+  textarea {
+    @extend %control;
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  select:not([multiple]) {
+    appearance: none;
+    padding-right: $select_chevron_inset * 2 + $select_chevron;
+    background-image:
+      linear-gradient(45deg, transparent 50%, currentcolor 50%),
+      linear-gradient(135deg, currentcolor 50%, transparent 50%);
+    background-position:
+      right #{$select_chevron_inset + $select_chevron} center,
+      right #{$select_chevron_inset} center;
+    background-size: $select_chevron $select_chevron;
+    background-repeat: no-repeat;
+  }
+
+  input[type='checkbox'],
+  input[type='range'] {
+    accent-color: var(--accent);
+  }
+
+  input[type='range'] {
+    width: 100%;
+  }
+
+  textarea {
+    width: 100%;
+    min-height: $preview_height;
+  }
+
+  label {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: $space_2;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+    font-size: $text_label;
+  }
+
+  th,
+  td {
+    padding: $space_3;
+    border-bottom: $border_thin solid var(--surface-border);
+    white-space: nowrap;
+  }
+
+  th {
+    font-weight: 650;
+    background: var(--surface-sunken);
+  }
+
+  tr:hover td {
+    background: var(--surface-hover);
+  }
+
+  button[aria-pressed='true'],
+  button[aria-selected='true'] {
+    background: var(--surface-hover);
+    border-color: var(--accent);
+  }
+
+  img {
+    object-fit: contain;
+  }
+
+  .primary {
+    background: $color_primary;
+    color: $color_on_primary;
+
+    &:hover:not(:disabled) {
+      background: $color_primary_hover;
+    }
+  }
+
+  // What cannot be undone: outlined, so it reads in both themes.
+  .danger {
+    border-color: var(--status-error);
+    color: var(--status-error);
+  }
+
+  .app_error {
+    color: var(--status-error);
+  }
+
+  .muted {
+    @extend %muted;
+  }
+
+  &.app_stack,
+  .app_stack {
+    @extend %stack;
+  }
+
+  .app_icon_button {
+    @extend %icon_button;
+  }
+
+  .app_toolbar {
+    @extend %fx_base;
+    flex-wrap: wrap;
+    gap: $space_2;
+  }
+
+  .app_panel {
+    @extend %panel;
+    padding: $space_4;
+  }
+
+  // A panel that opens with an icon, a title and a line on what it holds, and an action at the end.
+  .app_card {
+    @extend %stack;
+  }
+
+  .app_card_header {
+    display: flex;
+    align-items: flex-start;
+    gap: $space_3;
+
+    > .common_icon {
+      margin-top: $border_thin;
+      color: var(--accent);
+    }
+
+    > button {
+      flex-shrink: 0;
+    }
+  }
+
+  .app_card_title {
+    @extend %stack;
+    flex: 1;
+    gap: 0;
+
+    h3,
+    p {
+      margin: 0;
+    }
+
+    p {
+      font-size: $text_label;
+    }
+  }
+
+  .app_scroll {
+    overflow: auto;
+    min-width: 0;
+  }
+
+  .app_list {
+    @extend %stack;
+    gap: $space_2;
+  }
+
+  .app_row {
+    width: 100%;
+    justify-content: start;
+    text-align: left;
+
+    img {
+      width: $space_8;
+      height: $space_8;
+    }
+  }
+}

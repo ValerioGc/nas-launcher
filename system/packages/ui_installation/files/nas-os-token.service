@@ -1,0 +1,30 @@
+# Shared release token: stores, encrypted, the token the setup wizard or the App Manager was given.
+#
+# It does not start on its own and it is not enabled at boot: the launcher writes the token into
+# its state directory, readable by itself only, and starts this unit, which hands that file to the
+# helper as its input and removes it however the helper ends. The permission to start it (and only
+# this unit) comes from the polkit rule installed alongside.
+#
+# It runs as root because the credential store and the key that encrypts it belong to root, and
+# because the helper restarts the launcher, which reads its credentials only when it starts.
+
+[Unit]
+Description=nas-os: store the shared release token
+Documentation=https://github.com/ValerioGc/nas-launcher
+
+[Service]
+Type=oneshot
+StandardInput=file:/var/lib/nas-os/launcher-token.new
+ExecStart=/usr/local/lib/nas-os/launcher-token.sh
+ExecStopPost=/bin/rm -f /var/lib/nas-os/launcher-token.new
+TimeoutStartSec=2min
+
+NoNewPrivileges=yes
+ProtectHome=yes
+PrivateTmp=yes
+PrivateNetwork=yes
+RestrictRealtime=yes
+RestrictSUIDSGID=yes
+LockPersonality=yes
+SystemCallArchitectures=native
+SystemCallFilter=@system-service

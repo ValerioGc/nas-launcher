@@ -1,0 +1,19 @@
+/*
+ * Lets the launcher share on the local network the folders an application asked for, and nothing
+ * else: the verb `start` of `nas-os-smb-shares.service`, whose helper checks every share again,
+ * writes the configuration of Samba and opens port 445 to the local network only while one is
+ * shared.
+ *
+ * Installed by `system/packages/ui_installation/install.sh`. Without it no folder is shared, and
+ * the launcher says what polkit refused.
+ */
+polkit.addRule(function (action, subject) {
+  if (
+    action.id === 'org.freedesktop.systemd1.manage-units' &&
+    subject.user === 'nas-os' &&
+    action.lookup('unit') === 'nas-os-smb-shares.service' &&
+    action.lookup('verb') === 'start'
+  ) {
+    return polkit.Result.YES;
+  }
+});

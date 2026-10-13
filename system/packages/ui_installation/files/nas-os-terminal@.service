@@ -1,0 +1,18 @@
+# One shell of the terminal, reading commands from the connection of the launcher and writing its
+# output back. The user comes from the drop-in terminal-user.sh writes. Without it the shell runs
+# as nobody. No new privileges, so sudo and su do not work from here.
+
+[Unit]
+Description=nas-os: a shell of the terminal
+Documentation=https://github.com/ValerioGc/nas-launcher
+
+[Service]
+User=nobody
+ExecStart=/bin/bash --noprofile --norc -s
+StandardInput=socket
+StandardOutput=socket
+StandardError=socket
+WorkingDirectory=~
+Environment=TERM=dumb
+NoNewPrivileges=yes
+PrivateTmp=yes

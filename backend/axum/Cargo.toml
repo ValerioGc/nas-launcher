@@ -1,0 +1,33 @@
+[package]
+name = "nas-os-axum"
+version = "0.1.36"
+edition = "2021"
+default-run = "nas-os-axum"
+
+[dependencies]
+axum = "0.8"
+
+serde_json = "1"
+serde = { version = "1", features = ["derive"] }
+tokio = { version = "1", features = ["full"] }
+sqlx = { version = "0.9", default-features = false, features = ["sqlite", "runtime-tokio", "migrate", "macros"] }
+reqwest = { version = "0.13.5", default-features = false, features = ["rustls", "json", "stream"] }
+sha2 = "0.11.0"
+futures-util = { version = "0.3.34", default-features = false, features = ["std"] }
+hyper = { version = "1.11.1", features = ["http1", "client"] }
+hyper-util = { version = "0.1.20", default-features = false, features = ["tokio"] }
+http-body-util = "0.1"
+utoipa = { version = "6", features = ["axum_extras", "preserve_order", "preserve_path_order"] }
+utoipa-axum = "0.3"
+url = "2"
+
+[dev-dependencies]
+tower = { version = "0.5", features = ["util"] }
+
+[[test]]
+name = "health"
+path = "../tests/routes/health.rs"
+
+[[test]]
+name = "machine"
+path = "../tests/machine/main.rs"

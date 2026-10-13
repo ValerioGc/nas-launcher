@@ -1,0 +1,221 @@
+@use './variables' as *;
+@use './mixins' as *;
+
+// =============================================================================
+// Accessibility
+// =============================================================================
+
+%visually_hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+// =============================================================================
+// Layout
+// =============================================================================
+
+%fieldset_reset {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+%fx_base {
+  display: flex;
+  align-items: center;
+}
+
+%fx_center {
+  justify-content: center;
+  @extend %fx_base;
+}
+
+%fx_between_center {
+  @extend %fx_base;
+  justify-content: space-between;
+}
+
+%stack {
+  display: flex;
+  flex-direction: column;
+  gap: $space_4;
+  min-width: 0;
+}
+
+%full_wh {
+  width: 100%;
+  height: 100%;
+}
+
+// =============================================================================
+// Surfaces
+// =============================================================================
+
+%panel {
+  border: $border_thin solid var(--surface-border);
+  border-radius: $radius_control;
+  background: var(--surface);
+}
+
+%panel_sunken {
+  @extend %panel;
+  background: var(--surface-sunken);
+}
+
+%backdrop {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  border: 0;
+  padding: 0;
+  background: var(--backdrop);
+  cursor: pointer;
+}
+
+// =============================================================================
+// Controls
+// =============================================================================
+
+%control {
+  min-height: $space_10;
+  padding: $space_2 $space_3;
+  border: $border_thin solid var(--surface-border);
+  border-radius: $radius_control;
+  background: var(--surface-sunken);
+  color: inherit;
+  font: inherit;
+
+  &:focus-visible {
+    @include focus-ring;
+  }
+}
+
+%button {
+  @extend %control;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: $space_2;
+  cursor: pointer;
+  background: var(--surface);
+
+  &:hover:not(:disabled) {
+    background: var(--surface-hover);
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+  }
+}
+
+%text_button {
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+}
+
+%icon_button {
+  @extend %button;
+  padding: $space_2;
+  border-color: transparent;
+  background: transparent;
+}
+
+// =============================================================================
+// Tables
+// =============================================================================
+
+%sortable_columns {
+  th {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    padding: $space_2;
+
+    button {
+      min-height: $space_8;
+      padding: $space_2;
+      border: 0;
+      background: transparent;
+    }
+  }
+}
+
+// =============================================================================
+// Text
+// =============================================================================
+
+%bullet_list {
+  display: grid;
+  gap: $space_2;
+  margin: 0;
+  padding-left: $space_5;
+  list-style: disc;
+
+  li::marker {
+    color: var(--bullet-tone, var(--accent));
+  }
+}
+
+%truncated_text {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+%badge {
+  padding: 0 $space_2;
+  border: $border_thin solid var(--surface-border);
+  border-radius: $radius_large;
+  color: var(--surface-muted);
+  font-size: $text_label;
+  white-space: nowrap;
+}
+
+%muted {
+  color: var(--surface-muted);
+  font-size: $text_label;
+}
+
+%info_tile {
+  @extend %panel_sunken;
+  padding: $space_2 $space_3;
+
+  dt {
+    color: var(--surface-muted);
+    font-size: $text_small;
+  }
+
+  dd {
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    overflow-wrap: anywhere;
+  }
+}
+
+%centered_page {
+  display: grid;
+  place-items: center;
+  min-height: 100vh;
+  min-height: 100svh;
+  padding: $space_4;
+  background: var(--theme-background);
+}
+
+%hidden_scrollbar {
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}

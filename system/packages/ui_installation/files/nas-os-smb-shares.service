@@ -1,0 +1,39 @@
+# Shares on the local network the folders the applications asked for, through
+# apply-smb-shares.sh: it writes /etc/samba/smb.conf, keeps smbd running only while a folder is
+# shared and opens TCP 445 to the local network meanwhile. The launcher starts it after a change of
+# the shares and at its own start; polkit lets it start nothing else (58-nas-os-smb-shares.rules).
+# Installed by `system/packages/ui_installation/install.sh`.
+
+[Unit]
+Description=Folders of the NAS shared on the local network
+After=nas-os-base-firewall.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/lib/nas-os/apply-smb-shares.sh
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=yes
+ReadOnlyPaths=/var/lib/nas-os
+ReadWritePaths=-/etc/samba -/run/samba -/var/cache/samba -/var/lib/samba
+NoNewPrivileges=yes
+# It reads the requests the launcher keeps in its own state directory and crosses the folders of
+# the data disks (CAP_DAC_READ_SEARCH), and puts port 445 in the set of the base firewall
+# (CAP_NET_ADMIN, over netlink); systemd starts and stops smbd for it, over its unix socket.
+CapabilityBoundingSet=CAP_DAC_READ_SEARCH CAP_NET_ADMIN
+RestrictAddressFamilies=AF_UNIX AF_NETLINK
+PrivateDevices=yes
+ProtectProc=invisible
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectKernelLogs=yes
+ProtectControlGroups=yes
+ProtectClock=yes
+ProtectHostname=yes
+RestrictNamespaces=yes
+RestrictRealtime=yes
+RestrictSUIDSGID=yes
+LockPersonality=yes
+MemoryDenyWriteExecute=yes
+SystemCallArchitectures=native
+SystemCallFilter=@system-service

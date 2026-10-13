@@ -1,0 +1,26 @@
+/*
+ * Lets the launcher refresh the Debian package index and install the upgrades it chose, and
+ * nothing else.
+ *
+ * apt needs root, which the launcher is not: it leaves the selection in its state directory and
+ * starts `nas-os-apt@refresh.service` or `nas-os-apt@upgrade.service`, which do the work. This rule
+ * allows exactly those two instances and exactly the verb `start`.
+ *
+ * Installed by `system/packages/ui_installation/install.sh`; by hand, on Debian 13:
+ *   sudo install -m 0644 system/packages/ui_installation/files/60-nas-os-apt.rules /etc/polkit-1/rules.d/
+ *   sudo systemctl restart polkit
+ *
+ * Without this rule the launcher still lists the upgrades; what it cannot do is install them, and
+ * it says so instead of claiming it did.
+ */
+polkit.addRule(function (action, subject) {
+  if (
+    action.id === 'org.freedesktop.systemd1.manage-units' &&
+    subject.user === 'nas-os' &&
+    ['nas-os-apt@refresh.service', 'nas-os-apt@upgrade.service'].indexOf(action.lookup('unit')) !==
+      -1 &&
+    action.lookup('verb') === 'start'
+  ) {
+    return polkit.Result.YES;
+  }
+});

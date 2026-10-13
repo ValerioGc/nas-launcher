@@ -1,0 +1,16 @@
+node_modules/
+dist/
+package-lock.json
+backend/target/
+coverage/
+src/tests/e2e/.features-gen/
+pnpm-lock.yaml
+
+# SFCs are formatted by scripts/format-sfc-spacing.mjs, which calls prettier and then adds the
+# blank lines inside <script> and <style> that prettier alone would strip again.
+*.vue
+gateway/target/
+external-apps/
+
+# User-maintained task notes are not part of the formatted source.
+task.md

@@ -1,0 +1,15 @@
+// Ghiaccio: a cool light theme, white and steel blue. The accent stays the one chosen in the settings.
+:root[data-theme='light'][data-palette='glacier'] {
+  --theme-background: #eef4f9;
+  --theme-foreground: #12212e;
+
+  --surface: #fbfdff;
+  --surface-sunken: #e3edf5;
+  --surface-hover: #d4e3ef;
+  --surface-border: #bdd0df;
+  --surface-muted: #4a6274;
+  --backdrop: #0f22334d;
+
+  --drop-primary: #5fb4e647;
+  --drop-secondary: #3a7fc430;
+}

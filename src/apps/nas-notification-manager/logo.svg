@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+  <title>Notifications</title>
+  <defs>
+    <linearGradient id="badge" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f3cc56"/>
+      <stop offset="1" stop-color="#c67f18"/>
+    </linearGradient>
+  </defs>
+  <rect x="2" y="2" width="20" height="20" rx="5.5" fill="url(#badge)"/>
+  <g fill="none" stroke="#ffffff" stroke-width="1.8"
+     stroke-linecap="round" stroke-linejoin="round">
+    <path d="M16.4 11.4a4.4 4.4 0 1 0-8.8 0c0 2.9-1.2 4-1.2 4h11.2s-1.2-1.1-1.2-4z"/>
+    <path d="M13.4 17.6a1.7 1.7 0 0 1-2.8 0"/>
+  </g>
+</svg>

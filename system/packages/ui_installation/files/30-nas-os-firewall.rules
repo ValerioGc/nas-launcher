@@ -1,0 +1,24 @@
+/*
+ * Lets the launcher apply its own access list, and nothing else.
+ *
+ * Writing an nftables set needs root, which the launcher is not: it writes the list to its state
+ * directory and starts `nas-os-firewall.service`, which does the work. This rule allows
+ * exactly that one unit and exactly the verb `start`: not stop, not enable, not any other unit.
+ *
+ * Installed by `system/packages/ui_installation/install.sh`; by hand, on Debian 13:
+ *   sudo install -m 0644 system/packages/ui_installation/files/30-nas-os-firewall.rules /etc/polkit-1/rules.d/
+ *   sudo systemctl restart polkit
+ *
+ * Without this rule the list is still saved and still enforced by the launcher itself; what is
+ * missing is the filter in front of the rest of the NAS, and the log says so every time.
+ */
+polkit.addRule(function (action, subject) {
+  if (
+    action.id === 'org.freedesktop.systemd1.manage-units' &&
+    subject.user === 'nas-os' &&
+    action.lookup('unit') === 'nas-os-firewall.service' &&
+    action.lookup('verb') === 'start'
+  ) {
+    return polkit.Result.YES;
+  }
+});

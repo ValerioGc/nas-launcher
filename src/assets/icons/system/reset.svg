@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+     stroke="#e67d85" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+  <title>Reset</title>
+  <path d="M4 12a8 8 0 1 0 2.35-5.65"/>
+  <path d="M4 4.2v4.6h4.6"/>
+  <path d="m9.5 9.5 5 5M14.5 9.5l-5 5"/>
+</svg>

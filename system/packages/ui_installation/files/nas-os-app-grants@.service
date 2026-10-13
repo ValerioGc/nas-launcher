@@ -1,0 +1,39 @@
+# Writes the paths the launcher granted to the application %i as the drop-in
+# /etc/systemd/system/nas-app@%i.service.d/grants.conf, through apply-app-grants.sh. The launcher
+# starts it after installing, updating or removing an application; polkit lets it start nothing
+# else (55-nas-os-app-grants.rules). Installed by `system/packages/ui_installation/install.sh`.
+
+[Unit]
+Description=Grants of the NAS application %i
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/lib/nas-os/apply-app-grants.sh %i
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=yes
+ReadOnlyPaths=/var/lib/nas-os
+ReadWritePaths=/etc/systemd/system
+NoNewPrivileges=yes
+# It reads the requests the launcher keeps in its own state directory (0710, files 0600, owned by
+# nas-os), which root may only cross and read with CAP_DAC_READ_SEARCH; it writes files root already
+# owns and asks systemd to reload, over its unix socket. No other capability, no network, nothing of
+# the kernel.
+CapabilityBoundingSet=CAP_DAC_READ_SEARCH
+PrivateNetwork=yes
+RestrictAddressFamilies=AF_UNIX
+PrivateDevices=yes
+ProtectProc=invisible
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectKernelLogs=yes
+ProtectControlGroups=yes
+ProtectClock=yes
+ProtectHostname=yes
+RestrictNamespaces=yes
+RestrictRealtime=yes
+RestrictSUIDSGID=yes
+LockPersonality=yes
+MemoryDenyWriteExecute=yes
+SystemCallArchitectures=native
+SystemCallFilter=@system-service

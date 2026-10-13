@@ -1,0 +1,32 @@
+# Access list of the NAS: this is what turns the rules saved in the launcher into a real filter.
+#
+# It does not start on its own and is not enabled at boot: the launcher starts it after writing
+# the list to /var/lib/nas-os/access-rules. The permission to start it (and only this unit)
+# comes from the polkit rule installed alongside.
+#
+# It runs as root because nftables is written by root: that is why the work is here and not inside
+# the launcher, which is not root.
+
+[Unit]
+Description=nas-os: apply the access list to nftables
+Documentation=https://github.com/ValerioGc/nas-launcher
+After=nftables.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/lib/nas-os/apply-access-rules.sh
+
+# It has to talk to netfilter, so neither PrivateNetwork nor the capability drop that would stop
+# it: CAP_NET_ADMIN is precisely the permission this unit exists to use.
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+ProtectKernelModules=yes
+RestrictNamespaces=yes
+RestrictRealtime=yes
+RestrictSUIDSGID=yes
+LockPersonality=yes
+MemoryDenyWriteExecute=yes
+SystemCallArchitectures=native
+SystemCallFilter=@system-service

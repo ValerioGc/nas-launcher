@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "apps": [
+    {
+      "id": "fileExplorer",
+      "name": "Esplora file",
+      "info": "Sfoglia i file del NAS.",
+      "provider": "github",
+      "repository": "example/nas-file-explorer",
+      "asset": "file-explorer-{version}-linux-x64.tar.gz",
+      "preinstall": true,
+      "system": true
+    }
+  ]
+}

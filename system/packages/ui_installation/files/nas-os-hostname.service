@@ -1,0 +1,11 @@
+[Unit]
+Description=Apply the NAS network hostname
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/lib/nas-os/apply-hostname.sh
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=yes
+ReadWritePaths=/var/lib/nas-os
+NoNewPrivileges=yes

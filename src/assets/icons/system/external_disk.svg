@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+     stroke="#899aeb" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+  <title>External drives</title>
+  <path d="M2 12 5.45 5.11A2 2 0 0 1 7.24 4h9.52a2 2 0 0 1 1.79 1.11L22 12v6a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2z"/>
+  <path d="M2 12h20M6 16h.01M10 16h.01"/>
+</svg>

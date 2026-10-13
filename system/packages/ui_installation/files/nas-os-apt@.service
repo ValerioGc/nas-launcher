@@ -1,0 +1,22 @@
+# Debian packages: `nas-os-apt@refresh.service` refreshes the index, `nas-os-apt@upgrade.service`
+# installs the upgrades the launcher chose. Installed by `system/packages/ui_installation/install.sh`.
+#
+# It does not start on its own and it is not enabled at boot: the launcher starts an instance when
+# someone presses the button, and the polkit rule installed alongside allows those two instances,
+# and only the verb `start`.
+#
+# It runs as root with little sandboxing on purpose: apt writes /usr, /var and /etc, fetches from
+# the network and runs the maintainer scripts of the packages, which expect a normal system.
+
+[Unit]
+Description=nas-os: %i the Debian packages
+Documentation=https://github.com/ValerioGc/nas-launcher
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/lib/nas-os/apt-updates.sh %i
+TimeoutStartSec=1h
+ProtectHome=yes
+PrivateTmp=yes

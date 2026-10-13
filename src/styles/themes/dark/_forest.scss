@@ -1,0 +1,15 @@
+// Bosco: a dark theme of deep greens. The accent stays the one chosen in the settings.
+:root[data-theme='dark'][data-palette='forest'] {
+  --theme-background: #121c17;
+  --theme-foreground: #edf5ef;
+
+  --surface: #17241d;
+  --surface-sunken: #0d1511;
+  --surface-hover: #203227;
+  --surface-border: #2b4334;
+  --surface-muted: #a3bdac;
+  --backdrop: #050b0899;
+
+  --drop-primary: #3fae6b3d;
+  --drop-secondary: #1f7a5236;
+}

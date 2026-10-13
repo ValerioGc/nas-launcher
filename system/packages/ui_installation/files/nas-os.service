@@ -1,0 +1,84 @@
+# The unit of the launcher on Debian 13. Installed by `system/packages/ui_installation/install.sh`, which also
+# creates the service user and the polkit rules; see system/packages/ui_installation/README.md.
+#
+# The switches in /etc/nas-os/nas-os.env, such as `NAS_POWER_MODE=real`, are what turn each half from
+# simulated into real. The permissions come from the polkit rules installed with this unit.
+
+[Unit]
+Description=nas-os
+Documentation=https://github.com/ValerioGc/nas-launcher
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=exec
+User=nas-os
+Group=nas-os
+# Reading the system journal, which the log of the terminal application follows, and nothing more.
+SupplementaryGroups=systemd-journal
+ExecStart=/usr/local/bin/nas-os-axum
+# The settings (the port, the switches that make each half real, the repository of the releases,
+# the domain of the applications) are in /etc/nas-os/nas-os.env, which the release replaces at every
+# update, and in /etc/nas-os/nas-os.local.env, which the administrator writes and which wins.
+EnvironmentFile=/etc/nas-os/nas-os.env
+EnvironmentFile=-/etc/nas-os/nas-os.local.env
+# The shared token for private launcher and application releases: an encrypted credential set by
+# the setup wizard, the App Manager or ../ui_configuration, decrypted by systemd for this service
+# only. Missing is fine: the repository
+# is then read without one.
+ImportCredential=nas-os.*
+# Where the installed applications answer. Each one listens on `<id>.sock` in this directory, and
+# the launcher forwards `/apps/<id>/` onto it: the socket path is derived from the identifier and
+# never read from a package. systemd creates the directory and keeps it across a restart of the
+# launcher, because the applications are not restarted with it.
+# nas-os/launcher holds the socket on which the processes of the applications reach the launcher:
+# they may open it, but not write in the directory, so none can take its name while the launcher
+# restarts.
+RuntimeDirectory=nas-os/apps nas-os/launcher
+# Setgid, so a socket an application creates carries this group and the launcher can open it, and
+# nothing outside the group gets in. Sticky, so an application cannot remove another one's socket
+# and answer in its place. The launcher sets the same mode again at every start.
+RuntimeDirectoryMode=3770
+RuntimeDirectoryPreserve=yes
+Environment=NAS_APP_SOCKETS=/run/nas-os/apps
+Environment=NAS_LAUNCHER_SOCKET=/run/nas-os/launcher/apps.sock
+# A NAS at home: four workers of the runtime and two arenas of the allocator, where the defaults
+# grow with the cores of the machine and keep memory nobody uses.
+Environment=TOKIO_WORKER_THREADS=4 MALLOC_ARENA_MAX=2
+# The database lives here, and systemd creates the directory with the right permissions. The group
+# may only cross it: the applications, which run in it, reach their packages under apps/, while
+# every file the launcher writes stays its own through the umask.
+StateDirectory=nas-os
+StateDirectoryMode=0710
+LogsDirectory=nas-os
+LogsDirectoryMode=0750
+UMask=0077
+Restart=on-failure
+RestartSec=2
+
+# The launcher reads the state of the machine and talks to logind: it needs nothing else. No
+# capability at all, and only the sockets it uses: unix (the applications, D-Bus), IP (the forges)
+# and netlink (`ip`).
+CapabilityBoundingSet=
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6 AF_NETLINK
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectKernelLogs=yes
+ProtectClock=yes
+ProtectHostname=yes
+PrivateDevices=yes
+ProtectControlGroups=yes
+RestrictNamespaces=yes
+RestrictRealtime=yes
+RestrictSUIDSGID=yes
+LockPersonality=yes
+MemoryDenyWriteExecute=yes
+SystemCallArchitectures=native
+SystemCallFilter=@system-service
+
+[Install]
+WantedBy=multi-user.target

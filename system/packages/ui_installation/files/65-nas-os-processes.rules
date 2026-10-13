@@ -1,0 +1,21 @@
+/*
+ * Lets the launcher terminate a process or restart the service it runs in, from the process
+ * widget, and nothing else: the verb `start` of `nas-os-process@<verb>-<pid>-<started>.service`,
+ * whose helper checks the request again as root. A process that keeps the NAS working is only
+ * restarted, a thread of the kernel is left alone: the helper decides, not this rule.
+ *
+ * Installed by `system/packages/ui_installation/install.sh`. Without it the widget still lists the
+ * processes, and says what polkit refused when asked to act on one.
+ */
+polkit.addRule(function (action, subject) {
+  if (
+    action.id === 'org.freedesktop.systemd1.manage-units' &&
+    subject.user === 'nas-os' &&
+    /^nas-os-process@(terminate|restart)-[1-9][0-9]{0,9}-[0-9]{1,20}\.service$/.test(
+      action.lookup('unit') || ''
+    ) &&
+    action.lookup('verb') === 'start'
+  ) {
+    return polkit.Result.YES;
+  }
+});

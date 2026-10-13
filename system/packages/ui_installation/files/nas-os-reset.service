@@ -1,0 +1,23 @@
+# Reset of the NAS: launcher, gateway and applications back to where the wizard found them, the
+# data disks untouched, then the wizard started again.
+#
+# It does not start on its own and it is not enabled at boot: the launcher starts it once the
+# gateway has checked the password of the account. The permission to start it (and only this unit)
+# comes from the polkit rule installed alongside. It runs as root because it stops the services,
+# removes users and data that root owns and starts the wizard; it stops the launcher that asked
+# for it, which is why the launcher does not wait for it.
+
+[Unit]
+Description=nas-os: reset the NAS and start the wizard again
+Documentation=https://github.com/ValerioGc/nas-launcher
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/lib/nas-os/factory-reset.sh
+TimeoutStartSec=30min
+
+NoNewPrivileges=yes
+PrivateTmp=yes
+RestrictRealtime=yes
+LockPersonality=yes
+SystemCallArchitectures=native

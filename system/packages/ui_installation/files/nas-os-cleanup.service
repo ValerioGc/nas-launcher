@@ -1,0 +1,21 @@
+# Runs one cleanup the Cleanup app asked for: `nas-os-axum --cleanup-job` reads the request the
+# launcher wrote in /var/lib/nas-os, does an item of its fixed list (or only measures it) and
+# writes the answer beside it. The launcher starts it and waits; polkit lets it start nothing else
+# (59-nas-os-cleanup.rules). Installed by `system/packages/ui_installation/install.sh`, never
+# enabled.
+
+[Unit]
+Description=Cleanup of the system requested by the NAS Cleanup app
+After=local-fs.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/flock /run/nas-os-cleanup.lock /usr/local/bin/nas-os-axum --cleanup-job
+TimeoutStartSec=2h
+# It cleans /tmp and /var/tmp themselves, and apt purges kernels and their modules: no private
+# temporary folder, no read-only /usr. It needs no network.
+PrivateTmp=no
+NoNewPrivileges=yes
+ProtectKernelTunables=yes
+ProtectControlGroups=yes
+RestrictAddressFamilies=AF_UNIX

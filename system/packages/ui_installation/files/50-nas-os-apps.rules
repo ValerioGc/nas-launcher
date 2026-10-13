@@ -1,0 +1,29 @@
+/*
+ * Lets the launcher start, stop and restart the installed applications and delete the state of a
+ * removed one, and nothing else.
+ *
+ * Every application runs as an instance of one template unit, `nas-app@.service`: this rule
+ * allows the four verbs on `nas-app@<id>.service` and on no other unit. The identifier is
+ * matched against the same shape the launcher accepts (ASCII letters, digits, `-` and `_`) so a
+ * name carrying a slash, a dot or a space is not a unit this rule has anything to say about.
+ *
+ * It does not grant `enable`: an application is started by the launcher when it is installed and
+ * when somebody presses the button, never on its own at boot.
+ *
+ * Installed by `system/packages/ui_installation/install.sh`; by hand, on Debian 13:
+ *   sudo install -m 0644 system/packages/ui_installation/files/50-nas-os-apps.rules /etc/polkit-1/rules.d/
+ *   sudo systemctl restart polkit
+ *
+ * Without this rule a package installs and never opens: the launcher says the application is not
+ * running, and pressing start answers with what polkit refused.
+ */
+polkit.addRule(function (action, subject) {
+  if (
+    action.id === 'org.freedesktop.systemd1.manage-units' &&
+    subject.user === 'nas-os' &&
+    /^nas-app@[A-Za-z0-9_-]{1,64}\.service$/.test(action.lookup('unit') || '') &&
+    ['start', 'stop', 'restart', 'clean'].indexOf(action.lookup('verb')) !== -1
+  ) {
+    return polkit.Result.YES;
+  }
+});

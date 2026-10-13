@@ -1,0 +1,12 @@
+[Unit]
+Description=NAS data volume discovery and user storage
+After=local-fs.target nas-os.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/nas-os-axum --reconcile-storage
+TimeoutStartSec=60
+CapabilityBoundingSet=CAP_SYS_ADMIN CAP_CHOWN CAP_FOWNER CAP_DAC_OVERRIDE
+NoNewPrivileges=yes
+PrivateMounts=no
+RestrictAddressFamilies=AF_UNIX

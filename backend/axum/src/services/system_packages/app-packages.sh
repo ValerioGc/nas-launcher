@@ -1,0 +1,108 @@
+#!/usr/bin/env bash
+#
+# Installs the Debian packages an application needs, and purges those no application needs any
+# more. It runs as root from `nas-os-app-packages@<id>.service`:
+#
+#   app-packages.sh <id>
+#
+# The launcher writes what each installed application asks for, one package per line, in
+# /var/lib/nas-os/app-packages/<id>, and removes the file with the application. This script
+# installs what the file of <id> lists and is missing, and records it; then it purges every package
+# it recorded that no file lists any more. A package that was on the machine before is never
+# recorded, so it is never removed. A line it does not know stops it: what may be installed is
+# decided here, not by what the file says.
+
+set -euo pipefail
+
+readonly REQUESTS=${NAS_APP_PACKAGES_DIR:-/var/lib/nas-os/app-packages}
+readonly RECORD=${NAS_APP_PACKAGES_RECORD:-/var/lib/nas-os-app-packages/installed}
+readonly INSTALLABLE=(msmtp clamav clamav-freshclam 7zip samba syncthing)
+export DEBIAN_FRONTEND=noninteractive
+# Another apt may hold the lock of dpkg (apt-daily, an upgrade from the settings): wait for it.
+readonly LOCK_WAIT=(-o DPkg::Lock::Timeout=300)
+
+fail() {
+  printf 'system packages not set up: %s\n' "$1" >&2
+  exit 1
+}
+
+id=${1:-}
+[[ $id =~ ^[A-Za-z0-9_-]{1,64}$ ]] || fail "not an application identifier: ${id:-<empty>}"
+
+is_installable() {
+  local name
+  for name in "${INSTALLABLE[@]}"; do
+    [[ $name == "$1" ]] && return 0
+  done
+  return 1
+}
+
+# Reads into `names` the packages a request file lists, each checked against the list above.
+read_request() {
+  names=()
+  local line
+  while IFS= read -r line || [[ -n $line ]]; do
+    [[ -z $line ]] && continue
+    is_installable "$line" || fail "${1##*/} asks for $line, which no application is given"
+    names+=("$line")
+  done <"$1"
+}
+
+is_present() {
+  [[ $(dpkg-query -W -f='${Status}' "$1" 2>/dev/null) == 'install ok installed' ]]
+}
+
+mkdir -p "$(dirname "$RECORD")"
+touch "$RECORD"
+# Two applications installed at once: one at a time reads and rewrites the record.
+exec 9>"$RECORD.lock"
+flock 9
+
+changed=false
+if [[ -f $REQUESTS/$id ]]; then
+  read_request "$REQUESTS/$id"
+  for name in "${names[@]}"; do
+    is_present "$name" && continue
+    if [[ $id == nas-security-center ]]; then
+      progress="$(dirname "$RECORD")/antivirus-install.progress"
+      rm -f -- "$progress"
+      install -m 0644 -o root -g root /dev/null "$progress"
+      apt-get install -q -y --no-install-recommends "${LOCK_WAIT[@]}" -o APT::Status-Fd=3 -- "$name" 3>"$progress" || fail "apt-get could not install $name"
+    else
+      apt-get install -q -y --no-install-recommends "${LOCK_WAIT[@]}" -- "$name" || fail "apt-get could not install $name"
+    fi
+    grep -qxF -- "$name" "$RECORD" || printf '%s\n' "$name" >>"$RECORD"
+    changed=true
+    echo "$id: installed $name"
+  done
+fi
+
+still=()
+shopt -s nullglob
+for file in "$REQUESTS"/*; do
+  read_request "$file"
+  still+=("${names[@]}")
+done
+
+kept=()
+while IFS= read -r name; do
+  [[ -z $name ]] && continue
+  if printf '%s\n' "${still[@]}" | grep -qxF -- "$name"; then
+    kept+=("$name")
+  elif is_present "$name"; then
+    apt-get purge -q -y "${LOCK_WAIT[@]}" -- "$name" || fail "apt-get could not remove $name"
+    changed=true
+    echo "removed $name, which no application needs any more"
+  fi
+done <"$RECORD"
+
+printf '%s\n' "${kept[@]}" | grep -v '^$' >"$RECORD.new" || true
+mv -f -- "$RECORD.new" "$RECORD"
+
+# What the removed packages pulled in and nothing needs any more, and the downloaded archives: a
+# clean-up that fails leaves the applications as they are.
+if $changed; then
+  apt-get autoremove --purge -q -y "${LOCK_WAIT[@]}" ||
+    echo 'warning: the packages nothing needs any more could not be removed'
+  apt-get clean || echo 'warning: the downloaded archives could not be removed'
+fi
