@@ -78,6 +78,17 @@ function appOf(frame: string) {
 /** The message of one type an application sends. */
 type MessageOf<T extends AppMessage['type']> = Extract<AppMessage, { type: T }>;
 
+/**
+ * The console loaded again over HTTPS, asked by the security center when it came over HTTP: an
+ * application may not navigate this page itself (frameGuard.ts).
+ */
+function openHttps(id: string) {
+  const page = globalThis.location;
+  if (id === SECURITY_CENTER && page.protocol === 'http:') {
+    page.assign(`https://${page.hostname}${page.pathname}${page.search}`);
+  }
+}
+
 function validRequest(requestId: unknown): requestId is string {
   return typeof requestId === 'string' && requestId.length > 0 && requestId.length <= 100;
 }
@@ -504,17 +515,6 @@ export function useAppBridge() {
           ? location
           : undefined,
     });
-  }
-
-  /**
-   * The console loaded again over HTTPS, asked by the security center when it came over HTTP: an
-   * application may not navigate this page itself (frameGuard.ts).
-   */
-  function openHttps(id: string) {
-    const page = globalThis.location;
-    if (id === SECURITY_CENTER && page.protocol === 'http:') {
-      page.assign(`https://${page.hostname}${page.pathname}${page.search}`);
-    }
   }
 
   async function shortcut(id: string, message: MessageOf<'shortcut'>) {

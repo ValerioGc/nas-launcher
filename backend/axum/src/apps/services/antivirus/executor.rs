@@ -19,7 +19,7 @@ use std::{
 };
 use tokio::{
     io::{AsyncBufReadExt, AsyncWriteExt, BufReader, BufWriter},
-    process::Command,
+    process::{ChildStdout, Command},
     sync::mpsc,
 };
 
@@ -268,46 +268,48 @@ async fn load_report() -> Result<Report, String> {
     }
 }
 
+async fn configure(settings: &Settings) -> Result<(), String> {
+    settings.validate().map_err(|error| error.1)?;
+    persist(
+        "settings.json",
+        &serde_json::to_vec(settings).map_err(failure)?,
+    )
+    .await?;
+    // Arming the unit now must not count as booting the operating system.
+    let boot = tokio::fs::read("/proc/sys/kernel/random/boot_id")
+        .await
+        .map_err(failure)?;
+    tokio::fs::write(state_file("boot-id"), boot)
+        .await
+        .map_err(failure)?;
+    if settings.enabled && (settings.boot_scan.enabled || settings.shutdown_scan.enabled) {
+        command(
+            "systemctl",
+            &["enable", "nas-os-antivirus-lifecycle.service"],
+        )
+        .await?;
+        command(
+            "systemctl",
+            &["start", "--no-block", "nas-os-antivirus-lifecycle.service"],
+        )
+        .await
+    } else {
+        command(
+            "systemctl",
+            &[
+                "disable",
+                "--now",
+                "--no-block",
+                "nas-os-antivirus-lifecycle.service",
+            ],
+        )
+        .await
+    }
+}
+
 async fn execute(job: Job, report: &mut Report) -> Result<(), String> {
     match job {
-        Job::Configure { settings } => {
-            settings.validate().map_err(|error| error.1)?;
-            persist(
-                "settings.json",
-                &serde_json::to_vec(&settings).map_err(failure)?,
-            )
-            .await?;
-            // Arming the unit now must not count as booting the operating system.
-            let boot = tokio::fs::read("/proc/sys/kernel/random/boot_id")
-                .await
-                .map_err(failure)?;
-            tokio::fs::write(state_file("boot-id"), boot)
-                .await
-                .map_err(failure)?;
-            if settings.enabled && (settings.boot_scan.enabled || settings.shutdown_scan.enabled) {
-                command(
-                    "systemctl",
-                    &["enable", "nas-os-antivirus-lifecycle.service"],
-                )
-                .await?;
-                command(
-                    "systemctl",
-                    &["start", "--no-block", "nas-os-antivirus-lifecycle.service"],
-                )
-                .await
-            } else {
-                command(
-                    "systemctl",
-                    &[
-                        "disable",
-                        "--now",
-                        "--no-block",
-                        "nas-os-antivirus-lifecycle.service",
-                    ],
-                )
-                .await
-            }
-        }
+        Job::Configure { settings } => configure(&settings).await,
         Job::Enable => {
             command("systemctl", &["stop", "clamav-freshclam.service"]).await?;
             let updated = command("freshclam", &["--stdout"]).await;
@@ -618,42 +620,16 @@ async fn scan(
         .spawn()
         .map_err(failure)?;
     let stdout = child.stdout.take().ok_or("scanner output unavailable")?;
-    let mut lines = BufReader::new(stdout).lines();
-    let mut last_publish = Instant::now();
-    let mut scan_detected = 0;
-    let mut scan_errors = Vec::new();
     let mut found_clean = Vec::new();
-    while let Some(line) = lines.next_line().await.map_err(failure)? {
-        if let Some(clean) = &cache {
-            if let Some(path) = line.strip_suffix(": OK") {
-                if in_scan_scope(path, &paths, &options.exclusions) {
-                    found_clean.push(PathBuf::from(path));
-                }
-                if found_clean.len() >= scan_cache::BATCH {
-                    clean.record(std::mem::take(&mut found_clean)).await;
-                }
-            } else if let Some((path, _)) = line
-                .strip_suffix(" FOUND")
-                .and_then(|found| found.rsplit_once(": "))
-            {
-                clean.forget(OsStr::new(path)).await;
-            }
-        }
-        if !read_scan_line(
-            &line,
-            &options,
-            &paths,
-            report,
-            &mut scan_detected,
-            &mut scan_errors,
-        )? {
-            continue;
-        }
-        if last_publish.elapsed() > Duration::from_secs(2) {
-            publish(report).await?;
-            last_publish = Instant::now();
-        }
-    }
+    let (scan_detected, scan_errors) = read_scan_output(
+        stdout,
+        cache.as_ref(),
+        &options,
+        &paths,
+        report,
+        &mut found_clean,
+    )
+    .await?;
     let status = child.wait().await.map_err(failure)?;
     if let Some(clean) = &cache {
         clean.record(found_clean).await;
@@ -689,6 +665,40 @@ async fn scan(
     Ok(())
 }
 
+async fn read_scan_output(
+    stdout: ChildStdout,
+    cache: Option<&Clean>,
+    options: &ScanOptions,
+    paths: &[String],
+    report: &mut Report,
+    found_clean: &mut Vec<PathBuf>,
+) -> Result<(usize, Vec<String>), String> {
+    let mut lines = BufReader::new(stdout).lines();
+    let mut last_publish = Instant::now();
+    let mut scan_detected = 0;
+    let mut scan_errors = Vec::new();
+    while let Some(line) = lines.next_line().await.map_err(failure)? {
+        if let Some(clean) = cache {
+            clean.record_line(&line, paths, options, found_clean).await;
+        }
+        if !read_scan_line(
+            &line,
+            options,
+            paths,
+            report,
+            &mut scan_detected,
+            &mut scan_errors,
+        )? {
+            continue;
+        }
+        if last_publish.elapsed() > Duration::from_secs(2) {
+            publish(report).await?;
+            last_publish = Instant::now();
+        }
+    }
+    Ok((scan_detected, scan_errors))
+}
+
 /// The archive of the files found clean during one scan, with the options and the moment it
 /// started. Its failures go to the journal and never fail the scan.
 struct Clean {
@@ -699,6 +709,28 @@ struct Clean {
 }
 
 impl Clean {
+    async fn record_line(
+        &self,
+        line: &str,
+        paths: &[String],
+        options: &ScanOptions,
+        found_clean: &mut Vec<PathBuf>,
+    ) {
+        if let Some(path) = line.strip_suffix(": OK") {
+            if in_scan_scope(path, paths, &options.exclusions) {
+                found_clean.push(PathBuf::from(path));
+            }
+            if found_clean.len() >= scan_cache::BATCH {
+                self.record(std::mem::take(found_clean)).await;
+            }
+        } else if let Some((path, _)) = line
+            .strip_suffix(" FOUND")
+            .and_then(|found| found.rsplit_once(": "))
+        {
+            self.forget(OsStr::new(path)).await;
+        }
+    }
+
     async fn open(options: &ScanOptions) -> Option<Self> {
         let started_ns = SystemTime::now()
             .duration_since(UNIX_EPOCH)

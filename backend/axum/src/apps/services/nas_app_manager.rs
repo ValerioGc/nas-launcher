@@ -104,6 +104,14 @@ pub fn newer_releases(found: &[Offer]) -> BTreeSet<String> {
         .collect()
 }
 
+async fn announce_updates(db: &SqlitePool, found: &[Offer]) {
+    packages::announce(db, found).await;
+    // Only the automatic check mails: a check asked for is answered on screen.
+    if let Some(notice) = packages::updates_notice(found) {
+        mail_events::forward(&notice);
+    }
+}
+
 pub async fn watch_updates(db: SqlitePool) {
     let mut last = None;
     let mut announced = BTreeSet::new();
@@ -118,11 +126,7 @@ pub async fn watch_updates(db: SqlitePool) {
                 Ok(found) => {
                     let fresh = newer_releases(&found);
                     if !fresh.is_subset(&announced) {
-                        packages::announce(&db, &found).await;
-                        // Only the automatic check mails: a check asked for is answered on screen.
-                        if let Some(notice) = packages::updates_notice(&found) {
-                            mail_events::forward(&notice);
-                        }
+                        announce_updates(&db, &found).await;
                     }
                     announced = fresh;
                 }

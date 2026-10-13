@@ -181,10 +181,8 @@ fn files_under(
             if skip(&path) {
                 continue;
             }
-            if metadata.is_dir() {
-                if metadata.dev() == top.dev() {
-                    folders.push(path);
-                }
+            if metadata.is_dir() && metadata.dev() == top.dev() {
+                folders.push(path);
             } else if (metadata.is_file() || metadata.file_type().is_symlink())
                 && keep(&path, &metadata)
             {
