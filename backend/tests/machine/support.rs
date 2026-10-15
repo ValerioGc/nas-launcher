@@ -46,6 +46,8 @@ pub struct Machine {
 }
 
 static MACHINE: OnceLock<Machine> = OnceLock::new();
+// I test di reset e spegnimento condividono la simulazione delle operazioni root attive.
+pub static ROOT_OPERATIONS: tokio::sync::Mutex<()> = tokio::sync::Mutex::const_new(());
 
 /// The applications of the catalogue, each for one test, released from `tests/<id>`.
 pub const CATALOGUE: &[(&str, &str)] = &[
@@ -277,6 +279,8 @@ impl Machine {
                 std::env::set_var("NAS_APP_DROPINS", root.join("dropins"));
                 std::env::set_var("CREDENTIALS_DIRECTORY", root.join("credentials"));
                 std::env::set_var("NAS_WIZARD_UNIT", root.join("nas-wizard.service"));
+                std::env::set_var("NAS_WIZARD_HOME", root.join("wizard"));
+                std::env::set_var("NAS_CONFIGURATION_STATE", root.join("configuration"));
                 std::env::set_var("NAS_STORAGE_STATE_DIR", &state);
                 std::env::set_var("NAS_LAUNCHER_SOCKET", root.join("launcher.sock"));
                 std::env::set_var("NAS_LAUNCHER_REPOSITORY", "tests/nas-launcher");
@@ -291,6 +295,18 @@ impl Machine {
                 std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o755))
                     .expect("executable");
             }
+            for relative in [
+                "wizard/wizard/bin/nas-wizard",
+                "wizard/packages/os_configuration/scripts/uninstall.sh",
+            ] {
+                let path = root.join(relative);
+                std::fs::create_dir_all(path.parent().expect("parent")).expect("wizard folder");
+                std::fs::write(&path, "#!/bin/sh\nexit 0\n").expect("wizard fixture");
+                std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o755))
+                    .expect("executable");
+            }
+            std::fs::create_dir_all(root.join("configuration")).expect("configuration folder");
+            std::fs::write(root.join("configuration/original-ready"), "").expect("backup marker");
             let apps = CATALOGUE
                 .iter()
                 .map(|(id, provider)| {

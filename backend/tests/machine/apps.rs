@@ -198,11 +198,12 @@ async fn terminates_a_process_through_its_helper_unit() {
 
 #[tokio::test]
 async fn starts_the_reset_and_changes_the_network_through_nmcli() {
+    let _operations = crate::support::ROOT_OPERATIONS.lock().await;
     let machine = Machine::get();
     let db = database::open_in_memory().await.expect("database");
 
     let state = reset::state().await;
-    assert!(state.reason.is_none());
+    assert_eq!(state.reason, None);
     reset::start().await.expect("reset started");
     assert!(!machine
         .calls("systemctl start --no-block nas-os-reset.service")

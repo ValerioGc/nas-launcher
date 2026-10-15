@@ -5871,7 +5871,7 @@
       "ResetBlock": {
         "type": "string",
         "description": "Why the NAS cannot be reset here.",
-        "enum": ["disabled", "noWizard"]
+        "enum": ["disabled", "noWizard", "noOriginalState"]
       },
       "ResetState": {
         "type": "object",

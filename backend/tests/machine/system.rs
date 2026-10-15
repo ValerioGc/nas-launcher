@@ -188,6 +188,7 @@ async fn hands_the_minutes_of_the_screen_beside_the_database() {
 
 #[tokio::test]
 async fn holds_a_restart_back_while_a_job_of_root_runs() {
+    let _operations = crate::support::ROOT_OPERATIONS.lock().await;
     use axum::http::StatusCode;
     use nas_os_axum::apps::services::nas_system_settings::power::{self, PowerAction};
     let machine = Machine::get();
