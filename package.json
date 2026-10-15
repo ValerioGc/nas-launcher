@@ -1,6 +1,6 @@
 {
   "name": "nas-os",
-  "version": "0.1.37",
+  "version": "0.1.38",
   "private": true,
   "type": "module",
   "description": "Custom Launcher for NAS OS on a Debian-based system",
