@@ -1,18 +1,18 @@
-# One shell of the terminal, reading commands from the connection of the launcher and writing its
-# output back. The user comes from the drop-in terminal-user.sh writes. Without it the shell runs
-# as nobody. No new privileges, so sudo and su do not work from here.
+# La PTY dell'app esterna viene avviata con l'utente configurato dal wizard.
 
 [Unit]
-Description=nas-os: a shell of the terminal
-Documentation=https://github.com/ValerioGc/nas-launcher
+Description=nas-os: interactive terminal session
+Documentation=https://github.com/ValerioGc/nas-system-terminal
 
 [Service]
 User=nobody
-ExecStart=/bin/bash --noprofile --norc -s
+SupplementaryGroups=nas-os
+ExecStart=/var/lib/nas-os/apps/nas-system-terminal/bin/nas-system-terminal-axum --shell
 StandardInput=socket
 StandardOutput=socket
-StandardError=socket
+StandardError=journal
 WorkingDirectory=~
-Environment=TERM=dumb
-NoNewPrivileges=yes
+Environment=TERM=xterm-256color
+NoNewPrivileges=no
 PrivateTmp=yes
+KillMode=control-group

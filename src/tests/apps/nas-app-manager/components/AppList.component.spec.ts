@@ -22,19 +22,19 @@ it('keeps sorting and selection across view changes without requesting data', as
   const wrapper = mount(AppList);
   vi.mocked(request).mockClear();
   await wrapper.get('[data-testid="app_manager_sort_name"]').trigger('click');
-  expect(wrapper.findAll('tbody tr')[0]!.text()).toContain('Terminale');
+  expect(wrapper.findAll('tbody tr')[0]!.text()).toContain('Ricerca globale');
   await wrapper.get('[data-testid="app_manager_app_example"]').trigger('click');
   manager.setView('preview');
   manager.setShowSystem(false);
   await nextTick();
-  expect(wrapper.find('[data-testid="app_manager_app_nas-system-terminal"]').exists()).toBe(false);
+  expect(wrapper.find('[data-testid="app_manager_app_nas-global-search"]').exists()).toBe(false);
   expect(wrapper.get('[data-testid="app_manager_app_example"]').attributes('aria-pressed')).toBe(
     'true',
   );
   manager.setView('list');
   manager.setShowSystem(true);
   await nextTick();
-  expect(wrapper.findAll('tbody tr')[0]!.text()).toContain('Terminale');
+  expect(wrapper.findAll('tbody tr')[0]!.text()).toContain('Ricerca globale');
   expect(request).not.toHaveBeenCalled();
   wrapper.unmount();
 });

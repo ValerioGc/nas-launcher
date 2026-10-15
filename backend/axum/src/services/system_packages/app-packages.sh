@@ -16,7 +16,7 @@ set -euo pipefail
 
 readonly REQUESTS=${NAS_APP_PACKAGES_DIR:-/var/lib/nas-os/app-packages}
 readonly RECORD=${NAS_APP_PACKAGES_RECORD:-/var/lib/nas-os-app-packages/installed}
-readonly INSTALLABLE=(msmtp clamav clamav-freshclam 7zip samba syncthing)
+readonly INSTALLABLE=(msmtp clamav clamav-freshclam 7zip samba syncthing cifs-utils)
 export DEBIAN_FRONTEND=noninteractive
 # Another apt may hold the lock of dpkg (apt-daily, an upgrade from the settings): wait for it.
 readonly LOCK_WAIT=(-o DPkg::Lock::Timeout=300)

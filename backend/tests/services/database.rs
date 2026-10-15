@@ -17,6 +17,17 @@ async fn a_new_desktop_has_the_system_applications_and_keeps_a_manual_shortcut_o
             "nas-system-settings"
         ]
     );
+    crate::services::registry::record(
+        &pool,
+        &crate::services::registry::Installed {
+            id: "nas-system-terminal".to_owned(),
+            name: "Terminal".to_owned(),
+            info: String::new(),
+            version: "0.1.0".to_owned(),
+        },
+    )
+    .await
+    .expect("external terminal installed");
     crate::services::desktop::add_app(&pool, "nas-system-terminal")
         .await
         .expect("manual shortcut");

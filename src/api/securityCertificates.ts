@@ -59,12 +59,38 @@ function withPassword(method: string, path: string) {
   };
 }
 
+export function httpsSettings(value: unknown): value is { port: number; force: boolean } {
+  return (
+    record(value) &&
+    Number.isInteger(value.port) &&
+    typeof value.port === 'number' &&
+    value.port >= 1 &&
+    value.port <= 65535 &&
+    typeof value.force === 'boolean'
+  );
+}
+
+function saveHttps(payload: unknown): Call | null {
+  if (!record(payload) || !password(payload.password)) {
+    return null;
+  }
+  const given = payload.password;
+  if (!httpsSettings(payload)) {
+    return null;
+  }
+  const { port, force } = payload;
+  return () =>
+    confirmed('/auth/https', { method: 'PUT', body: JSON.stringify({ port, force }) }, given);
+}
+
 /** Each request about the certificate, and the call it becomes for what it sent. */
 export const CERTIFICATE_CALLS: Record<
   SecurityCertificateRequest,
   (payload: unknown) => Call | null
 > = {
   certificate: () => () => gateway('/auth/certificate'),
+  'https-settings': () => () => gateway('/auth/https'),
+  'save-https-settings': saveHttps,
   'save-certificate-names': saveNames,
   'renew-certificate': withPassword('POST', '/auth/certificate/renew'),
   'upload-certificate': upload,

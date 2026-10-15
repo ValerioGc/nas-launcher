@@ -11,8 +11,10 @@
 //! it when plugged in again under another name.
 
 use super::{
-    collect, fstab_system_uuids, output, output_logged, reconcile, system_mount, valid_device_name,
-    Device, Devices, EXPLORER_ROOT, VOLUMES_ROOT,
+    contains_system,
+    inventory::{self, external},
+    output_logged, reconcile, system_mount, valid_device_name, Device, Devices, EXPLORER_ROOT,
+    VOLUMES_ROOT,
 };
 use crate::{
     http::error::ApiFailure,
@@ -29,7 +31,6 @@ use std::{
 };
 
 const EJECT_UNIT: &str = "nas-os-storage-eject.service";
-const COLUMNS: &str = "NAME,PATH,TYPE,FSTYPE,PARTTYPE,UUID,LABEL,MOUNTPOINTS,RO,RM,TRAN";
 
 #[derive(Debug, Clone, Deserialize, Serialize, utoipa::ToSchema)]
 #[serde(deny_unknown_fields)]
@@ -54,14 +55,6 @@ pub struct ExternalDisk {
     pub name: String,
     pub locked: bool,
     pub can_eject: bool,
-}
-
-fn external(disk: &Device) -> bool {
-    disk.rm.unwrap_or(false)
-        || disk
-            .tran
-            .as_deref()
-            .is_some_and(|transport| matches!(transport, "usb" | "mmc" | "firewire"))
 }
 
 fn external_inventory(
@@ -100,15 +93,11 @@ fn external_inventory(
 pub async fn external_disks(db: &SqlitePool) -> Result<Vec<ExternalDisk>, ApiFailure> {
     let locked = locks(db).await?;
     tokio::task::spawn_blocking(move || {
-        let listed = output("lsblk", &["--json", "--tree", "--output", COLUMNS])
-            .map_err(ApiFailure::unavailable)?;
-        let devices = serde_json::from_str(&listed)
-            .map_err(|_| ApiFailure::unavailable("invalid disk inventory"))?;
-        let fstab = fs::read_to_string("/etc/fstab").unwrap_or_default();
+        let devices = inventory::list().map_err(ApiFailure::unavailable)?;
         Ok(external_inventory(
             devices,
             &locked,
-            &fstab_system_uuids(&fstab),
+            &inventory::system_uuids(),
         ))
     })
     .await
@@ -163,7 +152,7 @@ pub(super) fn ejectable(disk: &Device, system_uuids: &HashSet<String>) -> Result
     if disk.kind != "disk" || !external(disk) {
         return Err("only an external disk can be ejected".to_owned());
     }
-    if collect(disk.clone(), system_uuids, &mut Vec::new(), false) {
+    if contains_system(disk, system_uuids) {
         return Err("the disk holds a filesystem of the system".to_owned());
     }
     Ok(())
@@ -199,8 +188,7 @@ fn inspect(device: &str, system_uuids: &HashSet<String>) -> Result<Device, Strin
     if !valid_device_name(device) {
         return Err("invalid device".to_owned());
     }
-    let listed = output("lsblk", &["--json", "--tree", "--output", COLUMNS])?;
-    let devices: Devices = serde_json::from_str(&listed).map_err(|error| error.to_string())?;
+    let devices: Devices = inventory::list()?;
     let disk = disk_of(&devices.blockdevices, device)
         .ok_or("the disk is no longer connected")?
         .clone();
@@ -253,13 +241,10 @@ pub async fn eject(db: &SqlitePool, input: EjectRequest) -> Result<(), ApiFailur
         ));
     }
     let device = input.device.clone();
-    let disk = tokio::task::spawn_blocking(move || {
-        let fstab = fs::read_to_string("/etc/fstab").unwrap_or_default();
-        inspect(&device, &fstab_system_uuids(&fstab))
-    })
-    .await
-    .map_err(|_| ApiFailure::unavailable("disk inspection failed"))?
-    .map_err(ApiFailure::bad)?;
+    let disk = tokio::task::spawn_blocking(move || inspect(&device, &inventory::system_uuids()))
+        .await
+        .map_err(|_| ApiFailure::unavailable("disk inspection failed"))?
+        .map_err(ApiFailure::bad)?;
     let locked = locks(db).await?;
     if uuids(&disk).iter().any(|uuid| locked.contains(uuid)) {
         return Err(ApiFailure::forbidden("the disk is marked as not removable"));
@@ -345,7 +330,7 @@ async fn run_reported(path: &Path) -> Result<(), String> {
     )
     .map_err(|error| format!("invalid ejection request: {error}"))?;
     let fstab = fs::read_to_string("/etc/fstab").map_err(|error| error.to_string())?;
-    let disk = inspect(&input.device, &fstab_system_uuids(&fstab))?;
+    let disk = inspect(&input.device, &inventory::fstab_system_uuids(&fstab))?;
     let log = log_path();
     if let Some(parent) = log.parent() {
         fs::create_dir_all(parent).map_err(|error| error.to_string())?;

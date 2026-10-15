@@ -53,6 +53,17 @@ async fn the_desktop_keeps_the_order_it_is_given() {
         ]
     );
 
+    crate::services::registry::record(
+        &db,
+        &crate::services::registry::Installed {
+            id: "nas-system-terminal".to_owned(),
+            name: "Terminal".to_owned(),
+            info: String::new(),
+            version: "0.1.0".to_owned(),
+        },
+    )
+    .await
+    .expect("external terminal installed");
     add_app(&db, "nas-system-terminal")
         .await
         .expect("manual shortcut");

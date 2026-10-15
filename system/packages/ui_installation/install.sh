@@ -58,6 +58,8 @@ readonly STORAGE_RENAME_UNIT_TARGET=/etc/systemd/system/nas-os-storage-rename.se
 readonly STORAGE_EJECT_UNIT_TARGET=/etc/systemd/system/nas-os-storage-eject.service
 readonly STORAGE_SMART_UNIT_TARGET=/etc/systemd/system/nas-os-storage-smart.service
 readonly STORAGE_TIMER_TARGET=/etc/systemd/system/nas-os-storage.timer
+readonly STORAGE_CRYPT_SOCKET_TARGET=/etc/systemd/system/nas-os-storage-crypt.socket
+readonly STORAGE_CRYPT_UNIT_TARGET='/etc/systemd/system/nas-os-storage-crypt@.service'
 readonly STORAGE_UDEV_TARGET=/etc/udev/rules.d/90-nas-os-storage.rules
 readonly HOSTNAME_UNIT_TARGET=/etc/systemd/system/nas-os-hostname.service
 readonly HOSTNAME_SCRIPT_TARGET=/usr/local/lib/nas-os/apply-hostname.sh
@@ -143,6 +145,13 @@ if getent group nas-storage >/dev/null; then
   echo "   nas-storage group already exists"
 else
   run groupadd --system nas-storage
+fi
+# The one group that may open the socket of the encryption of the data disks: before the unit of
+# the launcher, which names it, is installed.
+if getent group nas-os-crypt >/dev/null; then
+  echo "   nas-os-crypt group already exists"
+else
+  run groupadd --system nas-os-crypt
 fi
 # The base firewall learns the service user's uid when it loads.
 run systemctl try-restart nas-os-base-firewall.service
@@ -356,6 +365,8 @@ run install -m 0644 -o root -g root "$here/files/nas-os-storage-eject.service" \
 run install -m 0644 -o root -g root "$here/files/nas-os-storage-smart.service" \
   "$STORAGE_SMART_UNIT_TARGET"
 run install -m 0644 -o root -g root "$here/files/nas-os-storage.timer" "$STORAGE_TIMER_TARGET"
+run install -m 0644 -o root -g root "$here/files/nas-os-storage-crypt.socket" "$STORAGE_CRYPT_SOCKET_TARGET"
+run install -m 0644 -o root -g root "$here/files/nas-os-storage-crypt@.service" "$STORAGE_CRYPT_UNIT_TARGET"
 run install -m 0644 -o root -g root "$here/files/90-nas-os-storage-udev.rules" \
   "$STORAGE_UDEV_TARGET"
 run udevadm control --reload
@@ -405,6 +416,8 @@ run systemctl daemon-reload
 run systemctl enable "$SERVICE_NAME"
 run systemctl restart "$SERVICE_NAME"
 run systemctl enable --now nas-os-storage.timer
+# Listening only: the launcher sends nothing while NAS_ENCRYPTION_MODE is not real.
+run systemctl enable --now nas-os-storage-crypt.socket
 run systemctl start nas-os-storage.service
 echo "   $SERVICE_NAME started and enabled at boot"
 

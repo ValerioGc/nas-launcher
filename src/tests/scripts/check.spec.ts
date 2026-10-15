@@ -32,6 +32,7 @@ describe('check.sh', () => {
       'ValerioGc/nas-security-center',
       'ValerioGc/nas-sync-manager',
       'ValerioGc/nas-system-monitor',
+      'ValerioGc/nas-system-terminal',
     ]);
   });
 

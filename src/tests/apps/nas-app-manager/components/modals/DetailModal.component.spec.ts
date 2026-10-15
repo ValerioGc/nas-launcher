@@ -91,13 +91,13 @@ describe('application details', () => {
   it('names and describes an application of the launcher in the language of the page', async () => {
     vi.mocked(request).mockResolvedValue({
       ...detail,
-      name: 'Terminal',
-      description: 'Command console of the NAS and system log.',
+      name: 'Global search',
+      description: 'Search applications, settings and files.',
     });
-    const wrapper = await open({ appId: 'nas-system-terminal' });
+    const wrapper = await open({ appId: 'nas-global-search' });
 
-    expect(wrapper.get('h3').text()).toBe('Terminale');
-    expect(wrapper.text()).toContain('Console dei comandi del NAS e log di sistema.');
+    expect(wrapper.get('h3').text()).toBe('Ricerca globale');
+    expect(wrapper.text()).toContain('Ricerca tra applicazioni, impostazioni e file.');
     wrapper.unmount();
   });
 

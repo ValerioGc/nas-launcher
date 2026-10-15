@@ -9,6 +9,7 @@ use crate::{
     apps::services::nas_system_settings::{apply_hostname, discovery, General, Language, Theme},
     http::error::ApiFailure,
     services::{
+        notifications::{self, Notice, Tone},
         provisioning::{self, Step},
         settings::{self, Section},
     },
@@ -17,6 +18,11 @@ use crate::{
 use axum::http::StatusCode;
 use serde::{Deserialize, Serialize};
 use sqlx::SqlitePool;
+use std::path::Path;
+
+/// Where the entry script of the wizard notes that it installed the NAS in development mode,
+/// without an encrypted system or a TPM 2.0.
+const DEVELOPMENT_MARK: &str = "/var/lib/nas-wizard/security-development";
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, utoipa::ToSchema)]
 pub struct SetupState {
@@ -80,6 +86,8 @@ pub async fn complete(
         .await
         .map_err(|_| unavailable())?;
     discovery::announce_off(db).await;
+    // The wizard may have encrypted disks with their automatic key alone.
+    crate::services::storage::crypt::report_spare_keys(db).await;
 
     tokio::spawn(provisioning::resume(db.clone()));
     state(db).await
@@ -87,6 +95,37 @@ pub async fn complete(
 
 fn unavailable() -> ApiFailure {
     ApiFailure::unavailable("the setup state cannot be read")
+}
+
+/// Warns at every start, while the warning before is unread, that the NAS was installed without
+/// the security it needs.
+pub async fn report_development(db: &SqlitePool) {
+    report_development_mark(db, Path::new(DEVELOPMENT_MARK)).await;
+}
+
+async fn report_development_mark(db: &SqlitePool, mark: &Path) {
+    if tokio::fs::metadata(mark).await.is_err() {
+        return;
+    }
+    let unread: bool = sqlx::query_scalar(
+        "SELECT EXISTS (SELECT 1 FROM notifications WHERE key = 'developmentMode' AND read = 0)",
+    )
+    .fetch_one(db)
+    .await
+    .unwrap_or(true);
+    if !unread {
+        notifications::record(
+            db,
+            "nas-security-center",
+            Tone::Warning,
+            Notice::new(
+                "developmentMode",
+                "NAS in development mode",
+                "This NAS was installed without an encrypted system or a TPM 2.0: whoever takes one of its disks can read the data on it.",
+            ),
+        )
+        .await;
+    }
 }
 
 #[cfg(test)]

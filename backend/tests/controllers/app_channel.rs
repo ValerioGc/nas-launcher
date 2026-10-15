@@ -12,6 +12,31 @@ async fn as_backup() -> (Router, SqlitePool) {
     (router, db)
 }
 
+#[tokio::test]
+async fn only_the_terminal_application_reaches_its_journal_and_settings() {
+    let (other, db) = as_backup().await;
+    for path in ["/api/settings/terminal", "/api/terminal/log"] {
+        assert_eq!(send(&other, "GET", path, "").await, StatusCode::FORBIDDEN);
+    }
+    let terminal = routes()
+        .layer(Extension(Caller("nas-system-terminal".to_owned())))
+        .with_state(AppState::new(db));
+    assert_eq!(
+        send(&terminal, "GET", "/api/settings/terminal", "").await,
+        StatusCode::OK
+    );
+    assert_eq!(
+        send(
+            &terminal,
+            "POST",
+            "/api/terminal/session/missing/input",
+            r#"{"command":"ls"}"#
+        )
+        .await,
+        StatusCode::NOT_FOUND
+    );
+}
+
 async fn send(router: &Router, method: &str, path: &str, body: &str) -> StatusCode {
     router
         .clone()

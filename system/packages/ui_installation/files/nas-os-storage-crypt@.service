@@ -1,0 +1,27 @@
+# Formats a data disk, opens, closes and keys an encrypted data volume (LUKS2), or keeps, tries,
+# connects and forgets a network disk (SMB): it reads one request from the connection of
+# nas-os-storage-crypt.socket and answers on it. Passwords and keys
+# stay on the connection and in the runtime directory below, a tmpfs only root reads, never on a
+# command line nor in the journal. Installed by `system/packages/ui_installation/install.sh`.
+
+[Unit]
+Description=Encryption of one NAS data disk
+After=local-fs.target nas-os.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/nas-os-axum --storage-crypt
+StandardInput=socket
+StandardOutput=socket
+StandardError=journal
+RuntimeDirectory=nas-os-storage-crypt/%i
+RuntimeDirectoryMode=0700
+TimeoutStartSec=15min
+# Device mapper, mounts and the owners of the volumes, the memory of the keys locked, the open
+# files of the processes, read to say who keeps a volume busy, and the set of the base firewall
+# with the servers of the network disks. IP to find a server by its name.
+CapabilityBoundingSet=CAP_SYS_ADMIN CAP_CHOWN CAP_FOWNER CAP_DAC_OVERRIDE CAP_DAC_READ_SEARCH CAP_IPC_LOCK CAP_SYS_PTRACE CAP_NET_ADMIN
+NoNewPrivileges=yes
+PrivateMounts=no
+ProtectHome=yes
+RestrictAddressFamilies=AF_UNIX AF_NETLINK AF_INET AF_INET6

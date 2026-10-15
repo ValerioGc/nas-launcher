@@ -64,6 +64,7 @@ describe('the bridge between the shell and an application', () => {
       requestId: 'initialize-1',
       device: 'sdb',
       label: 'Data-1',
+      identity: 'wwn/S1/1024',
     } as const;
 
     arrive(message, ORIGIN, other.element.contentWindow);
@@ -73,7 +74,7 @@ describe('the bridge between the shell and an application', () => {
 
     expect(request).toHaveBeenCalledWith('/storage/disks/initialize', {
       method: 'POST',
-      body: JSON.stringify({ device: 'sdb', label: 'Data-1' }),
+      body: JSON.stringify({ device: 'sdb', label: 'Data-1', identity: 'wwn/S1/1024' }),
     });
     expect(request).toHaveBeenCalledWith('/tasks/initialize-storage');
     expect(disks.sent.postMessage).toHaveBeenCalledWith(
@@ -819,12 +820,19 @@ describe('the bridge between the shell and an application', () => {
     wrapper.unmount();
   });
 
-  it('loads the console again over HTTPS for the security center alone, and only from HTTP', () => {
+  it('opens the configured HTTPS port for the security center alone, preserving the URL', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi
+        .fn()
+        .mockImplementation(async () => new Response(JSON.stringify({ port: 8443, force: false }))),
+    );
     const assign = vi.fn();
     vi.stubGlobal('location', {
+      href: 'http://192.168.1.20:8080/console?app=x#certificates',
       protocol: 'http:',
       hostname: '192.168.1.20',
-      pathname: '/',
+      pathname: '/console',
       search: '?app=x',
       assign,
     });
@@ -837,10 +845,18 @@ describe('the bridge between the shell and an application', () => {
     arrive({ nas: APP_PROTOCOL, type: 'open-https' }, ORIGIN, other.element.contentWindow);
     expect(assign).not.toHaveBeenCalled();
     arrive({ nas: APP_PROTOCOL, type: 'open-https' }, ORIGIN, security.element.contentWindow);
-    expect(assign).toHaveBeenCalledWith('https://192.168.1.20/?app=x');
+    await flushPromises();
+    expect(assign).toHaveBeenCalledWith('https://192.168.1.20:8443/console?app=x#certificates');
 
-    vi.stubGlobal('location', { protocol: 'https:', hostname: 'nas', pathname: '/', assign });
+    vi.stubGlobal('location', {
+      href: 'https://nas:8443/',
+      protocol: 'https:',
+      hostname: 'nas',
+      pathname: '/',
+      assign,
+    });
     arrive({ nas: APP_PROTOCOL, type: 'open-https' }, ORIGIN, security.element.contentWindow);
+    await flushPromises();
     expect(assign).toHaveBeenCalledTimes(1);
     vi.unstubAllGlobals();
     wrapper.unmount();
@@ -855,6 +871,68 @@ describe('the bridge between the shell and an application', () => {
     arrive({ nas: APP_PROTOCOL, type: 'ready' }, ORIGIN, element.contentWindow);
 
     expect(sent.postMessage).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    [
+      'https://nas/console?app=security#certificates',
+      false,
+      'https://nas:8443/console?app=security#certificates',
+    ],
+    ['http://nas/console', true, 'https://nas:8443/console'],
+    ['http://127.0.0.1:8081/console', true, null],
+    ['http://nas/console', false, null],
+  ])('applies HTTPS connection changes to the console at %s', async (current, force, expected) => {
+    const assign = vi.fn();
+    const url = new URL(current);
+    vi.stubGlobal('location', {
+      href: url.href,
+      protocol: url.protocol,
+      hostname: url.hostname,
+      port: url.port,
+      assign,
+    });
+    vi.stubGlobal(
+      'fetch',
+      vi
+        .fn()
+        .mockImplementation(
+          async (path: string) =>
+            new Response(
+              JSON.stringify(
+                path === '/auth/confirm' ? { code: 'confirmed' } : { port: 8443, force },
+              ),
+            ),
+        ),
+    );
+    const { api, wrapper } = bridge();
+    const security = frame();
+    api.attach('nas-security-center', security.element);
+    arrive(
+      {
+        nas: APP_PROTOCOL,
+        type: 'save-https-settings',
+        requestId: 'https-save',
+        payload: { port: 8443, force, password: 'secret' },
+      },
+      ORIGIN,
+      security.element.contentWindow,
+    );
+    await flushPromises();
+    expect(security.sent.postMessage).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: 'save-https-settings-result',
+        success: true,
+        data: { port: 8443, force },
+      }),
+      ORIGIN,
+    );
+    if (expected) {
+      expect(assign).toHaveBeenCalledWith(expected);
+    } else {
+      expect(assign).not.toHaveBeenCalled();
+    }
+    wrapper.unmount();
   });
 
   it('tells an application the colours of the theme drawn now', () => {

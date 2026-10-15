@@ -94,7 +94,9 @@ Il campo `app.system` del manifest e `system` del catalogo classificano anche le
 come app di sistema, senza modificarne la categoria o trasformarle in app integrate.
 Nel catalogo standard tutte le app esterne sono di sistema tranne Backup e Picture Manager.
 Le altre hanno `preinstall` attivo e ricevono un collegamento durante la configurazione iniziale.
-Il Terminale rimane integrato e disponibile nel menu, senza collegamento iniziale sul desktop.
+Il Terminale è l’app esterna `nas-system-terminal`, preinstallata dal catalogo standard.
+Il launcher conserva in `services/terminal.rs` le sessioni, il journal e le impostazioni già salvate;
+il backend dell’app raggiunge queste funzioni sul canale Unix delle applicazioni.
 
 **Installata vuol dire due cose insieme**, e l'elenco è l'unione delle due. Il registro sa cosa ha
 scritto un'installazione (nome e descrizione della voce di catalogo, versione della release) e la
@@ -750,8 +752,8 @@ tutta insieme o non si salva: un valore rifiutato non lascia né documento né n
 `services/settings.rs` è l'archivio del launcher e conosce **solo** i nomi delle sezioni e il loro
 ordine, mai il contenuto di un documento. La forma di una sezione appartiene all'app che la
 possiede, con i suoi tipi e la sua validazione: `nas-system-settings` per generali, accesso e
-alimentazione, `nas-notification-manager` per i canali di consegna, `nas-system-terminal` per l'aspetto
-della console, `nas-app-manager` per il controllo automatico degli aggiornamenti e per il catalogo
+alimentazione, `nas-notification-manager` per i canali di consegna, `services/terminal.rs` per l'aspetto
+della console esterna, `nas-app-manager` per il controllo automatico degli aggiornamenti e per il catalogo
 modificato dall'interfaccia, che quando esiste prende il posto di `/etc/nas-os/catalogue.json`. Così una sezione cambia forma senza
 toccare l'archivio, e un'app non legge i tipi di un'altra.
 

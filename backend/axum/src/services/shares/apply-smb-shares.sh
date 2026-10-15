@@ -115,6 +115,19 @@ for file in "$REQUESTS"/*; do
       echo "warning: $path is not there: $name is not shared for now"
       continue
     fi
+    # The folder of a disk that is not mounted is an empty one on the system, not the disk.
+    disk=${path#"$STORAGE"/}
+    if ! mountpoint -q -- "$STORAGE/${disk%%/*}"; then
+      echo "warning: the disk of $path is not mounted: $name is not shared for now"
+      continue
+    fi
+    # A network disk is the share of another machine: it is not shared again from here.
+    case $(findmnt --noheadings --output FSTYPE --mountpoint "$STORAGE/${disk%%/*}" 2>/dev/null) in
+      cifs | smb3 | nfs | nfs4 | fuse.sshfs)
+        echo "warning: $path is on a network disk: $name is not shared"
+        continue
+        ;;
+    esac
     shares+=("$name"$'\t'"$path"$'\t'"$mode"$'\t'"$access"$'\t'"$trash")
   done <"$file"
 done

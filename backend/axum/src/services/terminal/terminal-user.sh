@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 #
-# Creates the user the terminal of the launcher runs as. It takes the name of the account of the
-# setup wizard and gets no password and no sudo. nas-os-terminal-user.service runs it with the name
-# the launcher wrote as its input.
+# Crea l'utente della console con il nome dell'account del wizard, senza password né sudo.
+# La configurazione del NAS passa il nome su stdin; il socket e il relativo servizio
+# restano gestiti dal launcher anche quando l'interfaccia del terminale è un'app esterna.
 #
 #   printf '%s' admin | sudo /usr/local/lib/nas-os/terminal-user.sh
 

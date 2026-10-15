@@ -24,6 +24,8 @@ export default {
   tokenMissing:
     'Nessun token configurato. Il token, necessario per installare e aggiornare le applicazioni, si imposta nelle impostazioni del gestore.',
   tokenLabel: 'Token per le release private',
+  tokenConfigured: 'Token configurato',
+  tokenNotConfigured: 'Token non configurato',
   tokenWriteOnly: 'Il token salvato non è visualizzabile.',
   notInstalled: 'Non installata',
   installFailed: 'Installazione di {name} non riuscita ({reason}).',
@@ -75,7 +77,6 @@ export default {
   appLogoFormatsValue: 'SVG, PNG, JPEG, WebP',
   appLogoMaxSize: 'Dimensione massima',
   appLogoMaxSizeValue: '{size} KB',
-  appLogoHint: 'In assenza di un logo personalizzato viene utilizzata l’icona predefinita.',
   appLogoFormat: 'Il logo deve essere un’immagine SVG, PNG, JPEG o WebP.',
   appLogoTooLarge: 'Il logo supera 256 KB.',
   tokenReplace: 'Token già salvato. Un nuovo valore lo sostituisce, il campo vuoto lo mantiene.',

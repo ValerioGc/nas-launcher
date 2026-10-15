@@ -77,3 +77,35 @@ async fn a_name_that_cannot_be_a_hostname_leaves_the_configuration_open() {
     }
     assert!(still_open(&db).await.is_ok());
 }
+
+#[tokio::test]
+async fn a_nas_in_development_mode_is_reported_until_the_warning_is_read() {
+    let db = database::open_in_memory().await.expect("database");
+    let directory = std::env::temp_dir().join(format!("nas-setup-mark-{}", std::process::id()));
+    std::fs::create_dir_all(&directory).expect("directory");
+    let mark = directory.join("security-development");
+    let warnings = || async {
+        sqlx::query_scalar::<_, i64>(
+            "SELECT COUNT(*) FROM notifications WHERE key = 'developmentMode'",
+        )
+        .fetch_one(&db)
+        .await
+        .expect("notifications")
+    };
+
+    report_development_mark(&db, &mark).await;
+    assert_eq!(warnings().await, 0);
+
+    std::fs::write(&mark, "development").expect("mark");
+    report_development_mark(&db, &mark).await;
+    report_development_mark(&db, &mark).await;
+    assert_eq!(warnings().await, 1);
+
+    sqlx::query("UPDATE notifications SET read = 1")
+        .execute(&db)
+        .await
+        .expect("read");
+    report_development_mark(&db, &mark).await;
+    assert_eq!(warnings().await, 2);
+    std::fs::remove_dir_all(&directory).expect("removed");
+}

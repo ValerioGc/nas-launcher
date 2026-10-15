@@ -110,6 +110,17 @@
       "category": "system",
       "system": true,
       "preinstall": true
+    },
+    {
+      "id": "nas-system-terminal",
+      "name": "Terminale",
+      "info": "Console dei comandi del NAS e log di sistema.",
+      "provider": "github",
+      "repository": "ValerioGc/nas-system-terminal",
+      "asset": "nas-system-terminal-{version}-linux-x64.tar.gz",
+      "category": "system",
+      "system": true,
+      "preinstall": true
     }
   ]
 }

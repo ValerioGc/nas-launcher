@@ -146,40 +146,43 @@ onMounted(() => {
         />
       </CommonField>
 
-      <CommonField :error="logoError">
+      <CommonField class="catalogue_logo_field" :error="logoError">
         <span>{{ t('appLogo') }}</span>
         <div class="catalogue_logo">
           <img :src="preview" alt="" data-testid="catalogue_logo_preview" />
-          <input
-            id="catalogue_logo"
-            type="file"
-            class="visually_hidden"
-            :accept="LOGO_TYPES.join(',')"
-            data-testid="catalogue_logo"
-            @change="choose"
-          />
-          <label for="catalogue_logo" class="catalogue_logo_pick">{{ t('appLogoChoose') }}</label>
-          <button
-            v-if="hasLogo"
-            type="button"
-            data-testid="catalogue_logo_remove"
-            @click="logo = null"
-          >
-            {{ t('appLogoRemove') }}
-          </button>
-        </div>
-        <div class="catalogue_logo_details">
-          <dl>
-            <div>
-              <dt>{{ t('appLogoFormats') }}</dt>
-              <dd>{{ t('appLogoFormatsValue') }}</dd>
+          <div class="catalogue_logo_details">
+            <dl>
+              <div>
+                <dt>{{ t('appLogoFormats') }}</dt>
+                <dd>{{ t('appLogoFormatsValue') }}</dd>
+              </div>
+              <div>
+                <dt>{{ t('appLogoMaxSize') }}</dt>
+                <dd>{{ t('appLogoMaxSizeValue', { size: LOGO_MAX_BYTES / 1024 }) }}</dd>
+              </div>
+            </dl>
+            <div class="app_toolbar">
+              <input
+                id="catalogue_logo"
+                type="file"
+                class="visually_hidden"
+                :accept="LOGO_TYPES.join(',')"
+                data-testid="catalogue_logo"
+                @change="choose"
+              />
+              <label for="catalogue_logo" class="catalogue_logo_pick">{{
+                t('appLogoChoose')
+              }}</label>
+              <button
+                v-if="hasLogo"
+                type="button"
+                data-testid="catalogue_logo_remove"
+                @click="logo = null"
+              >
+                {{ t('appLogoRemove') }}
+              </button>
             </div>
-            <div>
-              <dt>{{ t('appLogoMaxSize') }}</dt>
-              <dd>{{ t('appLogoMaxSizeValue', { size: LOGO_MAX_BYTES / 1024 }) }}</dd>
-            </div>
-          </dl>
-          <p class="muted">{{ t('appLogoHint') }}</p>
+          </div>
         </div>
       </CommonField>
     </div>
@@ -208,14 +211,20 @@ onMounted(() => {
   }
 }
 
+.catalogue_logo_field {
+  grid-column: 1 / -1;
+}
+
 .catalogue_logo {
-  @extend %fx_base;
-  flex-wrap: wrap;
-  gap: $space_3;
+  display: grid;
+  grid-template-columns: $space_8 * 4 minmax(0, 1fr);
+  align-items: center;
+  gap: $space_4;
 
   img {
-    width: $space_10;
-    height: $space_10;
+    width: $space_8 * 4;
+    height: $space_8 * 4;
+    object-fit: contain;
   }
 
   input:focus-visible + label {
@@ -224,6 +233,10 @@ onMounted(() => {
 
   &_pick {
     @extend %button;
+  }
+
+  @media (max-width: $breakpoint_small) {
+    grid-template-columns: 1fr;
   }
 }
 
@@ -251,8 +264,7 @@ onMounted(() => {
     color: var(--theme-foreground);
   }
 
-  dd,
-  p {
+  dd {
     margin: 0;
   }
 }

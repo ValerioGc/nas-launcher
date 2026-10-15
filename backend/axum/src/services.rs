@@ -19,3 +19,4 @@ pub mod shares;
 pub mod storage;
 pub mod sync_ports;
 pub mod system_packages;
+pub mod terminal;

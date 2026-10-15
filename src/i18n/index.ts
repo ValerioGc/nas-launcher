@@ -11,8 +11,6 @@ import searchIt from './apps/nas-global-search/it';
 import searchEn from './apps/nas-global-search/en';
 import settingsIt from './apps/nas-system-settings/it';
 import settingsEn from './apps/nas-system-settings/en';
-import terminalIt from './apps/nas-system-terminal/it';
-import terminalEn from './apps/nas-system-terminal/en';
 
 export type { Locale };
 
@@ -26,7 +24,6 @@ const catalogs: Record<Locale, Record<string, string>> = {
     ...notificationsIt,
     ...searchIt,
     ...settingsIt,
-    ...terminalIt,
   },
   en: {
     ...launcherEn,
@@ -34,7 +31,6 @@ const catalogs: Record<Locale, Record<string, string>> = {
     ...notificationsEn,
     ...searchEn,
     ...settingsEn,
-    ...terminalEn,
   },
 };
 

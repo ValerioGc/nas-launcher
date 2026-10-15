@@ -53,7 +53,8 @@ fail() {
 "$RESTORE" --check
 busy=$(systemctl list-units --plain --no-legend --state=active,activating,deactivating,reloading \
   'nas-os-update.service' 'nas-os-apt@*.service' 'nas-os-app-packages@*.service' \
-  'nas-os-storage-initialize.service' 'nas-os-storage-rename.service' 'nas-os-storage-eject.service')
+  'nas-os-storage-initialize.service' 'nas-os-storage-rename.service' 'nas-os-storage-eject.service' \
+  'nas-os-storage-crypt@*.service')
 [[ -z $busy ]] || fail 'wait for NAS updates, package installation or disk operations before resetting'
 
 stop_unit() {

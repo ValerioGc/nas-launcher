@@ -1,7 +1,14 @@
 //! Discovers data filesystems and publishes only the wizard user's directories to Explorer.
 //! This entry point runs as root from a dedicated oneshot unit, never from an HTTP handler.
 
+pub mod crypt;
 pub mod eject;
+pub mod inventory;
+pub mod network;
+
+use inventory::{
+    classify, contains_system, fstab_system_uuids, system_mount, Candidate, Device, Devices,
+};
 
 use crate::{
     http::error::ApiFailure,
@@ -30,35 +37,18 @@ const INITIALIZE_UNIT: &str = "nas-os-storage-initialize.service";
 const INITIALIZE_TASK: &str = "initialize-storage";
 const RENAME_UNIT: &str = "nas-os-storage-rename.service";
 const SMART_UNIT: &str = "nas-os-storage-smart.service";
+const SHARES_UNIT: &str = "nas-os-smb-shares.service";
+/// How long a reconciliation waits for the network disks that connect by themselves.
+const NETWORK_BUDGET: Duration = Duration::from_secs(30);
 static INITIALIZE_LOCK: tokio::sync::Mutex<()> = tokio::sync::Mutex::const_new(());
-
-#[derive(Debug, Deserialize)]
-struct Devices {
-    blockdevices: Vec<Device>,
-}
-
-#[derive(Debug, Clone, Deserialize)]
-struct Device {
-    name: Option<String>,
-    path: Option<String>,
-    #[serde(rename = "type")]
-    kind: String,
-    fstype: Option<String>,
-    parttype: Option<String>,
-    uuid: Option<String>,
-    label: Option<String>,
-    mountpoints: Option<Vec<Option<String>>>,
-    ro: Option<bool>,
-    rm: Option<bool>,
-    tran: Option<String>,
-    children: Option<Vec<Device>>,
-}
 
 #[derive(Debug, Clone, Deserialize, Serialize, utoipa::ToSchema)]
 #[serde(deny_unknown_fields)]
 pub struct InitializeRequest {
     pub device: String,
     pub label: String,
+    /// The identity of the disk as the inventory listed it: a disk renamed since is refused.
+    pub identity: String,
 }
 
 #[derive(Debug, Clone, Serialize, utoipa::ToSchema)]
@@ -80,178 +70,13 @@ pub struct SmartRequest {
     pub device: String,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
-struct Candidate {
-    id: String,
-    uuid: String,
-    name: String,
-    fstype: String,
-    mountpoint: Option<PathBuf>,
-    device: Option<String>,
-    external: bool,
-}
-
 #[derive(Debug)]
 struct Grant {
     id: String,
     name: String,
     path: PathBuf,
-    external: bool,
-}
-
-fn system_mount(path: &str) -> bool {
-    if path.starts_with("/run/media/") {
-        return false;
-    }
-    [
-        "/", "/boot", "/efi", "/usr", "/var", "/home", "/etc", "/sys", "/proc", "/dev", "/run",
-    ]
-    .iter()
-    .any(|mount| path == *mount || (*mount != "/" && path.starts_with(&format!("{mount}/"))))
-}
-
-fn system_partition(parttype: Option<&str>) -> bool {
-    parttype.is_some_and(|value| {
-        matches!(
-            value.to_ascii_lowercase().as_str(),
-            "c12a7328-f81f-11d2-ba4b-00a0c93ec93b" | // EFI system
-        "21686148-6449-6e6f-744e-656564454649" | // BIOS boot
-        "0657fd6d-a4ab-43c4-84e5-0933c84b4f4f" | // swap
-        "4f68bce3-e8cd-4db1-96e7-fbcaf984b709" | // x86-64 root
-        "44479540-f297-41b2-9af7-d131d5f0458a" | // x86 root
-        "4d21b016-b534-45c2-a9fb-5c16e091fd2d" | // /var
-        "933ac7e1-2eb4-4f13-b844-0e14e2aef915" | // /home
-        "de94bba4-06d1-4d40-a16a-bfd50179d6ac" | // Windows recovery
-        "0x27" // MBR recovery
-        )
-    })
-}
-
-fn supported(fstype: &str) -> bool {
-    matches!(
-        fstype,
-        "ext2" | "ext3" | "ext4" | "xfs" | "btrfs" | "vfat" | "exfat" | "ntfs" | "ntfs3"
-    )
-}
-
-fn collect(
-    device: Device,
-    protected_uuids: &HashSet<String>,
-    found: &mut Vec<Candidate>,
-    parent_external: bool,
-) -> bool {
-    let external = parent_external
-        || device.rm.unwrap_or(false)
-        || device
-            .tran
-            .as_deref()
-            .is_some_and(|transport| matches!(transport, "usb" | "mmc" | "firewire"));
-    let mountpoints = device.mountpoints.unwrap_or_default();
-    let mut protected = device.fstype.as_deref() == Some("swap")
-        || system_partition(device.parttype.as_deref())
-        || device
-            .uuid
-            .as_ref()
-            .is_some_and(|uuid| protected_uuids.contains(&uuid.to_ascii_lowercase()))
-        || mountpoints.iter().flatten().any(|path| system_mount(path));
-    let children = device.children.unwrap_or_default();
-    let is_leaf = children.is_empty();
-    for child in children {
-        protected |= collect(child, protected_uuids, found, external);
-    }
-    if protected || !is_leaf || device.ro.unwrap_or(false) {
-        return protected;
-    }
-    if !matches!(device.kind.as_str(), "disk" | "part" | "lvm" | "crypt")
-        && !device.kind.starts_with("raid")
-    {
-        return false;
-    }
-    let (Some(uuid), Some(fstype)) = (device.uuid, device.fstype) else {
-        return false;
-    };
-    if !supported(&fstype)
-        || uuid.is_empty()
-        || !uuid
-            .bytes()
-            .all(|byte| byte.is_ascii_alphanumeric() || byte == b'-')
-    {
-        return false;
-    }
-    let id = format!("v-{}", uuid.to_ascii_lowercase());
-    let name = device
-        .label
-        .filter(|label| !label.trim().is_empty())
-        .unwrap_or_else(|| format!("Disk {uuid}"));
-    let name = name
-        .chars()
-        .filter(|character| !character.is_control())
-        .take(80)
-        .collect();
-    let mountpoint = mountpoints
-        .into_iter()
-        .flatten()
-        .find(|path| {
-            path.starts_with('/')
-                && !system_mount(path)
-                && !path.starts_with(EXPLORER_ROOT)
-                && !path.starts_with(VOLUMES_ROOT)
-        })
-        .map(PathBuf::from);
-    found.push(Candidate {
-        id,
-        uuid,
-        name,
-        fstype,
-        mountpoint,
-        device: device.path,
-        external,
-    });
-    false
-}
-
-fn classify_with_system_uuids(
-    json: &str,
-    protected_uuids: &HashSet<String>,
-) -> Result<Vec<Candidate>, String> {
-    let devices: Devices = serde_json::from_str(json).map_err(|error| error.to_string())?;
-    let mut found = Vec::new();
-    for device in devices.blockdevices {
-        collect(device, protected_uuids, &mut found, false);
-    }
-    let mut sources = std::collections::HashMap::<String, HashSet<Option<String>>>::new();
-    let mut counts = std::collections::HashMap::new();
-    for candidate in &found {
-        sources
-            .entry(candidate.id.clone())
-            .or_default()
-            .insert(candidate.device.clone());
-        *counts.entry(candidate.id.clone()).or_insert(0_usize) += 1;
-    }
-    found.retain(|candidate| {
-        sources
-            .get(&candidate.id)
-            .is_some_and(|devices| devices.len() == 1)
-            && (candidate.device.is_some() || counts.get(&candidate.id) == Some(&1))
-    });
-    found.sort_by(|left, right| left.id.cmp(&right.id));
-    found.dedup_by(|left, right| left.id == right.id);
-    Ok(found)
-}
-
-fn fstab_system_uuids(contents: &str) -> HashSet<String> {
-    contents
-        .lines()
-        .filter_map(|line| {
-            let fields = line.split_whitespace().collect::<Vec<_>>();
-            if fields.len() < 2 || fields[0].starts_with('#') || !system_mount(fields[1]) {
-                return None;
-            }
-            fields[0]
-                .strip_prefix("UUID=")
-                .map(|uuid| uuid.to_ascii_lowercase())
-        })
-        .collect()
+    /// `device`, `external` or `network`, as Explorer groups them.
+    kind: &'static str,
 }
 
 fn output(program: &str, arguments: &[&str]) -> Result<String, String> {
@@ -436,7 +261,11 @@ fn mount_candidate(
         id: candidate.id.clone(),
         name: candidate.name.clone(),
         path: visible,
-        external: candidate.external,
+        kind: if candidate.external {
+            "external"
+        } else {
+            "device"
+        },
     })
 }
 
@@ -476,10 +305,12 @@ fn publish(grants: &[Grant]) -> Result<bool, String> {
             grant.id,
             grant.name,
             grant.path.display(),
-            if grant.external { "external" } else { "device" }
+            grant.kind
         ));
     }
-    let registry = Path::new(REGISTRY);
+    let registry = std::env::var_os("NAS_STORAGE_REGISTRY")
+        .map_or_else(|| PathBuf::from(REGISTRY), PathBuf::from);
+    let registry = registry.as_path();
     if fs::read_to_string(registry).ok().as_deref() == Some(content.as_str()) {
         return Ok(false);
     }
@@ -519,14 +350,15 @@ fn validate_initialize(input: &InitializeRequest) -> Result<(), String> {
     {
         return Err("invalid filesystem label".to_owned());
     }
+    if !inventory::valid_identity(&input.identity) {
+        return Err("invalid disk identity".to_owned());
+    }
     Ok(())
 }
 
-fn blank_disk(json: &str, device: &str) -> Result<(), String> {
-    let listed: Devices = serde_json::from_str(json).map_err(|error| error.to_string())?;
+fn blank_disk(devices: &[Device], device: &str, expected_identity: &str) -> Result<(), String> {
     let expected = format!("/dev/{device}");
-    let disk = listed
-        .blockdevices
+    let disk = devices
         .iter()
         .find(|item| {
             item.name.as_deref() == Some(device) && item.path.as_deref() == Some(&expected)
@@ -548,20 +380,18 @@ fn blank_disk(json: &str, device: &str) -> Result<(), String> {
     {
         return Err("the selected device is not an empty writable whole disk".to_owned());
     }
+    if inventory::identity(disk) != expected_identity {
+        return Err("the disk is not the one that was selected: list the disks again".to_owned());
+    }
     Ok(())
 }
 
-fn inspect_blank_disk(device: &str) -> Result<(), String> {
-    let listed = output(
-        "lsblk",
-        &[
-            "--json",
-            "--tree",
-            "--output",
-            "NAME,PATH,TYPE,FSTYPE,PARTTYPE,UUID,LABEL,MOUNTPOINTS,RO,RM,TRAN",
-        ],
-    )?;
-    blank_disk(&listed, device)
+fn inspect_blank_disk(input: &InitializeRequest) -> Result<(), String> {
+    blank_disk(
+        &inventory::list()?.blockdevices,
+        &input.device,
+        &input.identity,
+    )
 }
 
 fn inspect_signatures(device: &str) -> Result<(), String> {
@@ -660,16 +490,7 @@ fn inspect_smart_target(device_name: &str) -> Result<(), String> {
     if !valid_device_name(device_name) {
         return Err("invalid device".to_owned());
     }
-    let listed = output(
-        "lsblk",
-        &[
-            "--json",
-            "--tree",
-            "--output",
-            "NAME,PATH,TYPE,FSTYPE,PARTTYPE,MOUNTPOINTS,RO",
-        ],
-    )?;
-    let devices: Devices = serde_json::from_str(&listed).map_err(|error| error.to_string())?;
+    let devices = inventory::list()?;
     let device = devices
         .blockdevices
         .iter()
@@ -678,24 +499,11 @@ fn inspect_smart_target(device_name: &str) -> Result<(), String> {
     if device.kind != "disk"
         || device.path.as_deref() != Some(format!("/dev/{device_name}").as_str())
         || device.ro.unwrap_or(false)
-        || device_is_protected(device)
+        || contains_system(device, &inventory::system_uuids())
     {
         return Err("S.M.A.R.T. is available only for a data disk".to_owned());
     }
     Ok(())
-}
-
-fn device_is_protected(device: &Device) -> bool {
-    device.fstype.as_deref() == Some("swap")
-        || system_partition(device.parttype.as_deref())
-        || device
-            .mountpoints
-            .as_ref()
-            .is_some_and(|paths| paths.iter().flatten().any(|path| system_mount(path)))
-        || device
-            .children
-            .as_ref()
-            .is_some_and(|children| children.iter().any(device_is_protected))
 }
 
 pub async fn smart_data(input: SmartRequest) -> Result<serde_json::Value, ApiFailure> {
@@ -778,49 +586,42 @@ pub fn smart_reported(path: &Path) -> Result<(), String> {
 }
 
 fn inspect_rename_target(input: &RenameRequest) -> Result<(), String> {
-    let listed = output(
-        "lsblk",
-        &[
-            "--json",
-            "--tree",
-            "--output",
-            "NAME,PATH,TYPE,FSTYPE,PARTTYPE,MOUNTPOINTS,RO",
-        ],
-    )?;
-    let devices: Devices = serde_json::from_str(&listed).map_err(|error| error.to_string())?;
-    fn find<'a>(devices: &'a [Device], name: &str) -> Option<&'a Device> {
-        for device in devices {
-            if device.name.as_deref() == Some(name) {
-                return Some(device);
-            }
-            if let Some(found) = find(device.children.as_deref().unwrap_or_default(), name) {
-                return Some(found);
-            }
-        }
-        None
-    }
-    let device = find(&devices.blockdevices, &input.device).ok_or("device not found")?;
-    let expected = format!("/dev/{}", input.device);
+    let fstab = fs::read_to_string("/etc/fstab").unwrap_or_default();
+    renamable(&inventory::list()?.blockdevices, &input.device, &fstab)
+}
+
+/// Whether the volume `name` may take another label: a writable ext data volume that fstab does
+/// not mount by its label, which would then match nothing at the next boot.
+fn renamable(devices: &[Device], name: &str, fstab: &str) -> Result<(), String> {
+    let device = inventory::find(devices, name).ok_or("device not found")?;
+    let expected = format!("/dev/{name}");
     if device.path.as_deref() != Some(expected.as_str())
         || device.ro.unwrap_or(false)
         || device
             .fstype
             .as_deref()
             .is_none_or(|value| !matches!(value, "ext2" | "ext3" | "ext4"))
-        || device
-            .mountpoints
-            .as_ref()
-            .is_some_and(|paths| paths.iter().flatten().any(|path| system_mount(path)))
-        || system_partition(device.parttype.as_deref())
+        || contains_system(device, &inventory::fstab_system_uuids(fstab))
     {
         return Err("only a writable ext data volume can be renamed".to_owned());
+    }
+    if device
+        .label
+        .as_ref()
+        .is_some_and(|label| inventory::fstab_labels(fstab).contains(label))
+    {
+        return Err("fstab mounts this volume by its label: change it there first".to_owned());
     }
     Ok(())
 }
 
 pub async fn rename_volume(db: &SqlitePool, input: RenameRequest) -> Result<(), ApiFailure> {
     validate_rename(&input).map_err(ApiFailure::bad)?;
-    inspect_rename_target(&input).map_err(ApiFailure::bad)?;
+    let target = input.clone();
+    tokio::task::spawn_blocking(move || inspect_rename_target(&target))
+        .await
+        .map_err(|_| ApiFailure::unavailable("volume inspection failed"))?
+        .map_err(ApiFailure::bad)?;
     let path = rename_request_path();
     let temporary = path.with_extension("json.new");
     tokio::fs::write(
@@ -909,8 +710,8 @@ pub async fn start_initialize(
             "another disk initialization is already running",
         ));
     }
-    let device = input.device.clone();
-    let inspected = tokio::task::spawn_blocking(move || inspect_blank_disk(&device))
+    let request = input.clone();
+    let inspected = tokio::task::spawn_blocking(move || inspect_blank_disk(&request))
         .await
         .map_err(|_| ApiFailure::unavailable("disk inspection failed"))?;
     if let Err(reason) = inspected {
@@ -1012,9 +813,8 @@ fn run_step(program: &str, arguments: &[&str], log: Option<&Path>) -> Result<Str
 /// The only partition of the disk, once the kernel shows it: none while the disk has none, or
 /// more than one.
 fn single_partition(name: &str, device: &str) -> Option<String> {
-    let listed = output("lsblk", &["--json", "--tree", "--output", "NAME,PATH,TYPE"]).ok()?;
-    let devices = serde_json::from_str::<Devices>(&listed).ok()?;
-    let disk = devices
+    let disk = inventory::list()
+        .ok()?
         .blockdevices
         .into_iter()
         .find(|item| item.name.as_deref() == Some(name) && item.path.as_deref() == Some(device))?;
@@ -1030,10 +830,16 @@ async fn initialize_with_log(path: &Path, log: Option<&Path>) -> Result<(), Stri
     )
     .map_err(|error| format!("invalid initialization request: {error}"))?;
     validate_initialize(&input)?;
-    inspect_blank_disk(&input.device)?;
+    inspect_blank_disk(&input)?;
     inspect_signatures(&input.device)?;
+    let partition = partition(&input.device, log).await?;
+    run_step("mkfs.ext4", &["-F", "-L", &input.label, &partition], log)?;
+    reconcile().await
+}
 
-    let device = format!("/dev/{}", input.device);
+/// Gives the whole disk `name` one GPT partition, and returns it once the kernel shows it.
+async fn partition(name: &str, log: Option<&Path>) -> Result<String, String> {
+    let device = format!("/dev/{name}");
     let parted = [
         "--script", "--align", "optimal", &device, "mklabel", "gpt", "mkpart", "primary", "ext4",
         "0%", "100%",
@@ -1041,18 +847,13 @@ async fn initialize_with_log(path: &Path, log: Option<&Path>) -> Result<(), Stri
     run_step("parted", &parted, log)?;
     run_step("partprobe", &[&device], log)?;
     run_step("udevadm", &["settle"], log)?;
-
-    let mut partition = None;
     for _ in 0..40 {
-        partition = single_partition(&input.device, &device);
-        if partition.is_some() {
-            break;
+        if let Some(partition) = single_partition(name, &device) {
+            return Ok(partition);
         }
         tokio::time::sleep(Duration::from_millis(250)).await;
     }
-    let partition = partition.ok_or("the new partition did not appear")?;
-    run_step("mkfs.ext4", &["-F", "-L", &input.label, &partition], log)?;
-    reconcile().await
+    Err("the new partition did not appear".to_owned())
 }
 
 pub async fn initialize(path: &Path) -> Result<(), String> {
@@ -1095,34 +896,40 @@ pub async fn account_user() -> Result<Option<String>, String> {
     wizard_user(&dropin).await
 }
 
+/// The user of the wizard, its uid and the gid of the group of the data disks, who own the disks:
+/// none before the wizard made the user.
+async fn owner() -> Result<Option<(String, String, String)>, String> {
+    let Some(user) = account_user().await? else {
+        return Ok(None);
+    };
+    let uid = output("id", &["-u", &user])?;
+    let group = output("getent", &["group", GROUP])?;
+    let gid = group
+        .split(':')
+        .nth(2)
+        .ok_or("storage group has no gid")?
+        .to_owned();
+    Ok(Some((user, uid, gid)))
+}
+
 pub async fn reconcile() -> Result<(), String> {
-    let user = account_user().await?;
-    if user.is_none() {
+    let Some((user, account, gid)) = owner().await? else {
         if publish(&[])? {
-            let _ = output(
-                "systemctl",
-                &["try-restart", "nas-app@nas-file-manager.service"],
-            );
+            volumes_changed();
         }
         return Ok(());
-    }
-    let user = user.ok_or("wizard user missing")?;
-    let account = output("id", &["-u", &user])?;
-    let group = output("getent", &["group", GROUP])?;
-    let gid = group.split(':').nth(2).ok_or("storage group has no gid")?;
+    };
+    let gid = gid.as_str();
     fs::create_dir_all(VOLUMES_ROOT).map_err(|error| error.to_string())?;
     fs::create_dir_all(EXPLORER_ROOT).map_err(|error| error.to_string())?;
-    let listed = output(
-        "lsblk",
-        &[
-            "--json",
-            "--tree",
-            "--output",
-            "NAME,PATH,TYPE,FSTYPE,PARTTYPE,UUID,LABEL,MOUNTPOINTS,RO,RM,TRAN",
-        ],
-    )?;
     let fstab = fs::read_to_string("/etc/fstab").map_err(|error| error.to_string())?;
-    let candidates = classify_with_system_uuids(&listed, &fstab_system_uuids(&fstab))?;
+    let mut devices = inventory::list()?;
+    if crypt::root::open_automatic(&devices.blockdevices) {
+        let _ = output("udevadm", &["settle"]);
+        devices = inventory::list()?;
+    }
+    crypt::root::write_status_of(&devices.blockdevices);
+    let candidates = classify(devices, &fstab_system_uuids(&fstab));
     let mut grants = Vec::new();
     let mut used = HashSet::new();
     for candidate in &candidates {
@@ -1133,13 +940,57 @@ pub async fn reconcile() -> Result<(), String> {
             }
         }
     }
-    if publish(&grants)? {
-        let _ = output(
-            "systemctl",
-            &["try-restart", "nas-app@nas-file-manager.service"],
-        );
+    let (shares, pending) = network::root::mounted_shares();
+    grants.extend(shares);
+    seal_unmounted(Path::new(VOLUMES_ROOT));
+    seal_unmounted(Path::new(EXPLORER_ROOT));
+    let mut changed = publish(&grants)?;
+    // The disks of the machine are published before any network disk is waited for.
+    let connected = network::root::connect_pending(&pending, (&account, gid), NETWORK_BUDGET);
+    if !connected.is_empty() {
+        grants.extend(connected);
+        changed |= publish(&grants)?;
+    }
+    if changed {
+        volumes_changed();
     }
     Ok(())
+}
+
+/// Closes to everyone but root each folder of `root` with nothing mounted on it: the folder of a
+/// volume that is gone must not take, on the disk of the system, what is written for the volume.
+/// Without the list of the mounts nothing is closed, and a folder on another filesystem than
+/// `root` is a mount whatever the list says.
+fn seal_unmounted(root: &Path) {
+    let (Ok(mountinfo), Ok(parent), Ok(entries)) = (
+        fs::read_to_string("/proc/self/mountinfo"),
+        fs::metadata(root),
+        fs::read_dir(root),
+    ) else {
+        return;
+    };
+    let mounted = inventory::mountpoints(&mountinfo);
+    for entry in entries.flatten() {
+        let path = entry.path();
+        if entry
+            .metadata()
+            .is_ok_and(|folder| folder.is_dir() && folder.dev() == parent.dev())
+            && !mounted.contains(&path)
+        {
+            let _ = fs::set_permissions(&path, fs::Permissions::from_mode(0o000));
+        }
+    }
+}
+
+/// Explorer reads the volumes again, and the shares are applied again for the volumes now there.
+fn volumes_changed() {
+    let _ = output(
+        "systemctl",
+        &["try-restart", "nas-app@nas-file-manager.service"],
+    );
+    if fs::read_dir(state_file("smb-shares")).is_ok_and(|mut entries| entries.next().is_some()) {
+        let _ = output("systemctl", &["start", "--no-block", SHARES_UNIT]);
+    }
 }
 
 #[cfg(test)]

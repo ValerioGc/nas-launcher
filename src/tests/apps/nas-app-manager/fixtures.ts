@@ -13,7 +13,7 @@ export const installed: ManagedApp = {
 
 export const system: ManagedApp = {
   ...installed,
-  id: 'nas-system-terminal',
+  id: 'nas-global-search',
   name: 'System',
   system: true,
 };

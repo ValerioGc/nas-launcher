@@ -251,6 +251,12 @@ fi
 [[ -f /etc/systemd/system/nas-os-storage-rename.service ]] && ok "storage rename unit installed" || no "storage rename unit missing"
 [[ -f /etc/systemd/system/nas-os-storage-eject.service ]] && ok "storage eject unit installed" || no "storage eject unit missing: external disks cannot be ejected"
 [[ -f /etc/systemd/system/nas-os-storage-smart.service ]] && ok "storage S.M.A.R.T. unit installed" || no "storage S.M.A.R.T. unit missing"
+systemctl is-active --quiet nas-os-storage-crypt.socket && ok "encryption socket listening" || no "encryption socket not listening: encrypted volumes cannot be managed"
+if [[ $(setting NAS_ENCRYPTION_MODE) == real ]]; then
+  ok "encryption mode: real"
+else
+  ok "encryption mode: off (NAS_ENCRYPTION_MODE=real in nas-os.local.env turns it on)"
+fi
 command -v parted >/dev/null && ok "parted available for disk initialization" || no "parted missing: disks cannot be initialized"
 command -v mkfs.ext4 >/dev/null && ok "mkfs.ext4 available for disk initialization" || no "e2fsprogs missing: ext4 volumes cannot be created"
 [[ -f /etc/systemd/system/nas-os-storage.timer ]] && ok "storage refresh timer installed" || no "storage refresh timer missing"

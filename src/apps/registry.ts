@@ -7,7 +7,6 @@ import appManagerLogo from './nas-app-manager/logo.svg';
 import globalSearchLogo from './nas-global-search/logo.svg';
 import globalSettingsLogo from './nas-system-settings/logo.svg';
 import notificationManagerLogo from './nas-notification-manager/logo.svg';
-import systemTerminalLogo from './nas-system-terminal/logo.svg';
 import defaultLogo from './default_logo.svg';
 
 /**
@@ -59,15 +58,6 @@ export const internalApps: Record<string, AppEntry> = {
       component: lazy(() => import('./nas-notification-manager/NotificationManager.vue')),
     },
   },
-  'nas-system-terminal': {
-    label: 'systemTerminal',
-    presentation: 'fullscreen',
-    icon: systemTerminalLogo,
-    source: {
-      kind: 'internal',
-      component: lazy(() => import('./nas-system-terminal/SystemTerminal.vue')),
-    },
-  },
   [SETTINGS_APP_ID]: {
     label: 'globalSettings',
     presentation: 'fullscreen',
@@ -89,6 +79,7 @@ export function externalUrl(id: string): string {
 }
 
 const externalLabels: Record<string, string> = {
+  'nas-system-terminal': 'systemTerminal',
   'nas-log-manager': 'logViewer',
   'nas-system-monitor': 'systemMonitor',
 };

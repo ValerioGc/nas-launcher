@@ -23,21 +23,29 @@ afterEach(() => temp.remove());
 describe('apply-access-rules.sh', () => {
   const script = HELPERS.access;
 
-  function withFakeNft(list: string) {
+  function withFakeNft(list: string, https?: string, refuse = false) {
     const rules = join(temp.path, 'access-rules');
     const loaded = join(temp.path, 'loaded');
     writeFileSync(rules, list);
+    const connection = join(temp.path, 'gateway.connection');
+    if (https !== undefined) {
+      writeFileSync(connection, `${https}\n1\n`);
+    }
     fakeCommand(
       temp.path,
       'nft',
-      `if [[ "\${1:-}" == "-f" ]]; then cat > ${JSON.stringify(loaded)}; exit 0; fi
+      `if [[ "\${1:-}" == "-f" ]]; then cat >> ${JSON.stringify(loaded)}; exit ${refuse ? 1 : 0}; fi
        printf 'nft %s\\n' "$*" >> ${JSON.stringify(join(temp.path, 'calls'))}
        [[ "\${1:-}" == "list" ]] && exit 1
        exit 0`,
     );
 
     const result = run(script, {
-      env: { NAS_ACCESS_RULES: rules, PATH: `${temp.path}:${process.env.PATH}` },
+      env: {
+        NAS_ACCESS_RULES: rules,
+        NAS_GATEWAY_CONNECTION: connection,
+        PATH: `${temp.path}:${process.env.PATH}`,
+      },
     });
     const read = (path: string) => {
       try {
@@ -48,6 +56,28 @@ describe('apply-access-rules.sh', () => {
     };
     return { result, ruleset: read(loaded), calls: read(join(temp.path, 'calls')) };
   }
+
+  it('replaces the HTTPS port in one nft transaction and preserves the access list', () => {
+    const { result, ruleset } = withFakeNft('192.168.1.5\n', '8443');
+    expect(result.code).toBe(0);
+    expect(ruleset).toContain(
+      'flush set inet nas_base nas_https\nadd element inet nas_base nas_https { 8443 }\n',
+    );
+    expect(ruleset).toContain('elements = { 192.168.1.5 }');
+    expect(ruleset).not.toContain('{ 443 }');
+  });
+
+  it.each(['0', '65536', '443; flush ruleset'])('rejects an invalid HTTPS port: %s', (port) => {
+    const { result, ruleset } = withFakeNft('', port);
+    expect(result.code).not.toBe(0);
+    expect(ruleset).toBe('');
+  });
+
+  it('reports a refused HTTPS firewall transaction instead of claiming success', () => {
+    const { result } = withFakeNft('', '8443', true);
+    expect(result.code).not.toBe(0);
+    expect(result.output).toContain('cannot update the HTTPS port');
+  });
 
   it('turns the saved list into one set per family', () => {
     const { result, ruleset } = withFakeNft('192.168.1.5\n192.168.1.0/24\n2001:db8::/32\n');
@@ -1329,7 +1359,13 @@ describe('apply-discovery.sh', () => {
 
 describe('apply-smb-shares.sh', () => {
   /** A NAS with a disk, its account user, a fake Samba and a fake firewall that write down calls. */
-  function nas({ samba = true, testparm = 'exit 0', conf = '' } = {}) {
+  function nas({
+    samba = true,
+    testparm = 'exit 0',
+    conf = '',
+    mounted = 'exit 0',
+    fstype = 'echo ext4',
+  } = {}) {
     const storage = join(temp.path, 'storage');
     const requests = join(temp.path, 'requests');
     const samba_dir = join(temp.path, 'samba');
@@ -1350,6 +1386,8 @@ describe('apply-smb-shares.sh', () => {
     record('systemctl');
     record('nft');
     fakeCommand(temp.path, 'getent', 'exit 0');
+    fakeCommand(temp.path, 'mountpoint', mounted);
+    fakeCommand(temp.path, 'findmnt', fstype);
     if (samba) {
       fakeCommand(temp.path, 'smbd', 'exit 0');
       fakeCommand(temp.path, 'testparm', testparm);
@@ -1417,6 +1455,37 @@ describe('apply-smb-shares.sh', () => {
     );
     expect(result.conf).toContain('recycle:keeptree = yes\n   recycle:versions = no');
     expect(result.conf).toMatch(/\[Musica\][^[]*directory mask = 2770\n?$/);
+  });
+
+  it('leaves out the shares of a disk that is not mounted', () => {
+    const { storage, apply } = nas({
+      mounted: `[ "$3" = ${JSON.stringify(join(temp.path, 'storage', 'disk'))} ] && exit 1; exit 0`,
+    });
+    mkdirSync(join(storage, 'other'), { recursive: true });
+    const result = apply({
+      'nas-file-manager': `Disco\t${storage}/disk\trw\topen\nAltro\t${storage}/other\trw\topen\n`,
+    });
+
+    expect(result.code).toBe(0);
+    expect(result.stdout).toContain(`the disk of ${storage}/disk is not mounted`);
+    expect(result.stdout).toContain('1 folders shared');
+    expect(result.conf).not.toContain('[Disco]');
+    expect(result.conf).toContain(`[Altro]\n   path = ${storage}/other\n`);
+  });
+
+  it('never shares again a network disk', () => {
+    const { storage, apply } = nas({
+      fstype: `[ "$*" = ${JSON.stringify(`--noheadings --output FSTYPE --mountpoint ${join(temp.path, 'storage', 'disk')}`)} ] && echo cifs || echo ext4`,
+    });
+    mkdirSync(join(storage, 'other'), { recursive: true });
+    const result = apply({
+      'nas-file-manager': `Rete\t${storage}/disk/Foto\tro\topen\nAltro\t${storage}/other\trw\topen\n`,
+    });
+
+    expect(result.code).toBe(0);
+    expect(result.stdout).toContain('is on a network disk: Rete is not shared');
+    expect(result.conf).not.toContain('[Rete]');
+    expect(result.conf).toContain('[Altro]');
   });
 
   it('stops Samba and closes 445 when nothing is shared any more', () => {

@@ -25,7 +25,9 @@ import {
 } from '@/types/types';
 import { noticeMessage, noticeTitle, sourceLabel } from '@/apps/nas-notification-manager/text';
 import { accessCall } from '@/api/access';
-import { diskCall } from '@/api/disks';
+import { httpsSettings } from '@/api/securityCertificates';
+import { gateway } from '@/api/securityDevices';
+import { diskCall, waitForTask } from '@/api/disks';
 import { SYSTEM_MONITOR, monitorCall } from '@/api/systemMonitor';
 import type { AppNotification } from '@/apps/nas-notification-manager/types';
 import type { PowerSettings } from '@/apps/nas-system-settings/types/power';
@@ -78,14 +80,28 @@ function appOf(frame: string) {
 /** The message of one type an application sends. */
 type MessageOf<T extends AppMessage['type']> = Extract<AppMessage, { type: T }>;
 
-/**
- * The console loaded again over HTTPS, asked by the security center when it came over HTTP: an
- * application may not navigate this page itself (frameGuard.ts).
- */
-function openHttps(id: string) {
+/** Apre la console sulla porta HTTPS del gateway; l'app non può navigare il frame principale. */
+function navigateHttps(port: number) {
   const page = globalThis.location;
-  if (id === SECURITY_CENTER && page.protocol === 'http:') {
-    page.assign(`https://${page.hostname}${page.pathname}${page.search}`);
+  const target = new URL(page.href);
+  target.protocol = 'https:';
+  target.port = port === 443 ? '' : String(port);
+  if (target.href !== page.href) {
+    page.assign(target.href);
+  }
+}
+
+async function openHttps(id: string) {
+  if (id !== SECURITY_CENTER) {
+    return;
+  }
+  try {
+    const settings = await gateway('/auth/https');
+    if (httpsSettings(settings)) {
+      navigateHttps(settings.port);
+    }
+  } catch (error) {
+    console.error('HTTPS settings unavailable', error);
   }
 }
 
@@ -203,24 +219,6 @@ function networkDiskList(received: unknown): NetworkDisk[] {
     }
     return { name: disk.name, mount: disk.mount, source: disk.source, readOnly: disk.read_only };
   });
-}
-
-/** Follows the initialization of a disk until it is done, failed, or ten minutes have passed. */
-async function waitForTask(taskId: string) {
-  const deadline = Date.now() + 10 * 60 * 1000;
-  while (Date.now() < deadline) {
-    const task = await request<{ state: string; detail: string }>(
-      `/tasks/${encodeURIComponent(taskId)}`,
-    );
-    if (task.state === 'done') {
-      return;
-    }
-    if (task.state === 'failed' || task.state === 'cancelled') {
-      throw new Error(task.detail || 'Disk initialization failed');
-    }
-    await new Promise((resolve) => window.setTimeout(resolve, 500));
-  }
-  throw new Error('Disk initialization timed out');
 }
 
 export function useAppBridge() {
@@ -615,13 +613,21 @@ export function useAppBridge() {
   }
 
   async function initializeDisk(id: string, message: MessageOf<'initialize-disk'>) {
-    if (!fromDisks(id, message) || typeof message.label !== 'string') {
+    if (
+      !fromDisks(id, message) ||
+      typeof message.label !== 'string' ||
+      typeof message.identity !== 'string'
+    ) {
       return;
     }
     try {
       const result = await request<{ taskId: string }>('/storage/disks/initialize', {
         method: 'POST',
-        body: JSON.stringify({ device: message.device, label: message.label }),
+        body: JSON.stringify({
+          device: message.device,
+          label: message.label,
+          identity: message.identity,
+        }),
       });
       await waitForTask(result.taskId);
       post(id, {
@@ -717,13 +723,25 @@ export function useAppBridge() {
   async function access(id: string, message: Extract<AppMessage, { type: AccessRequest }>) {
     const call = accessCall(message.type, message.payload);
     if (id === SECURITY_CENTER && validRequest(message.requestId) && call) {
+      let saved: unknown;
       await answer(
         id,
         `${message.type}-result`,
         message.requestId,
-        call,
+        async () => {
+          saved = await call();
+          return saved;
+        },
         'Access settings unavailable',
       );
+      if (message.type === 'save-https-settings' && httpsSettings(saved)) {
+        const page = globalThis.location;
+        const screen =
+          ['localhost', '127.0.0.1', '[::1]'].includes(page.hostname) && page.port === '8081';
+        if (page.protocol === 'https:' || (saved.force && !screen)) {
+          navigateHttps(saved.port);
+        }
+      }
     }
   }
 
@@ -800,6 +818,11 @@ export function useAppBridge() {
       case 'smart-disk':
         await smartDisk(id, message);
         break;
+      case 'disk-inventory':
+      case 'disk-encryption':
+      case 'disk-crypt':
+      case 'smb-disks':
+      case 'smb-disk':
       case 'eject-disk':
       case 'disk-locks':
       case 'lock-disk':

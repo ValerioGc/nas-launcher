@@ -51,6 +51,15 @@ rm -f /etc/systemd/system/nas-os-reset.service /usr/local/lib/nas-os/factory-res
 say "Applications"
 stop_unit nas-os-storage.timer disable --now
 stop_unit nas-os-storage.service stop
+stop_unit nas-os-storage-crypt.socket disable --now
+rm -f /etc/systemd/system/nas-os-storage-crypt.socket '/etc/systemd/system/nas-os-storage-crypt@.service'
+# The automatic keys of the encrypted volumes stay: without the NAS a volume opens with its
+# password, its recovery key, or by hand with the credential:
+#   systemd-creds decrypt --name=nas-os.luks-<uuid> /etc/credstore.encrypted/nas-os.luks-<uuid> - |
+#     cryptsetup open --key-file=- /dev/disk/by-uuid/<uuid> data
+for key in /etc/credstore.encrypted/nas-os.luks-*; do
+  [[ -f $key ]] && echo "   automatic key kept: $key"
+done
 rm -f /etc/systemd/system/nas-os-storage.service /etc/systemd/system/nas-os-storage-initialize.service /etc/systemd/system/nas-os-storage-rename.service /etc/systemd/system/nas-os-storage-eject.service /etc/systemd/system/nas-os-storage-smart.service \
   /etc/systemd/system/nas-os-storage.timer \
   /etc/udev/rules.d/90-nas-os-storage.rules
@@ -214,6 +223,9 @@ if $purge; then
     fi
     existed=$("$RESTORE" --user-existed "$SERVICE_USER")
     if [[ $existed == no ]] && id -u "$SERVICE_USER" >/dev/null 2>&1; then userdel "$SERVICE_USER"; fi
+    if getent group nas-os-crypt >/dev/null; then groupdel nas-os-crypt; fi
+    # The passwords of the network disks: the shares stay on their servers.
+    rm -f /etc/credstore.encrypted/nas-os.smb-*
     echo "   data and user removed"
   else
     echo "   cancelled: data and user stay"

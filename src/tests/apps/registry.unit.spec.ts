@@ -57,11 +57,7 @@ describe('application registry', () => {
     for (const id of Object.keys(internalApps)) {
       expect(appInfo(id, 'from the backend')).not.toBe('from the backend');
     }
-    expect(appInfo('nas-system-terminal', 'x')).toBe(
-      'Console dei comandi del NAS e log di sistema.',
-    );
     setLocale('en');
-    expect(appInfo('nas-system-terminal', 'x')).toBe('Command console of the NAS and system log.');
     expect(appInfo('mediaServer', 'Riproduce musica')).toBe('Riproduce musica');
   });
 

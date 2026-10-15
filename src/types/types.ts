@@ -237,8 +237,16 @@ export type ShellMessage =
 export type DiagnosticRequest = 'diagnostics' | 'diagnostic-log' | 'remove-diagnostic';
 export type DiagnosticReply = `${DiagnosticRequest}-result`;
 
-// What the disk manager may ask about the external disks, and the answers it receives.
-export type DiskRequest = 'eject-disk' | 'disk-locks' | 'lock-disk';
+// What the disk manager may ask about the disks, and the answers it receives.
+export type DiskRequest =
+  | 'disk-inventory'
+  | 'disk-encryption'
+  | 'disk-crypt'
+  | 'smb-disks'
+  | 'smb-disk'
+  | 'eject-disk'
+  | 'disk-locks'
+  | 'lock-disk';
 export type DiskReply = `${DiskRequest}-result`;
 
 // What the security center may ask about the devices allowed in with mTLS.
@@ -254,6 +262,8 @@ export type SecurityDeviceRequest =
 
 // What the security center may ask about the certificate HTTPS answers with.
 export type SecurityCertificateRequest =
+  | 'https-settings'
+  | 'save-https-settings'
   | 'certificate'
   | 'save-certificate-names'
   | 'renew-certificate'
@@ -331,6 +341,7 @@ export type AppMessage =
       requestId: string;
       device: string;
       label: string;
+      identity: string;
     }
   | {
       nas: typeof APP_PROTOCOL;
@@ -355,6 +366,8 @@ export type AppMessage =
       nas: typeof APP_PROTOCOL;
       type: DiskRequest;
       requestId: string;
+      kind?: unknown;
+      request?: unknown;
       device?: unknown;
       uuid?: unknown;
       locked?: unknown;
@@ -401,8 +414,10 @@ export interface GatewayLogin {
   device: string | null;
 }
 
-// What the disk manager sends with a request about an external disk, checked before any use.
+// What the disk manager sends with a request about a disk, checked before any use.
 export interface DiskPayload {
+  kind?: unknown;
+  request?: unknown;
   device?: unknown;
   uuid?: unknown;
   locked?: unknown;

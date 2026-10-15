@@ -241,6 +241,59 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/storage/disks': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** The disks and volumes of the machine as the disk manager shows them, the system left out. */
+    get: operations['getStorageDisks'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/storage/encryption': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Whether disk encryption is on for this installation. */
+    get: operations['getStorageEncryption'];
+    put?: never;
+    /** Formats a data disk, or opens, closes and keys an encrypted volume. */
+    post: operations['postStorageEncryption'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/storage/network': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** The network disks the NAS mounts, connected or not. */
+    get: operations['getStorageNetwork'];
+    put?: never;
+    /** Adds, tries, connects, disconnects or forgets a network disk. */
+    post: operations['postStorageNetwork'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/storage/disks/external': {
     parameters: {
       query?: never;
@@ -1172,40 +1225,6 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  '/api/terminal/session': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    /** A shell for the window as server-sent events named session and done around the output lines */
-    get: operations['getTerminalSession'];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/api/terminal/session/{id}/input': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    get?: never;
-    put?: never;
-    /** Runs one line in the shell of a session */
-    post: operations['postTerminalSessionIdInput'];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
   '/api/settings/terminal': {
     parameters: {
       query?: never;
@@ -1330,6 +1349,17 @@ export interface components {
       accepted: boolean;
       task?: string | null;
     };
+    /** @description What the root unit answers. */
+    Answer: {
+      /** @description The new recovery key, shown once. */
+      recovery?: string | null;
+      /** @description The backup of the header, in base64. */
+      header?: string | null;
+      /** @description The task of a format, which goes on in the background. */
+      taskId?: string | null;
+      /** @description Why the root unit refused or failed. */
+      error?: string | null;
+    };
     /** @description Body shared by every failed response. */
     ApiError: {
       error: string;
@@ -1439,9 +1469,6 @@ export interface components {
       /** @description The applications stopped. */
       stopped: string[];
     };
-    Command: {
-      command: string;
-    };
     /**
      * @description A part of the NAS released on its own. The order is the order of installation: the wizard
      *     first, which changes nothing that runs, then the gateway, then the launcher, which restarts.
@@ -1495,6 +1522,16 @@ export interface components {
       packagesEnabled: boolean;
       appsManaged: boolean;
     };
+    /** @description A share as root keeps it: no password. */
+    Definition: {
+      id: string;
+      name: string;
+      server: string;
+      share: string;
+      username: string;
+      domain?: string | null;
+      automatic: boolean;
+    };
     /** @description One shortcut of the desktop, in the order of the file. */
     DesktopEntry: {
       kind: components['schemas']['ShortcutKind'];
@@ -1518,6 +1555,32 @@ export interface components {
     };
     Discovery: {
       enabled: boolean;
+    };
+    /** @description A volume or a disk as the disk manager lists it. */
+    Disk: {
+      id: string;
+      name: string;
+      device?: string | null;
+      kind: string;
+      disk_type: string;
+      /** Format: int64 */
+      size_bytes: number;
+      mount?: string | null;
+      filesystem?: string | null;
+      model?: string | null;
+      transport?: string | null;
+      removable: boolean;
+      read_only: boolean;
+      initializable: boolean;
+      parent?: string | null;
+      uuid?: string | null;
+      /** @description The disk holds the system: nothing on it may be erased. */
+      system_disk: boolean;
+      /** @description The identity of the whole disk, which an erasing request repeats. */
+      identity: string;
+      /** @description `locked` or `open` for a LUKS container. */
+      encryption?: string | null;
+      keys?: components['schemas']['Keys'] | null;
     };
     EditedCatalogue: {
       apps: components['schemas']['CatalogueApp'][];
@@ -1589,6 +1652,8 @@ export interface components {
     InitializeRequest: {
       device: string;
       label: string;
+      /** @description The identity of the disk as the inventory listed it: a disk renamed since is refused. */
+      identity: string;
     };
     /**
      * @description An application installed from a package. The version says what the NAS had: the import
@@ -1600,6 +1665,14 @@ export interface components {
     };
     /** @enum {string} */
     Job: 'refresh' | 'upgrade';
+    /** @description The keys a container has and whether the person closed it, as the root unit last saw them. */
+    Keys: {
+      password: boolean;
+      automatic: boolean;
+      recovery: boolean;
+      /** @description Closed by the person: nothing opens it but the person. */
+      held: boolean;
+    };
     /**
      * @description A cache, made again when emptied, or a trash, whose content goes for good.
      * @enum {string}
@@ -1652,6 +1725,56 @@ export interface components {
       components: components['schemas']['ComponentUpdate'][];
       tokenConfigured: boolean;
     };
+    /** @description A share as the disk manager shows it. */
+    NetworkDisk: components['schemas']['Definition'] & {
+      /** @description Mounted now. */
+      connected: boolean;
+      /** @description Disconnected by the person: nothing connects it but the person. */
+      held: boolean;
+    };
+    /** @description The shares, and whether this installation mounts them at all. */
+    NetworkDisks: {
+      available: boolean;
+      disks: components['schemas']['NetworkDisk'][];
+    };
+    /** @description What the launcher asks of the root helper about the network disks. */
+    NetworkRequest:
+      | {
+          id?: string | null;
+          name: string;
+          server: string;
+          share: string;
+          username: string;
+          domain?: string | null;
+          password?: string | null;
+          automatic: boolean;
+          /** @enum {string} */
+          op: 'networkSave';
+        }
+      | {
+          server: string;
+          share: string;
+          username: string;
+          domain?: string | null;
+          password: string;
+          /** @enum {string} */
+          op: 'networkTest';
+        }
+      | {
+          id: string;
+          /** @enum {string} */
+          op: 'networkConnect';
+        }
+      | {
+          id: string;
+          /** @enum {string} */
+          op: 'networkDisconnect';
+        }
+      | {
+          id: string;
+          /** @enum {string} */
+          op: 'networkForget';
+        };
     NetworkState: {
       connection: components['schemas']['Connection'];
       wifi: components['schemas']['WifiNetwork'][];
@@ -1840,6 +1963,54 @@ export interface components {
       error?: string | null;
       operationError?: string | null;
     };
+    /** @description What the launcher asks of the root unit. */
+    Request:
+      | {
+          device: string;
+          identity: string;
+          label: string;
+          encrypt: boolean;
+          automatic?: boolean;
+          password?: string | null;
+          /** @enum {string} */
+          op: 'format';
+        }
+      | {
+          uuid: string;
+          password: string;
+          /** @enum {string} */
+          op: 'unlock';
+        }
+      | {
+          uuid: string;
+          /** @enum {string} */
+          op: 'lock';
+        }
+      | {
+          uuid: string;
+          enabled: boolean;
+          password?: string | null;
+          /** @enum {string} */
+          op: 'automatic';
+        }
+      | {
+          uuid: string;
+          current?: string | null;
+          password: string;
+          /** @enum {string} */
+          op: 'password';
+        }
+      | {
+          uuid: string;
+          current?: string | null;
+          /** @enum {string} */
+          op: 'recovery';
+        }
+      | {
+          uuid: string;
+          /** @enum {string} */
+          op: 'header';
+        };
     /**
      * @description Why the NAS cannot be reset here.
      * @enum {string}
@@ -2656,6 +2827,207 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['SetupState'];
+        };
+      };
+      /** @description The request was refused */
+      '4XX': {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ApiError'];
+        };
+      };
+      /** @description The launcher or the machine could not answer */
+      '5XX': {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ApiError'];
+        };
+      };
+    };
+  };
+  getStorageDisks: {
+    parameters: {
+      query?: {
+        /** @description `local` or `external`; every disk when missing */
+        kind?: string;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Disk'][];
+        };
+      };
+      /** @description The request was refused */
+      '4XX': {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ApiError'];
+        };
+      };
+      /** @description The launcher or the machine could not answer */
+      '5XX': {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ApiError'];
+        };
+      };
+    };
+  };
+  getStorageEncryption: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'text/plain': boolean;
+        };
+      };
+      /** @description The request was refused */
+      '4XX': {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ApiError'];
+        };
+      };
+      /** @description The launcher or the machine could not answer */
+      '5XX': {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ApiError'];
+        };
+      };
+    };
+  };
+  postStorageEncryption: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['Request'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Answer'];
+        };
+      };
+      /** @description The request was refused */
+      '4XX': {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ApiError'];
+        };
+      };
+      /** @description The launcher or the machine could not answer */
+      '5XX': {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ApiError'];
+        };
+      };
+    };
+  };
+  getStorageNetwork: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['NetworkDisks'];
+        };
+      };
+      /** @description The request was refused */
+      '4XX': {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ApiError'];
+        };
+      };
+      /** @description The launcher or the machine could not answer */
+      '5XX': {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ApiError'];
+        };
+      };
+    };
+  };
+  postStorageNetwork: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['NetworkRequest'];
+      };
+    };
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['Answer'];
         };
       };
       /** @description The request was refused */
@@ -5546,86 +5918,6 @@ export interface operations {
         content: {
           'text/event-stream': string;
         };
-      };
-      /** @description The request was refused */
-      '4XX': {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ApiError'];
-        };
-      };
-      /** @description The launcher or the machine could not answer */
-      '5XX': {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ApiError'];
-        };
-      };
-    };
-  };
-  getTerminalSession: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Success */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'text/event-stream': string;
-        };
-      };
-      /** @description The request was refused */
-      '4XX': {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ApiError'];
-        };
-      };
-      /** @description The launcher or the machine could not answer */
-      '5XX': {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['ApiError'];
-        };
-      };
-    };
-  };
-  postTerminalSessionIdInput: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        id: string;
-      };
-      cookie?: never;
-    };
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['Command'];
-      };
-    };
-    responses: {
-      /** @description Success */
-      204: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content?: never;
       };
       /** @description The request was refused */
       '4XX': {

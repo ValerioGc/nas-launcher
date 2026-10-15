@@ -20,7 +20,17 @@ fail() {
 }
 
 command -v nft >/dev/null || fail 'nft is not installed (packages/os_configuration/install.sh)'
-[[ -r $REQUEST ]] || fail "no list in $REQUEST"
+readonly CONNECTION=${NAS_GATEWAY_CONNECTION:-/var/lib/nas-os-gateway/gateway.connection}
+if [[ -f $CONNECTION ]]; then
+  IFS= read -r port <"$CONNECTION" || fail 'cannot read the HTTPS port'
+  [[ $port =~ ^[1-9][0-9]{0,4}$ ]] && ((port <= 65535)) || fail 'invalid HTTPS port'
+  printf 'flush set inet nas_base nas_https\nadd element inet nas_base nas_https { %s }\n' "$port" | nft -f - ||
+    fail 'cannot update the HTTPS port: update the base firewall first'
+fi
+if [[ ! -r $REQUEST ]]; then
+  [[ -f $CONNECTION ]] && exit 0
+  fail "no list in $REQUEST"
+fi
 
 v4=()
 v6=()

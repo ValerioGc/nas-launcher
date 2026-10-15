@@ -191,6 +191,29 @@ describe('what the installation grants', () => {
     expect(power).not.toContain('ignore-inhibit');
   });
 
+  it('lets the gateway start only the existing firewall helper for its HTTPS port', () => {
+    type Rule = (
+      action: { id: string; lookup: (key: string) => string | undefined },
+      subject: { user: string },
+    ) => string | undefined;
+    const registered: Rule[] = [];
+    runInNewContext(firewall, {
+      polkit: { addRule: (rule: Rule) => registered.push(rule), Result: { YES: 'yes' } },
+    });
+    const authorize = (unit: string, verb: string, user: string) =>
+      registered[0]!(
+        {
+          id: 'org.freedesktop.systemd1.manage-units',
+          lookup: (key) => ({ unit, verb })[key as 'unit' | 'verb'],
+        },
+        { user },
+      );
+    expect(authorize('nas-os-firewall.service', 'start', 'nas-os-gateway')).toBe('yes');
+    expect(authorize('nas-os-firewall.service', 'stop', 'nas-os-gateway')).toBeUndefined();
+    expect(authorize('nas-os.service', 'start', 'nas-os-gateway')).toBeUndefined();
+    expect(authorize('nas-os-firewall.service', 'start', 'nas')).toBeUndefined();
+  });
+
   it.each([
     ['nas-os-wake.service', power],
     ['nas-os-firewall.service', firewall],
@@ -399,6 +422,25 @@ describe('the systemd units', () => {
     expect(template).not.toContain('WantedBy=');
   });
 
+  it('lets only the launcher reach the encryption of the disks, keys kept off the disk', () => {
+    const socket = code('files/nas-os-storage-crypt.socket');
+    const helper = code('files/nas-os-storage-crypt@.service');
+
+    expect(socket).toContain('SocketGroup=nas-os-crypt');
+    expect(socket).toContain('SocketMode=0660');
+    expect(socket).toContain('Accept=yes');
+    expect(launcher).toMatch(/^SupplementaryGroups=systemd-journal nas-os-crypt$/m);
+    expect(template).not.toContain('nas-os-crypt');
+    expect(helper).toContain('StandardInput=socket');
+    expect(helper).toContain('RuntimeDirectoryMode=0700');
+    expect(code('files/nas-os-storage.service')).toContain('RuntimeDirectoryMode=0700');
+    expect(production).toMatch(/^NAS_ENCRYPTION_MODE=off$/m);
+    const install = read('install.sh');
+    expect(install.indexOf('groupadd --system nas-os-crypt')).toBeLessThan(
+      install.indexOf('files/nas-os.service'),
+    );
+  });
+
   it('gives the launcher no capability and no device', () => {
     expect(launcher).toContain('Environment=TOKIO_WORKER_THREADS=4 MALLOC_ARENA_MAX=2');
     expect(launcher).toContain('CapabilityBoundingSet=\n');
@@ -455,9 +497,13 @@ describe('the terminal', () => {
     expect(socket).toContain('SocketMode=0660');
   });
 
-  it('never opens a shell as root or with new privileges', () => {
+  it('starts the app PTY as the configured user and permits authenticated su and sudo', () => {
     expect(shell).toContain('User=nobody');
-    expect(shell).toContain('NoNewPrivileges=yes');
+    expect(shell).toContain('NoNewPrivileges=no');
+    expect(shell).toContain(
+      'ExecStart=/var/lib/nas-os/apps/nas-system-terminal/bin/nas-system-terminal-axum --shell',
+    );
+    expect(shell).toContain('KillMode=control-group');
     expect(shell).not.toMatch(/^User=root$/m);
   });
 });

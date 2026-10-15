@@ -1,14 +1,19 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="title desc">
   <title id="title">Picture Manager</title>
-  <desc id="desc">A framed landscape with mountains and a sun on a blue background.</desc>
+  <desc id="desc">Overlapping photo prints with a sunset landscape on a burgundy background.</desc>
   <defs>
     <linearGradient id="background" x1="16" y1="8" x2="112" y2="120" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#45B3DC" />
-      <stop offset="1" stop-color="#2166AD" />
+      <stop stop-color="#B84C64" />
+      <stop offset="1" stop-color="#64274C" />
     </linearGradient>
   </defs>
   <rect width="128" height="128" rx="28" fill="url(#background)" />
-  <rect x="28" y="32" width="72" height="64" rx="9" fill="none" stroke="#FFFFFF" stroke-width="6" />
-  <circle cx="47" cy="51" r="7" fill="#FFFFFF" />
-  <path d="m32 86 19-22 15 17 14-18 16 23" fill="none" stroke="#FFFFFF" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" />
+  <rect x="24" y="25" width="68" height="76" rx="8" transform="rotate(-12 58 63)" fill="#F5C7C6" />
+  <rect x="30" y="34" width="76" height="74" rx="9" fill="#4B1E3C" opacity="0.24" />
+  <rect x="32" y="30" width="72" height="74" rx="8" fill="#FFF9F2" />
+  <rect x="38" y="36" width="60" height="48" rx="3" fill="#F2D5BD" />
+  <circle cx="82" cy="50" r="8" fill="#DE8B4F" />
+  <path d="m38 70 14-15 22 23 12-12 12 11v7H38Z" fill="#BC6B70" />
+  <path d="m38 81 22-18 22 21H38Zm34 3 15-12 11 8v4Z" fill="#78334F" />
+  <rect x="51" y="92" width="34" height="4" rx="2" fill="#E6C7BD" />
 </svg>

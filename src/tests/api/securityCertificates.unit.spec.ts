@@ -27,6 +27,23 @@ const sent = () =>
   }));
 
 describe('what the security center may ask about the certificate', () => {
+  it('reads and saves the HTTPS connection separately from the certificate', async () => {
+    await accessCall('https-settings', undefined)?.();
+    await accessCall('save-https-settings', { port: 8443, force: true, password: 'secret' })?.();
+    expect(sent()).toEqual([
+      { path: '/auth/https', method: 'GET', body: undefined, code: undefined },
+      { path: '/auth/https', method: 'PUT', body: '{"port":8443,"force":true}', code: 'c0de' },
+    ]);
+    expect(confirmPassword).toHaveBeenCalledWith('secret');
+    for (const port of [0, 65536, 1.5, '443', null]) {
+      expect(
+        accessCall('save-https-settings', { port, force: true, password: 'secret' }),
+      ).toBeNull();
+    }
+    expect(
+      accessCall('save-https-settings', { port: 443, force: 'yes', password: 'secret' }),
+    ).toBeNull();
+  });
   it('reads the certificate in use without the password', async () => {
     await accessCall('certificate', undefined)?.();
     expect(sent()).toEqual([

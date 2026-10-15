@@ -20,6 +20,7 @@ fn api_routes() -> OpenApiRouter<AppState> {
         "/api",
         controllers::routes()
             .merge(apps::routes())
+            .merge(controllers::terminal::routes())
             .merge(widgets::routes()),
     )
 }

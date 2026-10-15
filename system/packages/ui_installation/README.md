@@ -58,7 +58,7 @@ Gli helper, nel repository:
 | `install-launcher-update.sh` | `backend/axum/src/apps/services/nas_system_settings/updates/`        |
 | `apt-updates.sh`             | `backend/axum/src/apps/services/nas_system_settings/system_updates/` |
 | `launcher-token.sh`          | `backend/axum/src/services/packages/`                                |
-| `terminal-user.sh`           | `backend/axum/src/apps/services/nas_system_terminal/`                |
+| `terminal-user.sh`           | `backend/axum/src/services/terminal/`                                |
 | `apply-hostname.sh`          | `backend/axum/src/apps/services/nas_system_settings/`                |
 | `factory-reset.sh`           | `backend/axum/src/apps/services/nas_system_settings/reset/`          |
 
@@ -129,13 +129,17 @@ Verificare che il nome dell'asset della release corrisponda alla voce `asset` de
     pacchetti Debian, entrambi avviati solo dal launcher.
 11. **Il token delle release**: `nas-os-token.service` e `launcher-token.sh`, avviati dal launcher
     quando il token arriva dall'App Manager. Il wizard lo salva da root con `ui_configuration`.
-12. **Il terminale**: `NAS_TERMINAL_MODE=real` nell'unità, che permette all'app terminale di aprire
-    una shell e di seguire il journal di sistema, più il gruppo `systemd-journal`, che serve a
-    leggerlo. La shell non gira come `nas-os`: il wizard, con `ui_configuration`, esegue da root
-    `terminal-user.sh`, che crea un utente con il nome dell'account, senza password e senza sudo,
-    e accende `nas-os-terminal.socket`. Ogni finestra del terminale è una
-    `nas-os-terminal@.service` che gira come quell'utente. Il launcher non crea utenti: la unit
-    `nas-os-terminal-user.service` e la regola polkit 80 delle versioni precedenti vengono tolte.
+12. **Il terminale**: l'app esterna `nas-system-terminal` gestisce WebSocket e PTY; `NAS_TERMINAL_MODE=real`
+    e il gruppo `systemd-journal` consentono al launcher di fornire il journal. Il wizard esegue
+    `terminal-user.sh` da root: crea l'utente con il nome dell'account, senza password e senza sudo,
+    e abilita `nas-os-terminal.socket`. Ogni connessione avvia il binario dell'app con `--shell`
+    tramite `nas-os-terminal@.service`, come quell'utente. Il gruppo supplementare `nas-os` della
+    sessione consente di leggere il pacchetto installato; non modifica i gruppi dell'account.
+    La sessione permette `su - nas` con la password Linux di `nas` e successivamente `sudo` secondo
+    i permessi già assegnati a quell'account. L'unità dedicata usa `NoNewPrivileges=no`; le
+    protezioni dei servizi HTTP del launcher e delle app restano attive. `KillMode=control-group`
+    termina anche i processi rimasti alla chiusura. Il launcher conserva soltanto impostazioni,
+    journal e configurazione dell'utente, e rimuove le vecchie unità polkit del terminale.
 13. **Gli strumenti che restano**: `check.sh`, `uninstall.sh` e `configure.sh` (la copia di
     `ui_configuration/install.sh`) in `/usr/local/lib/nas-os/`, perché il pacchetto non resta
     sulla macchina.
@@ -201,16 +205,53 @@ hotplug. Dopo aver creato l'utente, `ui_configuration` avvia una riconciliazione
 all'installazione non aveva ancora un'area utente in cui pubblicare i volumi. I file già presenti fuori
 dall'area utente non vengono toccati o mostrati; partizioni non formattate e filesystem non
 supportati non compaiono. Il registro contiene solo
-i volumi pronti; gli errori dei mount sono in `journalctl -u nas-os-storage.service`.
+i volumi pronti; gli errori dei mount sono in `journalctl -u nas-os-storage.service`. Le cartelle
+sotto `/srv/nas-volumes` e `/srv/storage` senza un filesystem montato restano con permessi `000`:
+un volume scollegato non diventa una cartella del disco di sistema per chi ci scrive. Quando il
+registro cambia la riconciliazione riapplica le cartelle condivise, e `apply-smb-shares.sh` lascia
+fuori quelle di un disco non montato.
+La classificazione dei dischi è una sola (`services/storage/inventory.rs`): la usano la
+riconciliazione, le unità root e `GET /api/storage/disks`, che nas-disk-manager legge attraverso
+la shell (`disk-inventory`). Un disco che contiene il sistema non si cancella in nessuna sua parte,
+anche quando ha un volume dati montabile; ogni voce porta l'identità del disco intero (WWN, seriale
+e dimensione), che una richiesta distruttiva ripete e l'unità root confronta.
 I dischi interi vuoti possono essere inizializzati esplicitamente da nas-disk-manager. Il launcher
 accetta la richiesta solo da quell'app e avvia l'unità root fissa
 `nas-os-storage-initialize.service`; l'unità ricontrolla che il dispositivo sia scrivibile, senza
-partizioni, mount, filesystem o firme, crea una partizione GPT ext4 e richiama la riconciliazione.
+partizioni, mount, filesystem o firme, e che sia ancora il disco scelto, crea una partizione GPT
+ext4 e richiama la riconciliazione.
 `parted` ed `e2fsprogs` li installa il wizard con la configurazione del sistema; nessun disco viene inizializzato
 automaticamente durante l'installazione.
+La cifratura dei dischi dati (LUKS2) passa da `nas-os-storage-crypt.socket`: solo il gruppo
+`nas-os-crypt`, che ha soltanto il launcher, può aprirlo (le applicazioni hanno il gruppo `nas-os`,
+non questo), e ogni connessione avvia `nas-os-storage-crypt@.service`, che esegue come root
+`nas-os-axum --storage-crypt`. La richiesta, password comprese, arriva sulla connessione; le chiavi
+restano nella cartella runtime dell'unità (tmpfs, 0700) per il tempo di un comando, mai in un
+argomento o nel journal. Formatta un disco dati interno (identità ripetuta, mai il disco di sistema,
+mai un disco con LVM o RAID), sblocca, blocca, imposta password, sblocco automatico e chiave di
+recupero, esporta l'intestazione. Gli slot: 0 password, 1 chiave automatica, 2 chiave di recupero.
+La chiave automatica è una credenziale cifrata di systemd (`/etc/credstore.encrypted/nas-os.luks-<uuid>`,
+chiave della macchina e TPM se presente); la riconciliazione apre con essa i volumi dopo l'avvio,
+senza crypttab, così un errore non blocca il boot. Un volume bloccato dall'utente resta in
+`/var/lib/nas-os/storage-held` e non viene riaperto, neanche dopo un riavvio; le chiavi presenti
+le scrive la riconciliazione in `/var/lib/nas-os/storage-crypt.json`. È spenta finché non si prova
+su una macchina: `NAS_ENCRYPTION_MODE=real` in `/etc/nas-os/nas-os.local.env` la accende. La
+disinstallazione lascia le chiavi automatiche al loro posto e stampa come aprire un volume a mano.
+Lo stesso socket porta le richieste dei dischi di rete (SMB): server, condivisione, utente e dominio
+stanno in `/etc/nas-os/network-disks.json`, la password nella credenziale cifrata
+`nas-os.smb-<id>`. `mount.cifs` (pacchetto `cifs-utils`, chiesto dall'app Dischi) la legge da un
+file della cartella runtime, tolto dopo il montaggio. La riconciliazione monta su
+`/srv/storage/n-<id>` le condivisioni che si collegano all'avvio, se l'utente non le ha scollegate
+(`storage-held`), ognuna entro 20 secondi e tutte entro 30, dopo aver pubblicato i dischi locali,
+e le pubblica a Explorer, Backup e Sync come volumi `network`. Il kernel raggiunge il server sulla
+445 solo verso gli indirizzi della rete locale messi nei set `nas_smb_servers` e
+`nas_smb_servers6` del firewall di base; Samba non ricondivide un disco di rete. Spenta finché non
+si prova su una macchina: `NAS_NETWORK_DISKS_MODE=real`. La disinstallazione completa toglie le
+password dei dischi di rete.
 nas-disk-manager può anche rinominare i volumi ext2/ext3/ext4 scrivibili tramite l'unità root fissa
 `nas-os-storage-rename.service`; il launcher accetta la richiesta soltanto da nas-disk-manager e il
-backend ricontrolla dispositivo, filesystem e appartenenza all'area dati prima di usare `e2label`.
+backend ricontrolla dispositivo, filesystem e appartenenza all'area dati prima di usare `e2label`, e
+rifiuta un volume che fstab monta per etichetta: la riga resterebbe senza filesystem al riavvio.
 La lettura S.M.A.R.T. usa allo stesso modo `nas-os-storage-smart.service`: il browser non accede ai
 device, il backend valida che si tratti di un disco dati e l'unità esegue `smartctl` in sola lettura.
 Un disco esterno (rimovibile, USB, lettore di schede o FireWire) si espelle da nas-disk-manager con

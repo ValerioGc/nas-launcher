@@ -21,8 +21,10 @@ use crate::{
     },
 };
 use axum::{
-    extract::{Path, State},
+    extract::{Path, Request, State},
     http::StatusCode,
+    middleware::{self, Next},
+    response::{IntoResponse, Response},
     routing::{delete, get, patch, post, put},
     Extension, Json, Router,
 };
@@ -195,8 +197,27 @@ async fn declare_shares(
     Ok(StatusCode::NO_CONTENT)
 }
 
+async fn terminal_only(
+    Extension(caller): Extension<Caller>,
+    request: Request,
+    next: Next,
+) -> Response {
+    if caller.0 != "nas-system-terminal" {
+        return ApiFailure::forbidden(
+            "only the terminal application may use its journal and settings",
+        )
+        .into_response();
+    }
+    next.run(request).await
+}
+
 pub fn routes() -> Router<AppState> {
+    let terminal = crate::controllers::terminal::routes()
+        .split_for_parts()
+        .0
+        .route_layer(middleware::from_fn(terminal_only));
     Router::new()
+        .nest("/api", terminal)
         .route("/api/apps", get(nas_app_manager::installed))
         .route("/api/system/telemetry", get(process_control::telemetry))
         .route("/api/system/inotify", get(inotify))

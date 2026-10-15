@@ -1,11 +1,12 @@
 use super::*;
 use crate::{
+    apps::services::nas_app_manager,
     apps::services::nas_system_settings::{
         access::RuleKind, load_general, save_general, BackgroundPattern, DesktopIconSize,
         PowerAction, PowerDay, PowerRule,
     },
-    apps::services::{nas_app_manager, nas_system_terminal},
     services::database::open_in_memory,
+    services::terminal,
 };
 use axum::http::StatusCode;
 
@@ -211,11 +212,11 @@ async fn the_export_carries_only_the_applications_chosen() {
 #[tokio::test]
 async fn the_settings_of_the_applications_and_the_desktop_travel_with_the_file() {
     let source = configured().await;
-    let terminal = nas_system_terminal::TerminalSettings {
+    let terminal = terminal::TerminalSettings {
         font_size: 18,
         ..Default::default()
     };
-    nas_system_terminal::save_settings(&source, terminal.clone())
+    terminal::save_settings(&source, terminal.clone())
         .await
         .expect("terminal");
     let manager = nas_app_manager::ManagerSettings {
@@ -247,9 +248,7 @@ async fn the_settings_of_the_applications_and_the_desktop_travel_with_the_file()
     import(&db, config).await.expect("import");
 
     assert_eq!(
-        nas_system_terminal::load_settings(&db)
-            .await
-            .expect("terminal"),
+        terminal::load_settings(&db).await.expect("terminal"),
         terminal
     );
     assert_eq!(
@@ -317,10 +316,8 @@ async fn a_file_with_wrong_application_settings_changes_nothing() {
         assert_eq!(refused.0, StatusCode::BAD_REQUEST);
     }
     assert_eq!(
-        nas_system_terminal::load_settings(&db)
-            .await
-            .expect("terminal"),
-        nas_system_terminal::TerminalSettings::default()
+        terminal::load_settings(&db).await.expect("terminal"),
+        terminal::TerminalSettings::default()
     );
 }
 

@@ -15,7 +15,6 @@ use crate::{
     apps::services::{
         nas_app_manager::{self, ManagerSettings},
         nas_notification_manager::NotificationSettings,
-        nas_system_terminal::TerminalSettings,
     },
     http::error::ApiFailure,
     services::{
@@ -24,6 +23,7 @@ use crate::{
         packages::catalogue::{self, Catalogue, CatalogueApp},
         registry,
         settings::{self, Section},
+        terminal::TerminalSettings,
     },
     utils::{self, now_ms, Mode},
     widgets::services::settings::{self as widgets, WidgetSettings},
@@ -179,7 +179,7 @@ async fn export_apps(db: &SqlitePool, wanted: &[String]) -> Result<AppsConfig, A
             Some(crate::apps::services::nas_notification_manager::load_settings(db).await?);
     }
     if chosen.contains(TERMINAL) {
-        apps.terminal = Some(crate::apps::services::nas_system_terminal::load_settings(db).await?);
+        apps.terminal = Some(crate::services::terminal::load_settings(db).await?);
     }
     Ok(apps)
 }

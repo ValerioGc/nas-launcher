@@ -1,6 +1,7 @@
 // Shell texts: header, search, desktop, menu, windows and widgets, with the entries shared by
 // several applications (save, cancel, loading).
 export default {
+  systemTerminal: 'Terminale',
   logViewer: 'Visualizzatore log',
   systemMonitor: 'Monitor sistema',
   externalDisks: 'Dischi esterni',

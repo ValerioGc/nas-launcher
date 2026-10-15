@@ -20,7 +20,7 @@ export const HELPERS = {
   app: join(BACKEND, 'services/lifecycle/run-app.sh'),
   apt: join(BACKEND, 'apps/services/nas_system_settings/system_updates/apt-updates.sh'),
   token: join(BACKEND, 'services/packages/launcher-token.sh'),
-  terminal: join(BACKEND, 'apps/services/nas_system_terminal/terminal-user.sh'),
+  terminal: join(BACKEND, 'services/terminal/terminal-user.sh'),
   hostname: join(BACKEND, 'apps/services/nas_system_settings/apply-hostname.sh'),
   reset: join(BACKEND, 'apps/services/nas_system_settings/reset/factory-reset.sh'),
   grants: join(BACKEND, 'services/grants/apply-app-grants.sh'),

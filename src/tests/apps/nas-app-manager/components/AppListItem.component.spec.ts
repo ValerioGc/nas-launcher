@@ -45,7 +45,7 @@ describe('AppListItem', () => {
 
   it('keeps an integrated application protected without showing a badge', () => {
     const wrapper = mount(AppListItem, {
-      props: { app: { ...row, id: 'nas-system-terminal', system: true, updateAvailable: false } },
+      props: { app: { ...row, id: 'nas-global-search', system: true, updateAvailable: false } },
     });
 
     expect(wrapper.attributes('aria-disabled')).toBe('true');

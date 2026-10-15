@@ -1,6 +1,7 @@
 // Shell texts: header, search, desktop, menu, windows and widgets, with the entries shared by
 // several applications (save, cancel, loading).
 export default {
+  systemTerminal: 'Terminal',
   logViewer: 'Log viewer',
   systemMonitor: 'System monitor',
   externalDisks: 'External disks',

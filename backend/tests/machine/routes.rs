@@ -121,6 +121,9 @@ async fn reads_the_state_of_the_machine_and_of_its_applications() {
         "/api/system/telemetry",
         "/api/setup",
         "/api/storage/disks/external",
+        "/api/storage/disks?kind=local",
+        "/api/storage/encryption",
+        "/api/storage/network",
         "/api/storage/locks",
         "/api/apps",
         "/api/apps/installed",
@@ -137,7 +140,6 @@ async fn reads_the_state_of_the_machine_and_of_its_applications() {
         "/api/notifications",
         "/api/notifications/sources",
         "/api/terminal/log",
-        "/api/terminal/session",
         "/api/tasks",
         "/api/access/rules",
         "/api/capabilities/file-picker",
@@ -296,6 +298,14 @@ async fn access_rules_failures_locks_and_the_token_are_checked() {
         ),
         ("/api/storage/disks/smart", json!({"device": "sdz"})),
         ("/api/storage/disks/eject", json!({"device": "sdz"})),
+        (
+            "/api/storage/encryption",
+            json!({"op": "lock", "uuid": "not a uuid"}),
+        ),
+        (
+            "/api/storage/network",
+            json!({"op": "networkConnect", "id": "not an id"}),
+        ),
         (
             "/api/network/wifi",
             json!({"ssid": "home", "password": "long enough"}),

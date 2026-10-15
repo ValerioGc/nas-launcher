@@ -44,7 +44,7 @@ read -r -a SAVED <<<"${NAS_UPDATE_PATHS:-$STATE/launcher.db $STATE/launcher.db-w
 read -r -a SAVED_GATEWAY <<<"${NAS_UPDATE_GATEWAY_PATHS:-/usr/local/bin/nas-os-gateway \
 /etc/systemd/system/nas-os-gateway.service /usr/local/lib/nas-os-gateway \
 /var/lib/private/nas-os-gateway/gateway.db /var/lib/private/nas-os-gateway/gateway.db-wal \
-/var/lib/private/nas-os-gateway/gateway.db-shm}"
+/var/lib/private/nas-os-gateway/gateway.db-shm /var/lib/private/nas-os-gateway/gateway.connection}"
 read -r -a SAVED_WIZARD <<<"${NAS_UPDATE_WIZARD_PATHS:-/usr/local/lib/nas-wizard \
 /etc/systemd/system/nas-wizard.service}"
 

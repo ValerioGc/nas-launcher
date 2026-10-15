@@ -8,8 +8,10 @@ import type { SystemPackage, SystemUpdates } from '@/apps/nas-system-settings/ty
 import type { TableColumn } from '@/types/types';
 
 import CommonSpinner from '@/components/commons/CommonSpinner.vue';
+import CommonIcon from '@/components/commons/CommonIcon.vue';
 import CommonSwitch from '@/components/commons/CommonSwitch.vue';
 import CommonTable from '@/components/commons/CommonTable.vue';
+import refreshIcon from '@/assets/icons/system/refresh.svg';
 import LauncherUpdates from '../LauncherUpdates.vue';
 import SettingsTabLayout from '../SettingsTabLayout.vue';
 import SettingsStatus from '../SettingsStatus.vue';
@@ -66,19 +68,29 @@ usePolling(
       :aria-label="t('systemUpdates')"
       data-testid="system_updates"
     >
-      <!-- The title with its action: the installation when apt offers something, the check otherwise. -->
       <header class="settings_heading">
         <h2>{{ t('systemUpdates') }}</h2>
-        <button
-          v-if="data?.packages.length"
-          type="button"
-          class="primary"
-          :disabled="!idle || !selected.length"
-          data-testid="system_updates_apply"
-          @click="update"
-        >
-          {{ t('applyUpdates') }}
-        </button>
+        <div v-if="data?.packages.length" class="app_toolbar">
+          <button
+            type="button"
+            :disabled="!idle"
+            :aria-label="t('checkUpdates')"
+            :title="t('checkUpdates')"
+            data-testid="system_updates_recheck"
+            @click="refresh"
+          >
+            <CommonIcon :src="refreshIcon" />
+          </button>
+          <button
+            type="button"
+            class="primary"
+            :disabled="!idle || !selected.length"
+            data-testid="system_updates_apply"
+            @click="update"
+          >
+            {{ t('applyUpdates') }}
+          </button>
+        </div>
         <button
           v-else
           type="button"

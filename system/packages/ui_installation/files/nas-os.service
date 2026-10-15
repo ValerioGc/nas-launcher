@@ -14,8 +14,9 @@ Wants=network-online.target
 Type=exec
 User=nas-os
 Group=nas-os
-# Reading the system journal, which the log of the terminal application follows, and nothing more.
-SupplementaryGroups=systemd-journal
+# Reading the system journal, which the log of the terminal application follows, and the socket of
+# the encryption of the data disks (nas-os-storage-crypt.socket), and nothing more.
+SupplementaryGroups=systemd-journal nas-os-crypt
 ExecStart=/usr/local/bin/nas-os-axum
 # The settings (the port, the switches that make each half real, the repository of the releases,
 # the domain of the applications) are in /etc/nas-os/nas-os.env, which the release replaces at every

@@ -23,7 +23,7 @@ impl SystemApp {
 }
 
 /// Shell applications: always present and never installable or removable.
-pub const SYSTEM: [SystemApp; 5] = [
+pub const SYSTEM: [SystemApp; 4] = [
     SystemApp {
         id: "nas-app-manager",
         name: "Application manager",
@@ -47,12 +47,6 @@ pub const SYSTEM: [SystemApp; 5] = [
         name: "Settings",
         info: "General settings, network, access, power and updates.",
         metadata: include_str!("../../../../src/apps/nas-system-settings/metadata.json"),
-    },
-    SystemApp {
-        id: "nas-system-terminal",
-        name: "Terminal",
-        info: "A command console on the NAS, and its system log.",
-        metadata: include_str!("../../../../src/apps/nas-system-terminal/metadata.json"),
     },
 ];
 

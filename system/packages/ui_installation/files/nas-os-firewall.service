@@ -1,8 +1,7 @@
 # Access list of the NAS: this is what turns the rules saved in the launcher into a real filter.
 #
-# It does not start on its own and is not enabled at boot: the launcher starts it after writing
-# the list to /var/lib/nas-os/access-rules. The permission to start it (and only this unit)
-# comes from the polkit rule installed alongside.
+# Launcher e gateway avviano questo helper per la lista di accesso e la porta HTTPS salvate.
+# La regola polkit autorizza soltanto l'avvio di questa unità.
 #
 # It runs as root because nftables is written by root: that is why the work is here and not inside
 # the launcher, which is not root.

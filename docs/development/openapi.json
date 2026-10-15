@@ -735,6 +735,226 @@
         }
       }
     },
+    "/api/storage/disks": {
+      "get": {
+        "summary": "The disks and volumes of the machine as the disk manager shows them, the system left out.",
+        "operationId": "getStorageDisks",
+        "parameters": [
+          {
+            "name": "kind",
+            "in": "query",
+            "description": "`local` or `external`; every disk when missing",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Disk"
+                  }
+                }
+              }
+            }
+          },
+          "4XX": {
+            "description": "The request was refused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "5XX": {
+            "description": "The launcher or the machine could not answer",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/storage/encryption": {
+      "get": {
+        "summary": "Whether disk encryption is on for this installation.",
+        "operationId": "getStorageEncryption",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "boolean"
+                }
+              }
+            }
+          },
+          "4XX": {
+            "description": "The request was refused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "5XX": {
+            "description": "The launcher or the machine could not answer",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Formats a data disk, or opens, closes and keys an encrypted volume.",
+        "operationId": "postStorageEncryption",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Request"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Answer"
+                }
+              }
+            }
+          },
+          "4XX": {
+            "description": "The request was refused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "5XX": {
+            "description": "The launcher or the machine could not answer",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/storage/network": {
+      "get": {
+        "summary": "The network disks the NAS mounts, connected or not.",
+        "operationId": "getStorageNetwork",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NetworkDisks"
+                }
+              }
+            }
+          },
+          "4XX": {
+            "description": "The request was refused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "5XX": {
+            "description": "The launcher or the machine could not answer",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Adds, tries, connects, disconnects or forgets a network disk.",
+        "operationId": "postStorageNetwork",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NetworkRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Answer"
+                }
+              }
+            }
+          },
+          "4XX": {
+            "description": "The request was refused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "5XX": {
+            "description": "The launcher or the machine could not answer",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/storage/disks/external": {
       "get": {
         "summary": "Lists connected external disks and whether each can be safely ejected.",
@@ -3868,95 +4088,6 @@
         }
       }
     },
-    "/api/terminal/session": {
-      "get": {
-        "summary": "A shell for the window as server-sent events named session and done around the output lines",
-        "operationId": "getTerminalSession",
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "text/event-stream": {
-                "schema": {
-                  "type": "string"
-                }
-              }
-            }
-          },
-          "4XX": {
-            "description": "The request was refused",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiError"
-                }
-              }
-            }
-          },
-          "5XX": {
-            "description": "The launcher or the machine could not answer",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/terminal/session/{id}/input": {
-      "post": {
-        "summary": "Runs one line in the shell of a session",
-        "operationId": "postTerminalSessionIdInput",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/Command"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "204": {
-            "description": "Success"
-          },
-          "4XX": {
-            "description": "The request was refused",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiError"
-                }
-              }
-            }
-          },
-          "5XX": {
-            "description": "The launcher or the machine could not answer",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/api/settings/terminal": {
       "get": {
         "summary": "How the terminal looks",
@@ -4448,6 +4579,28 @@
           }
         }
       },
+      "Answer": {
+        "type": "object",
+        "description": "What the root unit answers.",
+        "properties": {
+          "recovery": {
+            "type": ["string", "null"],
+            "description": "The new recovery key, shown once."
+          },
+          "header": {
+            "type": ["string", "null"],
+            "description": "The backup of the header, in base64."
+          },
+          "taskId": {
+            "type": ["string", "null"],
+            "description": "The task of a format, which goes on in the background."
+          },
+          "error": {
+            "type": ["string", "null"],
+            "description": "Why the root unit refused or failed."
+          }
+        }
+      },
       "ApiError": {
         "type": "object",
         "description": "Body shared by every failed response.",
@@ -4781,16 +4934,6 @@
           }
         }
       },
-      "Command": {
-        "type": "object",
-        "required": ["command"],
-        "properties": {
-          "command": {
-            "type": "string"
-          }
-        },
-        "additionalProperties": false
-      },
       "Component": {
         "type": "string",
         "description": "A part of the NAS released on its own. The order is the order of installation: the wizard\nfirst, which changes nothing that runs, then the gateway, then the launcher, which restarts.",
@@ -4941,6 +5084,34 @@
           }
         }
       },
+      "Definition": {
+        "type": "object",
+        "description": "A share as root keeps it: no password.",
+        "required": ["id", "name", "server", "share", "username", "automatic"],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "server": {
+            "type": "string"
+          },
+          "share": {
+            "type": "string"
+          },
+          "username": {
+            "type": "string"
+          },
+          "domain": {
+            "type": ["string", "null"]
+          },
+          "automatic": {
+            "type": "boolean"
+          }
+        }
+      },
       "DesktopEntry": {
         "type": "object",
         "description": "One shortcut of the desktop, in the order of the file.",
@@ -5000,6 +5171,94 @@
           }
         },
         "additionalProperties": false
+      },
+      "Disk": {
+        "type": "object",
+        "description": "A volume or a disk as the disk manager lists it.",
+        "required": [
+          "id",
+          "name",
+          "kind",
+          "disk_type",
+          "size_bytes",
+          "removable",
+          "read_only",
+          "initializable",
+          "system_disk",
+          "identity"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "device": {
+            "type": ["string", "null"]
+          },
+          "kind": {
+            "type": "string"
+          },
+          "disk_type": {
+            "type": "string"
+          },
+          "size_bytes": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          },
+          "mount": {
+            "type": ["string", "null"]
+          },
+          "filesystem": {
+            "type": ["string", "null"]
+          },
+          "model": {
+            "type": ["string", "null"]
+          },
+          "transport": {
+            "type": ["string", "null"]
+          },
+          "removable": {
+            "type": "boolean"
+          },
+          "read_only": {
+            "type": "boolean"
+          },
+          "initializable": {
+            "type": "boolean"
+          },
+          "parent": {
+            "type": ["string", "null"]
+          },
+          "uuid": {
+            "type": ["string", "null"]
+          },
+          "system_disk": {
+            "type": "boolean",
+            "description": "The disk holds the system: nothing on it may be erased."
+          },
+          "identity": {
+            "type": "string",
+            "description": "The identity of the whole disk, which an erasing request repeats."
+          },
+          "encryption": {
+            "type": ["string", "null"],
+            "description": "`locked` or `open` for a LUKS container."
+          },
+          "keys": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/Keys",
+                "description": "The keys of a LUKS container, as the root unit last saw them."
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
       },
       "EditedCatalogue": {
         "type": "object",
@@ -5200,13 +5459,17 @@
       },
       "InitializeRequest": {
         "type": "object",
-        "required": ["device", "label"],
+        "required": ["device", "label", "identity"],
         "properties": {
           "device": {
             "type": "string"
           },
           "label": {
             "type": "string"
+          },
+          "identity": {
+            "type": "string",
+            "description": "The identity of the disk as the inventory listed it: a disk renamed since is refused."
           }
         },
         "additionalProperties": false
@@ -5228,6 +5491,26 @@
       "Job": {
         "type": "string",
         "enum": ["refresh", "upgrade"]
+      },
+      "Keys": {
+        "type": "object",
+        "description": "The keys a container has and whether the person closed it, as the root unit last saw them.",
+        "required": ["password", "automatic", "recovery", "held"],
+        "properties": {
+          "password": {
+            "type": "boolean"
+          },
+          "automatic": {
+            "type": "boolean"
+          },
+          "recovery": {
+            "type": "boolean"
+          },
+          "held": {
+            "type": "boolean",
+            "description": "Closed by the person: nothing opens it but the person."
+          }
+        }
       },
       "Kind": {
         "type": "string",
@@ -5349,6 +5632,152 @@
             "type": "boolean"
           }
         }
+      },
+      "NetworkDisk": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Definition"
+          },
+          {
+            "type": "object",
+            "required": ["connected", "held"],
+            "properties": {
+              "connected": {
+                "type": "boolean",
+                "description": "Mounted now."
+              },
+              "held": {
+                "type": "boolean",
+                "description": "Disconnected by the person: nothing connects it but the person."
+              }
+            }
+          }
+        ],
+        "description": "A share as the disk manager shows it."
+      },
+      "NetworkDisks": {
+        "type": "object",
+        "description": "The shares, and whether this installation mounts them at all.",
+        "required": ["available", "disks"],
+        "properties": {
+          "available": {
+            "type": "boolean"
+          },
+          "disks": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/NetworkDisk"
+            }
+          }
+        }
+      },
+      "NetworkRequest": {
+        "oneOf": [
+          {
+            "type": "object",
+            "description": "Adds a share, or changes one; without a password a change keeps the one it had.",
+            "required": ["name", "server", "share", "username", "automatic", "op"],
+            "properties": {
+              "id": {
+                "type": ["string", "null"]
+              },
+              "name": {
+                "type": "string"
+              },
+              "server": {
+                "type": "string"
+              },
+              "share": {
+                "type": "string"
+              },
+              "username": {
+                "type": "string"
+              },
+              "domain": {
+                "type": ["string", "null"]
+              },
+              "password": {
+                "type": ["string", "null"]
+              },
+              "automatic": {
+                "type": "boolean"
+              },
+              "op": {
+                "type": "string",
+                "enum": ["networkSave"]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "description": "Tries a share without keeping it.",
+            "required": ["server", "share", "username", "password", "op"],
+            "properties": {
+              "server": {
+                "type": "string"
+              },
+              "share": {
+                "type": "string"
+              },
+              "username": {
+                "type": "string"
+              },
+              "domain": {
+                "type": ["string", "null"]
+              },
+              "password": {
+                "type": "string"
+              },
+              "op": {
+                "type": "string",
+                "enum": ["networkTest"]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "description": "Mounts a share now; it stays connected until the person disconnects it.",
+            "required": ["id", "op"],
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "op": {
+                "type": "string",
+                "enum": ["networkConnect"]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "description": "Unmounts a share, which stays disconnected until the person connects it again.",
+            "required": ["id", "op"],
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "op": {
+                "type": "string",
+                "enum": ["networkDisconnect"]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "description": "Unmounts a share and forgets it, password included.",
+            "required": ["id", "op"],
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "op": {
+                "type": "string",
+                "enum": ["networkForget"]
+              }
+            }
+          }
+        ],
+        "description": "What the launcher asks of the root helper about the network disks."
       },
       "NetworkState": {
         "type": "object",
@@ -5867,6 +6296,142 @@
             "type": ["string", "null"]
           }
         }
+      },
+      "Request": {
+        "oneOf": [
+          {
+            "type": "object",
+            "description": "Erases a data disk and makes one volume on it, encrypted or not. An encrypted one opens\nwith the password, the automatic key, or both.",
+            "required": ["device", "identity", "label", "encrypt", "op"],
+            "properties": {
+              "device": {
+                "type": "string"
+              },
+              "identity": {
+                "type": "string"
+              },
+              "label": {
+                "type": "string"
+              },
+              "encrypt": {
+                "type": "boolean"
+              },
+              "automatic": {
+                "type": "boolean"
+              },
+              "password": {
+                "type": ["string", "null"]
+              },
+              "op": {
+                "type": "string",
+                "enum": ["format"]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "description": "Opens a closed container with the password or the recovery key, and publishes it.",
+            "required": ["uuid", "password", "op"],
+            "properties": {
+              "uuid": {
+                "type": "string"
+              },
+              "password": {
+                "type": "string"
+              },
+              "op": {
+                "type": "string",
+                "enum": ["unlock"]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "description": "Takes the volume off Explorer, unmounts it and closes the container, which stays closed.",
+            "required": ["uuid", "op"],
+            "properties": {
+              "uuid": {
+                "type": "string"
+              },
+              "op": {
+                "type": "string",
+                "enum": ["lock"]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "description": "Adds or removes the automatic key. Adding it needs a key that opens the container.",
+            "required": ["uuid", "enabled", "op"],
+            "properties": {
+              "uuid": {
+                "type": "string"
+              },
+              "enabled": {
+                "type": "boolean"
+              },
+              "password": {
+                "type": ["string", "null"]
+              },
+              "op": {
+                "type": "string",
+                "enum": ["automatic"]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "description": "Sets or replaces the password, with a key that opens the container, or with the automatic\nkey when `current` is missing.",
+            "required": ["uuid", "password", "op"],
+            "properties": {
+              "uuid": {
+                "type": "string"
+              },
+              "current": {
+                "type": ["string", "null"]
+              },
+              "password": {
+                "type": "string"
+              },
+              "op": {
+                "type": "string",
+                "enum": ["password"]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "description": "Makes a new recovery key, which replaces the one before.",
+            "required": ["uuid", "op"],
+            "properties": {
+              "uuid": {
+                "type": "string"
+              },
+              "current": {
+                "type": ["string", "null"]
+              },
+              "op": {
+                "type": "string",
+                "enum": ["recovery"]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "description": "The backup of the header of the container.",
+            "required": ["uuid", "op"],
+            "properties": {
+              "uuid": {
+                "type": "string"
+              },
+              "op": {
+                "type": "string",
+                "enum": ["header"]
+              }
+            }
+          }
+        ],
+        "description": "What the launcher asks of the root unit."
       },
       "ResetBlock": {
         "type": "string",

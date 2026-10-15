@@ -7,9 +7,11 @@ use tokio::process::Command;
 pub enum Mode {
     Apps,
     Apt,
+    Encryption,
     Firewall,
     Hostname,
     Network,
+    NetworkDisks,
     Packages,
     Power,
     Processes,
@@ -24,9 +26,11 @@ impl Mode {
         match self {
             Self::Apps => "NAS_APPS_MODE",
             Self::Apt => "NAS_APT_MODE",
+            Self::Encryption => "NAS_ENCRYPTION_MODE",
             Self::Firewall => "NAS_FIREWALL_MODE",
             Self::Hostname => "NAS_HOSTNAME_MODE",
             Self::Network => "NAS_NETWORK_MODE",
+            Self::NetworkDisks => "NAS_NETWORK_DISKS_MODE",
             Self::Packages => "NAS_PACKAGES_MODE",
             Self::Power => "NAS_POWER_MODE",
             Self::Processes => "NAS_PROCESSES_MODE",

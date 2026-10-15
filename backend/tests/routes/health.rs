@@ -104,7 +104,8 @@ async fn the_installed_applications_are_listed_for_the_shell() {
     assert_eq!(status, StatusCode::OK);
 
     let apps = body.as_array().expect("an array of applications");
-    assert_eq!(apps.len(), 5);
+    assert_eq!(apps.len(), 4);
+    assert!(apps.iter().all(|app| app["id"] != "nas-system-terminal"));
     assert_eq!(apps[0]["id"], "nas-app-manager");
     assert_eq!(apps[0]["system"], true);
     assert_eq!(apps[0]["running"], true);
@@ -269,8 +270,8 @@ async fn a_token_that_is_not_one_is_refused() {
 }
 
 #[tokio::test]
-async fn no_shell_and_no_log_where_the_terminal_is_disabled() {
-    for path in ["/api/terminal/session", "/api/terminal/log"] {
+async fn no_journal_where_the_terminal_is_disabled() {
+    for path in ["/api/terminal/log"] {
         let (status, body) = get(path).await;
 
         assert_eq!(status, StatusCode::SERVICE_UNAVAILABLE, "{path}");
@@ -282,27 +283,20 @@ async fn no_shell_and_no_log_where_the_terminal_is_disabled() {
 }
 
 #[tokio::test]
-async fn a_command_goes_to_an_open_session_and_on_one_line_only() {
+async fn the_launcher_no_longer_serves_shell_sessions_or_command_input() {
     let router = session().await;
-
-    let (status, _) = send(
-        &router,
-        "POST",
-        "/api/terminal/session/nothing-open/input",
-        r#"{"command":"ls"}"#,
-    )
-    .await;
-    assert_eq!(status, StatusCode::NOT_FOUND);
-
-    let (status, body) = send(
-        &router,
-        "POST",
-        "/api/terminal/session/nothing-open/input",
-        r#"{"command":"ls\nrm -rf /tmp/x"}"#,
-    )
-    .await;
-    assert_eq!(status, StatusCode::BAD_REQUEST);
-    assert_eq!(body["error"], "invalid command");
+    assert_eq!(get("/api/terminal/session").await.0, StatusCode::NOT_FOUND);
+    assert_eq!(
+        send(
+            &router,
+            "POST",
+            "/api/terminal/session/old/input",
+            r#"{"command":"ls"}"#
+        )
+        .await
+        .0,
+        StatusCode::NOT_FOUND
+    );
 }
 
 #[tokio::test]

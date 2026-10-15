@@ -1,0 +1,19 @@
+# Where the launcher hands the requests of encryption of the data disks to root: one connection,
+# one run of nas-os-storage-crypt@.service. Only the group nas-os-crypt may connect, and the
+# launcher is its one member (SupplementaryGroups= in nas-os.service): the applications share the
+# group nas-os, not this one. Installed by `system/packages/ui_installation/install.sh`.
+
+[Unit]
+Description=Encryption of the NAS data disks, from the launcher
+
+[Socket]
+ListenStream=/run/nas-os-storage-crypt.sock
+SocketUser=root
+SocketGroup=nas-os-crypt
+SocketMode=0660
+Accept=yes
+MaxConnections=2
+RemoveOnStop=yes
+
+[Install]
+WantedBy=sockets.target

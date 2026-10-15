@@ -106,6 +106,10 @@ const FAKES: &[&str] = &[
     "partprobe",
     "e2label",
     "findmnt",
+    "cryptsetup",
+    "systemd-creds",
+    "chown",
+    "nft",
 ];
 
 fn tarball(directory: &std::path::Path, files: &[(&'static str, String)]) -> Vec<u8> {
@@ -206,7 +210,10 @@ impl Machine {
             let root = std::env::temp_dir().join(format!("nas-os-machine-{}", std::process::id()));
             let _ = std::fs::remove_dir_all(&root);
             let bin = root.join("bin");
-            for folder in ["bin", "answers", "fail", "active", "apps", "logs", "state", "sockets", "dropins"] {
+            for folder in [
+                "bin", "answers", "fail", "active", "apps", "logs", "state", "sockets", "dropins",
+                "credstore", "runtime",
+            ] {
                 std::fs::create_dir_all(root.join(folder)).expect("machine folder");
             }
             for name in FAKES {
@@ -282,6 +289,17 @@ impl Machine {
                 std::env::set_var("NAS_WIZARD_HOME", root.join("wizard"));
                 std::env::set_var("NAS_CONFIGURATION_STATE", root.join("configuration"));
                 std::env::set_var("NAS_STORAGE_STATE_DIR", &state);
+                // Encryption: the socket a test serves with the root helper, its keys and runtime.
+                std::env::set_var("NAS_STORAGE_CRYPT_SOCKET", root.join("crypt.sock"));
+                std::env::set_var("NAS_CREDSTORE", root.join("credstore"));
+                std::env::set_var("NAS_CRYPTTAB", root.join("crypttab"));
+                std::env::set_var("RUNTIME_DIRECTORY", root.join("runtime"));
+                std::env::set_var("NAS_ENCRYPTION_MODE", "real");
+                std::env::set_var("NAS_STORAGE_REGISTRY", root.join("storage-volumes.tsv"));
+                std::env::set_var("NAS_NETWORK_DISKS", root.join("network-disks.json"));
+                std::env::set_var("NAS_NETWORK_DISKS_MODE", "real");
+                // No user of the wizard: the reconciliation publishes no volume.
+                std::env::set_var("NAS_TERMINAL_DROPIN", root.join("terminal"));
                 std::env::set_var("NAS_LAUNCHER_SOCKET", root.join("launcher.sock"));
                 std::env::set_var("NAS_LAUNCHER_REPOSITORY", "tests/nas-launcher");
                 std::env::set_var("NAS_GATEWAY_BINARY", root.join("versions/nas-os-gateway"));
@@ -330,7 +348,8 @@ impl Machine {
                 assert_eq!(PathBuf::from(&found), bin.join(name), "{name} is not the fake");
             }
             std::fs::write(root.join("nas-wizard.service"), "[Unit]\n").expect("wizard unit");
-            // The disks of the machine: the system on sda, an ext4 volume on sdy1, sdz blank.
+            // The disks of the machine: the system on sda, an ext4 volume on sdy1, sdz blank, open
+            // LUKS containers on sdw1 and sds1, a closed one on sdt1, a data disk to format on sdv.
             std::fs::write(
                 root.join("answers/lsblk"),
                 serde_json::json!({ "blockdevices": [
@@ -343,6 +362,30 @@ impl Machine {
                           "mountpoints": [null], "ro": false }
                     ]},
                     { "name": "sdz", "path": "/dev/sdz", "type": "disk", "ro": false },
+                    { "name": "sdv", "path": "/dev/sdv", "type": "disk", "ro": false, "children": [
+                        { "name": "sdv1", "path": "/dev/sdv1", "type": "part", "fstype": "ext4",
+                          "uuid": "OLD-V", "mountpoints": [null], "ro": false }
+                    ]},
+                    { "name": "sdt", "path": "/dev/sdt", "type": "disk", "ro": false, "children": [
+                        { "name": "sdt1", "path": "/dev/sdt1", "type": "part", "fstype": "crypto_LUKS",
+                          "uuid": "LUKS-T", "ro": false }
+                    ]},
+                    { "name": "sds", "path": "/dev/sds", "type": "disk", "ro": false, "children": [
+                        { "name": "sds1", "path": "/dev/sds1", "type": "part", "fstype": "crypto_LUKS",
+                          "uuid": "LUKS-S", "ro": false, "children": [
+                            { "name": "nas-luks-luks-s", "path": "/dev/mapper/nas-luks-luks-s",
+                              "type": "crypt", "fstype": "ext4", "uuid": "INNER-S",
+                              "mountpoints": [null], "ro": false }
+                        ]}
+                    ]},
+                    { "name": "sdw", "path": "/dev/sdw", "type": "disk", "ro": false, "children": [
+                        { "name": "sdw1", "path": "/dev/sdw1", "type": "part", "fstype": "crypto_LUKS",
+                          "uuid": "LUKS-W", "ro": false, "children": [
+                            { "name": "nas-luks-luks-w", "path": "/dev/mapper/nas-luks-luks-w",
+                              "type": "crypt", "fstype": "ext4", "uuid": "INNER-W",
+                              "mountpoints": [null], "ro": false }
+                        ]}
+                    ]},
                     { "name": "sdu", "path": "/dev/sdu", "type": "disk", "ro": false, "rm": true,
                       "tran": "usb", "children": [
                         { "name": "sdu1", "path": "/dev/sdu1", "type": "part", "fstype": "vfat",

@@ -14,14 +14,16 @@ use crate::{
 use std::{path::PathBuf, time::Duration};
 
 /// Free software an application may have installed: SMTP delivery, ClamAV, 7-Zip, Samba, the
-/// server of the folders shared on the local network, and Syncthing, the engine of the sync.
-pub const INSTALLABLE: [&str; 6] = [
+/// server of the folders shared on the local network, Syncthing, the engine of the sync, and
+/// cifs-utils, which mounts the network disks.
+pub const INSTALLABLE: [&str; 7] = [
     "msmtp",
     "clamav",
     "clamav-freshclam",
     "7zip",
     "samba",
     "syncthing",
+    "cifs-utils",
 ];
 const COMMAND_TIMEOUT: Duration = Duration::from_secs(15 * 60);
 

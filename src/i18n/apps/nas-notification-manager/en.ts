@@ -86,6 +86,12 @@ export default {
   notice_accessRuleRemoved_message: 'Address {value} removed from the allowed addresses.',
   notice_taskFailed_title: 'Operation failed',
   notice_taskFailed_message: 'Operation “{name}” not completed. {reason}',
+  notice_diskWithoutSpareKey_title: 'Encrypted disk without a password',
+  notice_diskWithoutSpareKey_message:
+    'An encrypted disk opens only on this NAS: set a password or a recovery key in Disks.',
+  notice_developmentMode_title: 'NAS in development mode',
+  notice_developmentMode_message:
+    'This NAS was installed without an encrypted system or a TPM 2.0: whoever takes one of its disks can read the data on it.',
   notice_appNotStarted_title: 'Application not started',
   notice_appNotStarted_message: '{app} installed, start failed ({reason}).',
   notice_settingsSaved_title: 'Settings saved',

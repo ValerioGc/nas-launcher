@@ -7,6 +7,7 @@ pub mod mail;
 pub mod process_control;
 pub mod setup;
 pub mod storage;
+pub mod terminal;
 
 use crate::http::state::AppState;
 use utoipa_axum::router::OpenApiRouter;

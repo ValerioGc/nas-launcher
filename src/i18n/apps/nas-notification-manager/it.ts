@@ -86,6 +86,12 @@ export default {
   notice_accessRuleRemoved_message: 'Indirizzo {value} rimosso dagli indirizzi ammessi.',
   notice_taskFailed_title: 'Operazione non riuscita',
   notice_taskFailed_message: 'Operazione «{name}» non completata. {reason}',
+  notice_diskWithoutSpareKey_title: 'Disco cifrato senza password',
+  notice_diskWithoutSpareKey_message:
+    'Un disco cifrato si apre solo su questo NAS: imposta una password o una chiave di recupero in Dischi.',
+  notice_developmentMode_title: 'NAS in modalità sviluppo',
+  notice_developmentMode_message:
+    'Il NAS è installato senza sistema cifrato o TPM 2.0: chi prende uno dei suoi dischi può leggerne i dati.',
   notice_appNotStarted_title: 'Applicazione non avviata',
   notice_appNotStarted_message: '{app} installata, avvio non riuscito ({reason}).',
   notice_settingsSaved_title: 'Impostazioni salvate',

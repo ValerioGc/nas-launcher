@@ -45,7 +45,9 @@ When('I remove it from the catalogue', async ({ page }) => {
   await page.getByTestId(`catalogue_remove_${APP}`).click();
   await page.getByTestId('app_manager_confirm').click();
   await expect(page.getByTestId(`catalogue_row_${APP}`)).toHaveCount(0);
-  // Enter in a field saves too: the settings are a form.
+  // Enter in a field saves too: the settings are a form. The token saved by an earlier scenario
+  // keeps its field closed until edited, and an empty field leaves it as it is.
+  await page.getByTestId('app_manager_token_edit').click();
   await page.getByTestId('app_manager_token_input').press('Enter');
   await expect(page.getByTestId('app_manager_settings')).toHaveCount(0);
 });

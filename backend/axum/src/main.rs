@@ -7,8 +7,8 @@ use nas_os_axum::{
     },
     http::app_channel,
     services::{
-        background, database, grants, mail_events, manifest, notifications, provisioning, shares,
-        storage, sync_ports,
+        background, database, grants, mail_events, manifest, notifications, provisioning, setup,
+        shares, storage, sync_ports,
     },
     widgets::services::tasks,
     AppState,
@@ -101,6 +101,7 @@ async fn run() -> Result<(), Box<dyn std::error::Error>> {
                 .await
                 .map_err(Into::into)
         }
+        Some("--storage-crypt") => storage::crypt::root::serve().await.map_err(Into::into),
         Some(command @ "--eject-storage") => {
             let request = request_file(&mut arguments, command)?;
             storage::eject::eject_reported(std::path::Path::new(&request))
@@ -140,6 +141,8 @@ async fn serve() -> Result<(), Box<dyn std::error::Error>> {
     access::apply_saved(&db).await;
     discovery::apply_saved(&db).await;
     updates::report_previous(&db).await;
+    setup::report_development(&db).await;
+    storage::crypt::report_spare_keys(&db).await;
 
     manifest::ensure_sockets_directory().await;
 

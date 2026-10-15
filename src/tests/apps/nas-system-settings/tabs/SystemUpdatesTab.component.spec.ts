@@ -75,8 +75,10 @@ describe('system updates', () => {
     expect(
       wrapper.get('[data-testid="system_packages_row_bash"] input').attributes('disabled'),
     ).toBeDefined();
-    // With packages to install the installation takes the place of the check, held while apt works.
     expect(wrapper.find('[data-testid="system_updates_refresh"]').exists()).toBe(false);
+    expect(
+      wrapper.get('[data-testid="system_updates_recheck"]').attributes('disabled'),
+    ).toBeDefined();
     expect(
       wrapper.get('[data-testid="system_updates_apply"]').attributes('disabled'),
     ).toBeDefined();
@@ -103,6 +105,36 @@ describe('system updates', () => {
     wrapper.unmount();
   });
 
+  it('checks again with pending packages without installing them', async () => {
+    const newer = { ...bash, version: '5.2.37-3' };
+    const refreshing = { ...idle, running: 'refresh' as const };
+    answer(idle, refreshing, refreshing, { ...idle, packages: [newer] });
+    const wrapper = mountTab();
+    await flushPromises();
+
+    const button = wrapper.get('[data-testid="system_updates_recheck"]');
+    expect(button.attributes('aria-label')).toBe('Controlla aggiornamenti');
+    expect(button.attributes('disabled')).toBeUndefined();
+    await button.trigger('click');
+    await flushPromises();
+
+    expect(request).toHaveBeenCalledWith('/system/updates/refresh', {
+      method: 'POST',
+      body: '{}',
+    });
+    expect(request).not.toHaveBeenCalledWith(
+      '/system/updates',
+      expect.objectContaining({ method: 'POST' }),
+    );
+    expect(button.attributes('disabled')).toBeDefined();
+
+    await vi.advanceTimersByTimeAsync(3000);
+    await flushPromises();
+    expect(wrapper.get('[data-testid="system_packages_row_bash"]').text()).toContain(newer.version);
+    expect(button.attributes('disabled')).toBeUndefined();
+    wrapper.unmount();
+  });
+
   it('says why nothing can be installed where the mode is not real', async () => {
     answer({ ...idle, manageable: false, packages: [] });
     const wrapper = mountTab();
@@ -124,6 +156,7 @@ describe('system updates', () => {
 
     expect(wrapper.find('[data-testid="system_updates_apply"]').exists()).toBe(false);
     expect(wrapper.find('[data-testid="system_updates_refresh"]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid="system_updates_recheck"]').exists()).toBe(false);
     wrapper.unmount();
   });
 });

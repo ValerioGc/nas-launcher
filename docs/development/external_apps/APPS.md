@@ -105,7 +105,7 @@ application then says on its socket whether it has a sync on, `PUT /api/apps/sel
 `{ active }`, and the launcher opens those ports to the local network meanwhile (set `nas_sync`,
 through `nas-os-sync-ports.service`), closing them when no application has one.
 `permissions.packages` asks for Debian packages on the machine, from a fixed list: `msmtp`,
-`clamav`, `clamav-freshclam`, `7zip`, `samba` and `syncthing`. The launcher has them installed by
+`clamav`, `clamav-freshclam`, `7zip`, `samba`, `syncthing` and `cifs-utils`. The launcher has them installed by
 `nas-os-app-packages@<id>.service` before the application takes its place, and purged after it is
 removed, unless another application still asks for them or they were on the machine before. A
 package asking for any other value is not installed either.

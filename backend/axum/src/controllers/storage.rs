@@ -2,13 +2,50 @@ use crate::{
     http::{error::ApiFailure, extract::ValidJson, state::AppState},
     services::storage::{
         self,
+        crypt::{self, Answer, Request},
         eject::{self, EjectRequest, LockRequest},
+        inventory::{self, Disk},
+        network::{self, NetworkDisks, NetworkRequest},
         InitializeAccepted, InitializeRequest, RenameRequest, SmartRequest,
     },
 };
-use axum::{extract::State, Json};
+use axum::{
+    extract::{Query, State},
+    Json,
+};
+use serde::Deserialize;
 use sqlx::SqlitePool;
 use utoipa_axum::{router::OpenApiRouter, routes};
+
+#[derive(Deserialize, utoipa::IntoParams)]
+#[serde(deny_unknown_fields)]
+#[into_params(parameter_in = Query)]
+struct DiskQuery {
+    /// `local` or `external`; every disk when missing
+    kind: Option<String>,
+}
+
+/// The disks and volumes of the machine as the disk manager shows them, the system left out.
+#[utoipa::path(
+    get,
+    path = "/storage/disks",
+    params(DiskQuery),
+    responses((status = OK, body = Vec<Disk>))
+)]
+async fn disks(Query(query): Query<DiskQuery>) -> Result<Json<Vec<Disk>>, ApiFailure> {
+    if query
+        .kind
+        .as_deref()
+        .is_some_and(|kind| !matches!(kind, "local" | "external"))
+    {
+        return Err(ApiFailure::bad("invalid disk kind"));
+    }
+    tokio::task::spawn_blocking(move || inventory::disks(query.kind.as_deref()))
+        .await
+        .map_err(|_| ApiFailure::unavailable("disk inspection failed"))?
+        .map(Json)
+        .map_err(ApiFailure::unavailable)
+}
 
 /// Lists connected external disks and whether each can be safely ejected.
 #[utoipa::path(
@@ -96,8 +133,54 @@ async fn set_lock(
     eject::set_lock(&db, input).await.map(Json)
 }
 
+/// Whether disk encryption is on for this installation.
+#[utoipa::path(get, path = "/storage/encryption", responses((status = OK, body = bool)))]
+async fn encryption() -> Json<bool> {
+    Json(crypt::available())
+}
+
+/// Formats a data disk, or opens, closes and keys an encrypted volume.
+#[utoipa::path(
+    post,
+    path = "/storage/encryption",
+    request_body = Request,
+    responses((status = OK, body = Answer))
+)]
+async fn encryption_request(
+    State(db): State<SqlitePool>,
+    ValidJson(input): ValidJson<Request>,
+) -> Result<Json<Answer>, ApiFailure> {
+    crypt::request(&db, input).await.map(Json)
+}
+
+/// The network disks the NAS mounts, connected or not.
+#[utoipa::path(get, path = "/storage/network", responses((status = OK, body = NetworkDisks)))]
+async fn network_disks() -> Result<Json<NetworkDisks>, ApiFailure> {
+    tokio::task::spawn_blocking(network::list)
+        .await
+        .map_err(|_| ApiFailure::unavailable("network disks unavailable"))?
+        .map(Json)
+        .map_err(ApiFailure::unavailable)
+}
+
+/// Adds, tries, connects, disconnects or forgets a network disk.
+#[utoipa::path(
+    post,
+    path = "/storage/network",
+    request_body = NetworkRequest,
+    responses((status = OK, body = Answer))
+)]
+async fn network_request(
+    ValidJson(input): ValidJson<NetworkRequest>,
+) -> Result<Json<Answer>, ApiFailure> {
+    network::request(input).await.map(Json)
+}
+
 pub fn routes() -> OpenApiRouter<AppState> {
     OpenApiRouter::new()
+        .routes(routes!(disks))
+        .routes(routes!(encryption, encryption_request))
+        .routes(routes!(network_disks, network_request))
         .routes(routes!(external_disks))
         .routes(routes!(initialize_disk))
         .routes(routes!(rename_disk))

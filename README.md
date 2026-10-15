@@ -29,7 +29,8 @@ spegne il computer su cui sta programmando:
   credenziale systemd cifrata, che l'interfaccia non chiede e non mostra.
 - **Pacchetti di sistema**: elenco degli aggiornamenti Debian letto con `apt`, aggiornamento
   dell'indice e installazione dei pacchetti scelti da una unit di root (`NAS_APT_MODE=real`).
-- **Terminale**: una console come utente locale creato dal wizard, senza `sudo`, e il journal di sistema
+- **Terminale**: l’app esterna `nas-system-terminal` usa il servizio del launcher per aprire
+  una console come utente locale creato dal wizard, senza `sudo`, e seguire il journal di sistema
   (`NAS_TERMINAL_MODE=real`).
 - **Configurazione**: esportata in un file, cifrato nel browser se si sceglie una password per il
   file, e reimportata; entrambe dopo la password dell'account, verificata dal gateway.

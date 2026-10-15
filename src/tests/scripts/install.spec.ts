@@ -115,7 +115,7 @@ describe('install.sh', () => {
     expect(line).toContain('0750');
   });
 
-  it('enables the launcher and the storage refresh', () => {
+  it('enables the launcher, the storage refresh and the socket of the encryption', () => {
     const enabled = dryRun([binary])
       .stdout.split('\n')
       .filter((line) => line.includes('systemctl enable'))
@@ -124,6 +124,7 @@ describe('install.sh', () => {
     expect(enabled).toEqual([
       '[dry run] systemctl enable nas-os',
       '[dry run] systemctl enable --now nas-os-storage.timer',
+      '[dry run] systemctl enable --now nas-os-storage-crypt.socket',
     ]);
   });
 

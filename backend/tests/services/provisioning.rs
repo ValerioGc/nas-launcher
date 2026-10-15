@@ -24,7 +24,8 @@ async fn the_standard_catalogue_plans_only_the_initial_system_applications() {
             "app:nas-log-manager",
             "app:nas-security-center",
             "app:nas-file-manager",
-            "app:nas-system-monitor"
+            "app:nas-system-monitor",
+            "app:nas-system-terminal"
         ]
     );
 }

@@ -27,7 +27,7 @@ sudo /usr/local/lib/nas-os/configure.sh --clear    # lo toglie
 | `install.sh` | Esegue `launcher-token.sh` e, per il wizard, `terminal-user.sh` e `nas-os-storage` |
 
 Gli helper veri stanno nel backend (`backend/axum/src/services/packages/launcher-token.sh` e
-`backend/axum/src/apps/services/nas_system_terminal/terminal-user.sh`) e `ui_installation` li mette
+`backend/axum/src/services/terminal/terminal-user.sh`) e `ui_installation` li mette
 in `/usr/local/lib/nas-os/`. Il token lo salva anche il launcher, tramite `nas-os-token.service`,
 quando arriva dall'App Manager: così il token si salva in un modo solo.
 
