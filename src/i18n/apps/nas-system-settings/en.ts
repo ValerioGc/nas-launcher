@@ -61,10 +61,12 @@ export default {
   accountPassword: 'Account password',
   factoryReset: 'Factory reset',
   factoryResetNote:
-    'Returns launcher and gateway to the state of the first installation and starts the guided configuration again. Data disks and their files stay unchanged.',
+    'Restores the original system name and network configuration, removes NAS settings and starts guided configuration again. Data disks and their files stay unchanged.',
   factoryResetAction: 'Reset the NAS',
   factoryReset_disabled: 'Reset not available in this installation.',
   factoryReset_noWizard: 'Reset not available, the wizard is not installed.',
+  factoryReset_noOriginalState:
+    'Reset not available: this installation has no saved copy of the original system configuration.',
   factoryResetTitle: 'Reset the NAS?',
   factoryResetIntro:
     'Launcher and gateway return to the state of the first installation and the guided configuration starts again.',
@@ -79,7 +81,7 @@ export default {
   factoryResetPasswordNote: 'Required to confirm the reset.',
   factoryResetConfirm: 'Reset',
   factoryResetRunning:
-    'Reset in progress. At the end the guided configuration opens and the page reloads automatically.',
+    'Reset in progress. The original system name and network configuration are restored. If this page disconnects, reopen guided configuration at the restored address.',
   wrongAccountPassword: 'The password is not correct.',
   tooManyPasswordAttempts: 'Too many failed attempts. Retry in a few minutes.',
   gradient: 'Gradient',

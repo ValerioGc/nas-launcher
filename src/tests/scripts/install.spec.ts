@@ -166,7 +166,7 @@ describe('uninstall.sh', () => {
     const source = readFileSync(join(SYSTEM, 'scripts/uninstall.sh'), 'utf8');
     const service = source.slice(
       source.indexOf('if systemctl list-unit-files'),
-      source.indexOf('rm -f /etc/systemd/system/nas-os-hostname.service'),
+      source.indexOf('stop_unit nas-os-hostname.service'),
     );
     const script = join(temp.path, 'service.sh');
     writeFileSync(script, `set -euo pipefail\nSERVICE_NAME=nas-os\n${service}`);

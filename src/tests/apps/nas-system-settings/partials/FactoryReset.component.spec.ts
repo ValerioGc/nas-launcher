@@ -43,6 +43,7 @@ describe('FactoryReset', () => {
   it.each([
     ['disabled', 'non disponibile in questa installazione'],
     ['noWizard', 'il wizard non è installato'],
+    ['noOriginalState', 'non ha una copia della configurazione originale'],
   ] as const)('explains why it cannot reset: %s', async (reason, text) => {
     const wrapper = await mountWith({ available: false, reason });
 

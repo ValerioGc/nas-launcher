@@ -128,6 +128,10 @@ else
   fail "parted and e2fsprogs are required: run the wizard, which configures the system first"
 fi
 
+# La rimozione deve essere disponibile anche se un passo successivo fallisce.
+run install -d -m 0755 -o root -g root "$TOOLS_DIR"
+run install -m 0755 -o root -g root "$here/scripts/uninstall.sh" "$TOOLS_DIR/uninstall.sh"
+
 say "Service user"
 if id -u "$SERVICE_USER" >/dev/null 2>&1; then
   echo "   $SERVICE_USER already exists"
@@ -385,7 +389,6 @@ say "Tools on the machine"
 # The package does not stay: what is needed later, by hand or by the removal of the whole NAS,
 # goes next to the helpers.
 run install -m 0755 -o root -g root "$here/scripts/check.sh" "$TOOLS_DIR/check.sh"
-run install -m 0755 -o root -g root "$here/scripts/uninstall.sh" "$TOOLS_DIR/uninstall.sh"
 run install -m 0755 -o root -g root "$here/../ui_configuration/install.sh" "$TOOLS_DIR/configure.sh"
 echo "   $TOOLS_DIR/check.sh, uninstall.sh and configure.sh"
 

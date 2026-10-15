@@ -13,6 +13,7 @@ SocketUser=root
 SocketGroup=nas-os
 SocketMode=0660
 MaxConnections=4
+RemoveOnStop=yes
 
 [Install]
 WantedBy=sockets.target

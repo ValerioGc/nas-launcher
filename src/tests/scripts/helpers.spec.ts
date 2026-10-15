@@ -449,7 +449,9 @@ describe('apt-updates.sh', () => {
     const { result, calls } = job('refresh');
 
     expect(result.code).toBe(0);
-    expect(calls.trim()).toBe('update -q -o DPkg::Lock::Timeout=300');
+    expect(calls.trim()).toBe(
+      'update -q -o APT::Update::Error-Mode=any -o DPkg::Lock::Timeout=300',
+    );
   });
 
   it('upgrades the packages that were chosen, and only upgrades them', () => {
@@ -459,16 +461,16 @@ describe('apt-updates.sh', () => {
     expect(calls).toContain('install -q -y --only-upgrade');
     expect(calls).toContain('--force-confold');
     expect(calls).toContain('-o DPkg::Lock::Timeout=300');
-    expect(calls).toContain(
-      '-- bash libc6\nautoremove --purge -q -y -o DPkg::Lock::Timeout=300\nclean',
-    );
+    expect(calls).toContain('-- bash libc6\n');
+    expect(calls).not.toContain('autoremove');
+    expect(calls).not.toContain('clean');
     expect(() => readFileSync(join(state, 'apt-upgrade'))).toThrow();
   });
 
   it('drops from the selection whatever is not a package name', () => {
     const { calls } = job('upgrade', 'bash\n-o APT::Get::Assume-Yes\n$(reboot)\n');
 
-    expect(calls).toContain('-- bash\nautoremove');
+    expect(calls).toContain('-- bash\n');
     expect(calls).not.toContain('reboot');
   });
 
@@ -619,6 +621,67 @@ describe('terminal-user.sh', () => {
   });
 });
 
+describe('apply-hostname.sh', () => {
+  function rename(name: string, refuse = false) {
+    const state = join(temp.path, 'state');
+    mkdirSync(state, { recursive: true });
+    const hosts = join(temp.path, 'hosts');
+    const initial = '127.0.0.1 localhost\n127.0.1.1 debian\n192.168.1.10 printer\n';
+    writeFileSync(hosts, initial);
+    writeFileSync(join(state, 'hostname'), name);
+    const calls = join(temp.path, 'hostname-calls');
+    fakeCommand(temp.path, 'hostname', 'echo debian');
+    fakeCommand(temp.path, 'systemctl', 'exit 0');
+    fakeCommand(
+      temp.path,
+      'hostnamectl',
+      `printf '%s\\n' "$*" >> ${JSON.stringify(calls)}\n${refuse ? 'echo refused >&2; exit 1' : 'exit 0'}`,
+    );
+    const restore = fakeCommand(temp.path, 'restore-system', 'exit 0');
+    const result = run(HELPERS.hostname, {
+      env: {
+        NAS_STATE_DIR: state,
+        NAS_HOSTS_FILE: hosts,
+        NAS_CONFIGURATION_HELPER: restore,
+        PATH: `${temp.path}:${process.env.PATH}`,
+      },
+    });
+    return {
+      result,
+      hosts: readFileSync(hosts, 'utf8'),
+      initial,
+      calls: existsSync(calls) ? readFileSync(calls, 'utf8') : '',
+      error: existsSync(join(state, 'hostname.error'))
+        ? readFileSync(join(state, 'hostname.error'), 'utf8')
+        : '',
+    };
+  }
+
+  it('keeps the current hostname locally resolvable and preserves other hosts', () => {
+    const changed = rename('nas-valerio');
+    expect(changed.result.code).toBe(0);
+    expect(changed.hosts).toContain('127.0.1.1\tnas-valerio\n');
+    expect(changed.hosts).toContain('127.0.0.1 localhost\n');
+    expect(changed.hosts).toContain('192.168.1.10 printer\n');
+    expect(changed.calls).toContain('--static --transient hostname nas-valerio');
+    expect(changed.error).toBe('');
+  });
+
+  it('keeps hosts unchanged when hostnamectl refuses the name', () => {
+    const changed = rename('nas-valerio', true);
+    expect(changed.result.code).not.toBe(0);
+    expect(changed.hosts).toBe(changed.initial);
+    expect(changed.error).toContain('refused');
+  });
+
+  it('rejects an invalid name before changing the system', () => {
+    const changed = rename('bad/name');
+    expect(changed.result.code).not.toBe(0);
+    expect(changed.hosts).toBe(changed.initial);
+    expect(changed.calls).toBe('');
+  });
+});
+
 describe('factory-reset.sh', () => {
   /**
    * The reset on a machine made of folders: the state of the launcher, of the gateway, of the
@@ -626,7 +689,13 @@ describe('factory-reset.sh', () => {
    * wizard, and a data disk under srv/ that must come out untouched.
    */
   function machine(
-    options: { wizard?: boolean; terminal?: string; update?: 'working' | 'broken' } = {},
+    options: {
+      wizard?: boolean;
+      terminal?: string;
+      update?: 'working' | 'broken';
+      original?: boolean;
+      nftFailure?: boolean;
+    } = {},
   ) {
     const root = join(temp.path, 'machine');
     const path = (...parts: string[]) => join(root, ...parts);
@@ -635,6 +704,8 @@ describe('factory-reset.sh', () => {
       'var/lib/private/nas-os-gateway',
       'var/lib/private/nas-app/nas-file-manager',
       'var/lib/nas-wizard/ui',
+      'var/lib/nas-wizard-updates',
+      'run',
       'etc/credstore.encrypted',
       'etc/systemd/system/nas-os-terminal@.service.d',
       'etc/systemd/system/nas-app@nas-file-manager.service.d',
@@ -645,6 +716,14 @@ describe('factory-reset.sh', () => {
     writeFileSync(path('var/lib/nas-os/launcher.db'), 'db');
     writeFileSync(path('var/lib/private/nas-os-gateway/gateway.db'), 'accounts');
     writeFileSync(path('etc/credstore.encrypted/nas-os.launcher-token'), 'secret');
+    for (const file of [
+      'nas-os-terminal.sock',
+      'nas-os-share-password.sock',
+      'nas-os-antivirus.lock',
+      'nas-os-cleanup.lock',
+    ]) {
+      writeFileSync(path('run', file), 'stale runtime file');
+    }
     writeFileSync(path('srv/storage/v-data/.nas-users/valerio/photo.jpg'), 'memories');
     writeFileSync(
       path('etc/systemd/system/nas-os-terminal@.service.d/user.conf'),
@@ -656,6 +735,32 @@ describe('factory-reset.sh', () => {
 
     const calls = join(temp.path, 'calls');
     const log = `printf '%s %s\\n' "$(basename "$0")" "$*" >> ${JSON.stringify(calls)}`;
+    const home = path('usr/local/lib/nas-wizard');
+    const launcherTools = path('usr/local/lib/nas-os');
+    const gatewayTools = path('usr/local/lib/nas-os-gateway');
+    mkdirSync(launcherTools, { recursive: true });
+    mkdirSync(gatewayTools, { recursive: true });
+    fakeCommand(launcherTools, 'uninstall.sh', log);
+    fakeCommand(gatewayTools, 'uninstall.sh', log);
+    mkdirSync(join(home, 'wizard/bin'), { recursive: true });
+    mkdirSync(join(home, 'packages/os_configuration/scripts'), { recursive: true });
+    fakeCommand(join(home, 'wizard/bin'), 'nas-wizard', 'exit 0');
+    fakeCommand(
+      join(home, 'packages/os_configuration/scripts'),
+      'uninstall.sh',
+      `${log}\nif [[ $1 == --check ]]; then exit ${options.original === false ? 1 : 0}; fi`,
+    );
+    fakeCommand(
+      join(home, 'packages/os_configuration/scripts'),
+      'firewall.sh',
+      `${log}\n${options.nftFailure ? 'exit 1' : 'nft delete table inet nas_launcher\nnft delete table inet nas_base'}`,
+    );
+    fakeCommand(join(home, 'packages/os_configuration/scripts'), 'wifi.sh', log);
+    fakeCommand(
+      temp.path,
+      'nft',
+      `${log}\n${options.nftFailure ? 'exit 1' : 'if [[ $* == "list tables" ]]; then printf "table inet nas_launcher\\ntable inet nas_base\\n"; elif [[ $* == "list table inet nas_base" ]]; then printf "set nas_shares {\\nset nas_sync {\\nset nas_discovery {\\n"; fi'}`,
+    );
     if (options.update) {
       // A release of the wizard the launcher downloaded: its installer only says it ran.
       const release = join(temp.path, 'wizard-release');
@@ -667,7 +772,7 @@ describe('factory-reset.sh', () => {
       );
       execFileSync('tar', ['-cf', path('var/lib/nas-os/wizard-update.tar'), '-C', release, '.']);
     }
-    for (const name of ['systemctl', 'userdel', 'pkill']) {
+    for (const name of ['systemctl', 'userdel', 'pkill', 'udevadm']) {
       fakeCommand(temp.path, name, log);
     }
     const passwd =
@@ -683,7 +788,14 @@ describe('factory-reset.sh', () => {
         NAS_TERMINAL_DROPIN: path('etc/systemd/system/nas-os-terminal@.service.d'),
         NAS_WIZARD_UNIT: path('etc/systemd/system/nas-wizard.service'),
         NAS_WIZARD_STATE: path('var/lib/nas-wizard'),
+        NAS_WIZARD_UPDATES: path('var/lib/nas-wizard-updates'),
+        NAS_LAUNCHER_TOOLS: launcherTools,
+        NAS_GATEWAY_TOOLS: gatewayTools,
         NAS_APP_DROPINS: path('etc/systemd/system'),
+        NAS_STORAGE_RULE: path('etc/udev/rules.d/90-nas-os-storage.rules'),
+        NAS_WIZARD_HOME: home,
+        NAS_LOG_DIR: path('var/log/nas-os'),
+        NAS_RUNTIME_DIR: path('run/nas-os'),
         PATH: `${temp.path}:${process.env.PATH}`,
       },
     });
@@ -704,6 +816,11 @@ describe('factory-reset.sh', () => {
       'var/lib/private/nas-os-gateway',
       'var/lib/private/nas-app',
       'var/lib/nas-wizard',
+      'var/lib/nas-wizard-updates',
+      'run/nas-os-terminal.sock',
+      'run/nas-os-share-password.sock',
+      'run/nas-os-antivirus.lock',
+      'run/nas-os-cleanup.lock',
       'etc/credstore.encrypted/nas-os.launcher-token',
       'etc/systemd/system/nas-os-terminal@.service.d',
       'etc/systemd/system/nas-app@nas-file-manager.service.d',
@@ -711,9 +828,14 @@ describe('factory-reset.sh', () => {
       expect(exists(removed), removed).toBe(false);
     }
     expect(calls).toContain('systemctl disable --now nas-os-gateway.service');
-    expect(calls).toContain('systemctl stop nas-os.service');
-    expect(calls).toContain('userdel --remove valerio');
-    expect(calls.trim().split('\n').at(-1)).toBe('systemctl start nas-wizard.service');
+    expect(calls).toContain('systemctl disable --now nas-os.service');
+    expect(calls).toContain('systemctl disable --now nas-os-storage.timer');
+    expect(calls).toContain('uninstall.sh --remove-terminal-user valerio');
+    expect(calls).toContain('nft delete table inet nas_launcher');
+    expect(calls).toContain('nft delete table inet nas_base');
+    expect(calls).toContain('wifi.sh --remove');
+    expect(calls).toContain('uninstall.sh --restore');
+    expect(calls.trim().split('\n').at(-1)).toBe('systemctl is-active --quiet nas-wizard.service');
   });
 
   it('installs a newer wizard the launcher downloaded before anything is removed', () => {
@@ -721,9 +843,11 @@ describe('factory-reset.sh', () => {
 
     expect(result.code).toBe(0);
     const lines = calls.trim().split('\n');
-    expect(lines[0]).toBe('install.sh --update');
+    expect(lines.indexOf('install.sh --update')).toBeLessThan(
+      lines.indexOf('systemctl disable --now nas-os-gateway.service'),
+    );
     expect(result.stdout).toContain('the wizard was updated');
-    expect(lines.at(-1)).toBe('systemctl start nas-wizard.service');
+    expect(lines.at(-1)).toBe('systemctl is-active --quiet nas-wizard.service');
   });
 
   it('goes on with the installed wizard when its update fails', () => {
@@ -732,7 +856,7 @@ describe('factory-reset.sh', () => {
     expect(result.code).toBe(0);
     expect(calls).toContain('install.sh --update');
     expect(exists('var/lib/nas-os')).toBe(false);
-    expect(calls.trim().split('\n').at(-1)).toBe('systemctl start nas-wizard.service');
+    expect(calls.trim().split('\n').at(-1)).toBe('systemctl is-active --quiet nas-wizard.service');
   });
 
   it('never touches the data disks', () => {
@@ -749,6 +873,7 @@ describe('factory-reset.sh', () => {
 
     expect(result.code).toBe(0);
     expect(calls).not.toContain('userdel');
+    expect(calls).not.toContain('--remove-terminal-user');
   });
 
   it('removes nothing when the wizard is not there to configure the NAS again', () => {
@@ -758,6 +883,14 @@ describe('factory-reset.sh', () => {
     expect(result.stderr).toContain('the wizard is not installed');
     expect(exists('var/lib/nas-os/launcher.db')).toBe(true);
     expect(calls).toBe('');
+  });
+  it('removes no data without the original configuration or when the firewall cannot be inspected', () => {
+    for (const options of [{ original: false }, { nftFailure: true }]) {
+      const { result, exists } = machine(options);
+      expect(result.code).not.toBe(0);
+      expect(exists('var/lib/nas-os/launcher.db')).toBe(true);
+      expect(result.stdout).not.toContain('the original system configuration is restored');
+    }
   });
 });
 
@@ -1028,7 +1161,7 @@ describe('app-packages.sh', () => {
     fakeCommand(
       temp.path,
       'dpkg-query',
-      `grep -qxF -- "\${@: -1}" ${JSON.stringify(dpkg)} && printf 'install ok installed'`,
+      `if (($# == 2)); then awk '{ print $0 "\\tinstalled" }' ${JSON.stringify(dpkg)}; else grep -qxF -- "\${@: -1}" ${JSON.stringify(dpkg)} && printf 'install ok installed'; fi`,
     );
     fakeCommand(
       temp.path,
@@ -1040,11 +1173,13 @@ case $1 in
   purge) grep -vxF -- "$name" ${JSON.stringify(dpkg)} > ${JSON.stringify(`${dpkg}.new`)}; mv ${JSON.stringify(`${dpkg}.new`)} ${JSON.stringify(dpkg)} ;;
 esac`,
     );
+    const restore = fakeCommand(temp.path, 'restore-system', 'exit 0');
     const result = run(HELPERS.packages, {
       args: [id],
       env: {
         NAS_APP_PACKAGES_DIR: directory,
         NAS_APP_PACKAGES_RECORD: record,
+        NAS_CONFIGURATION_HELPER: restore,
         PATH: `${temp.path}:${process.env.PATH}`,
       },
     });
@@ -1062,8 +1197,8 @@ esac`,
       'install -q -y --no-install-recommends -o DPkg::Lock::Timeout=300 -- msmtp',
     );
     expect(installed.record).toBe('msmtp\n');
-    expect(installed.calls).toContain('autoremove --purge -q -y -o DPkg::Lock::Timeout=300');
-    expect(installed.calls.trim().endsWith('clean')).toBe(true);
+    expect(installed.calls).not.toContain('autoremove');
+    expect(installed.calls).not.toContain('clean');
 
     const removed = packages('nas-mail-client', {});
     expect(removed.calls).toContain('purge -q -y -o DPkg::Lock::Timeout=300 -- msmtp');

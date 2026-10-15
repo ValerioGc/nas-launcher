@@ -1844,7 +1844,7 @@ export interface components {
      * @description Why the NAS cannot be reset here.
      * @enum {string}
      */
-    ResetBlock: 'disabled' | 'noWizard';
+    ResetBlock: 'disabled' | 'noWizard' | 'noOriginalState';
     /** @description Whether the NAS can be reset here, and why not when it cannot. */
     ResetState: {
       available: boolean;

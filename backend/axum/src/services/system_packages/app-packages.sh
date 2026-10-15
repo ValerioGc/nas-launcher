@@ -28,6 +28,20 @@ fail() {
 
 id=${1:-}
 [[ $id =~ ^[A-Za-z0-9_-]{1,64}$ ]] || fail "not an application identifier: ${id:-<empty>}"
+readonly RESTORE=${NAS_CONFIGURATION_HELPER:-/usr/local/lib/nas-wizard/packages/os_configuration/scripts/uninstall.sh}
+[[ -x $RESTORE ]] || fail 'the system restoration helper is missing'
+"$RESTORE" --check
+before=$(mktemp)
+trap 'rm -f -- "$before"' EXIT
+dpkg-query -W -f='${binary:Package}\t${db:Status-Status}\n' |
+  awk '$2 == "installed" { print $1 }' | LC_ALL=C sort -u >"$before"
+record_packages() {
+  local status=$?
+  "$RESTORE" --record-packages "$before" || status=1
+  rm -f -- "$before"
+  exit "$status"
+}
+trap record_packages EXIT
 
 is_installable() {
   local name
@@ -58,11 +72,11 @@ touch "$RECORD"
 exec 9>"$RECORD.lock"
 flock 9
 
-changed=false
 if [[ -f $REQUESTS/$id ]]; then
   read_request "$REQUESTS/$id"
   for name in "${names[@]}"; do
     is_present "$name" && continue
+    grep -qxF -- "$name" "$RECORD" || printf '%s\n' "$name" >>"$RECORD"
     if [[ $id == nas-security-center ]]; then
       progress="$(dirname "$RECORD")/antivirus-install.progress"
       rm -f -- "$progress"
@@ -71,8 +85,6 @@ if [[ -f $REQUESTS/$id ]]; then
     else
       apt-get install -q -y --no-install-recommends "${LOCK_WAIT[@]}" -- "$name" || fail "apt-get could not install $name"
     fi
-    grep -qxF -- "$name" "$RECORD" || printf '%s\n' "$name" >>"$RECORD"
-    changed=true
     echo "$id: installed $name"
   done
 fi
@@ -91,18 +103,9 @@ while IFS= read -r name; do
     kept+=("$name")
   elif is_present "$name"; then
     apt-get purge -q -y "${LOCK_WAIT[@]}" -- "$name" || fail "apt-get could not remove $name"
-    changed=true
     echo "removed $name, which no application needs any more"
   fi
 done <"$RECORD"
 
 printf '%s\n' "${kept[@]}" | grep -v '^$' >"$RECORD.new" || true
 mv -f -- "$RECORD.new" "$RECORD"
-
-# What the removed packages pulled in and nothing needs any more, and the downloaded archives: a
-# clean-up that fails leaves the applications as they are.
-if $changed; then
-  apt-get autoremove --purge -q -y "${LOCK_WAIT[@]}" ||
-    echo 'warning: the packages nothing needs any more could not be removed'
-  apt-get clean || echo 'warning: the downloaded archives could not be removed'
-fi

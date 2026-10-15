@@ -15,7 +15,7 @@
 #
 #   systemctl start nas-os-reset.service
 
-set -uo pipefail
+set -euo pipefail
 
 # Overridable so the script can be tested without root and without touching the machine.
 readonly STATE=${NAS_STATE_DIR:-/var/lib/nas-os}
@@ -25,10 +25,17 @@ readonly CREDENTIAL=${NAS_CREDENTIAL:-/etc/credstore.encrypted/nas-os.launcher-t
 readonly TERMINAL_DROPIN=${NAS_TERMINAL_DROPIN:-/etc/systemd/system/nas-os-terminal@.service.d}
 readonly WIZARD_UNIT=${NAS_WIZARD_UNIT:-/etc/systemd/system/nas-wizard.service}
 readonly WIZARD_STATE=${NAS_WIZARD_STATE:-/var/lib/nas-wizard}
+readonly WIZARD_UPDATES=${NAS_WIZARD_UPDATES:-/var/lib/nas-wizard-updates}
+readonly RUNTIME=${NAS_RUNTIME_DIR:-/run/nas-os}
 readonly APP_DROPINS=${NAS_APP_DROPINS:-/etc/systemd/system}
+readonly STORAGE_RULE=${NAS_STORAGE_RULE:-/etc/udev/rules.d/90-nas-os-storage.rules}
 readonly ANTIVIRUS_STATE=${NAS_ANTIVIRUS_STATE_DIR:-${STATE%/nas-os}/nas-os-antivirus}
 readonly WIZARD_UPDATE=$STATE/wizard-update.tar
 readonly TERMINAL_COMMENT='nas-os terminal'
+readonly WIZARD_HOME=${NAS_WIZARD_HOME:-/usr/local/lib/nas-wizard}
+readonly RESTORE=${NAS_CONFIGURATION_HELPER:-$WIZARD_HOME/packages/os_configuration/scripts/uninstall.sh}
+readonly LAUNCHER_TOOLS=${NAS_LAUNCHER_TOOLS:-/usr/local/lib/nas-os}
+readonly GATEWAY_TOOLS=${NAS_GATEWAY_TOOLS:-/usr/local/lib/nas-os-gateway}
 
 say() { printf '\n== %s\n' "$1"; }
 fail() {
@@ -39,6 +46,22 @@ fail() {
 [[ $EUID -eq 0 || -n ${NAS_STATE_DIR:-} ]] || fail "it has to run as root: nas-os-reset.service runs it"
 # Without the wizard nothing would configure the NAS again: nothing is removed.
 [[ -f $WIZARD_UNIT ]] || fail "the wizard is not installed ($WIZARD_UNIT): nothing was removed"
+[[ -x $WIZARD_HOME/wizard/bin/nas-wizard && -x $RESTORE ]] || fail 'the wizard or system restoration helper is missing: nothing was removed'
+[[ -x $WIZARD_HOME/packages/os_configuration/scripts/firewall.sh ]] || fail 'the firewall removal helper is missing: nothing was removed'
+[[ -x $WIZARD_HOME/packages/os_configuration/scripts/wifi.sh ]] || fail 'the wireless removal helper is missing: nothing was removed'
+[[ -x $LAUNCHER_TOOLS/uninstall.sh && -x $GATEWAY_TOOLS/uninstall.sh ]] || fail 'the launcher or gateway removal helper is missing: nothing was removed'
+"$RESTORE" --check
+busy=$(systemctl list-units --plain --no-legend --state=active,activating,deactivating,reloading \
+  'nas-os-update.service' 'nas-os-apt@*.service' 'nas-os-app-packages@*.service' \
+  'nas-os-storage-initialize.service' 'nas-os-storage-rename.service' 'nas-os-storage-eject.service')
+[[ -z $busy ]] || fail 'wait for NAS updates, package installation or disk operations before resetting'
+
+stop_unit() {
+  local unit=$1 load
+  shift
+  load=$(systemctl show "$unit" --property=LoadState --value)
+  if [[ $load != not-found ]]; then systemctl "$@" "$unit"; fi
+}
 
 say "Update of the wizard"
 if [[ -r $WIZARD_UPDATE ]]; then
@@ -53,51 +76,86 @@ if [[ -r $WIZARD_UPDATE ]]; then
 else
   echo "   no newer wizard"
 fi
+[[ -x $WIZARD_HOME/wizard/bin/nas-wizard ]] || fail 'the wizard update left no executable wizard: reset cancelled'
+"$RESTORE" --check
 
 say "Gateway"
 # Disabled as well: a reboot before the wizard is done must not hand port 80 back to it.
-systemctl disable --now nas-os-gateway.service || true
+stop_unit nas-os-gateway.service disable --now
+stop_unit nas-os-share-password.socket disable --now
+rm -f -- "${NAS_SHARE_PASSWORD_SOCKET:-${RUNTIME%/*}/nas-os-share-password.sock}"
 
 say "Applications"
-mapfile -t instances < <(systemctl list-units --plain --no-legend 'nas-app@*.service' 2>/dev/null |
-  awk '{ print $1 }')
+listing=$(systemctl list-units --all --plain --no-legend 'nas-app@*.service' \
+  'nas-os-terminal@*.service' 'nas-os-share-password@*.service' 'nas-os-app-grants@*.service')
+mapfile -t instances < <(printf '%s\n' "$listing" | awk 'NF { print $1 }')
 if ((${#instances[@]} > 0)); then
-  systemctl stop "${instances[@]}" || true
+  systemctl stop "${instances[@]}"
 fi
-echo "   ${#instances[@]} applications stopped"
+echo "   ${#instances[@]} NAS process units stopped"
 # The paths the launcher granted them go with them.
 rm -rf -- "$APP_DROPINS"/nas-app@?*.service.d
 
 say "Launcher"
-systemctl stop nas-os.service || true
+stop_unit nas-os.service disable --now
+rm -f -- "$STORAGE_RULE"
+udevadm control --reload-rules
+stop_unit nas-os-storage.timer disable --now
+stop_unit nas-os-storage.service stop
+stop_unit nas-os-hostname.service stop
 # Optional antivirus work outlives a launcher restart, but must stop before its state is reset.
-systemctl disable --now nas-os-antivirus-lifecycle.service >/dev/null 2>&1 || true
-rm -f "$ANTIVIRUS_STATE/settings.json" "$ANTIVIRUS_STATE/boot-id" "$ANTIVIRUS_STATE/notices.json"
-systemctl stop nas-os-antivirus.service || true
-systemctl stop nas-os-cleanup.service || true
+stop_unit nas-os-antivirus-lifecycle.service disable --now
+stop_unit nas-os-antivirus.service stop
+stop_unit nas-os-cleanup.service stop
 if [[ -f $STATE/app-packages/nas-security-center ]]; then
-  systemctl disable --now clamav-freshclam.service || true
+  stop_unit clamav-freshclam.service disable --now
 fi
 
+say "Network access and shared folders"
+stop_unit nas-os-firewall.service stop
+stop_unit nas-os-smb-shares.service stop
+stop_unit nas-os-sync-ports.service stop
+stop_unit nas-os-discovery.service stop
+stop_unit smbd.service stop
+stop_unit nmbd.service stop
+"$WIZARD_HOME/packages/os_configuration/scripts/firewall.sh" --remove
+"$WIZARD_HOME/packages/os_configuration/scripts/wifi.sh" --remove
+
 say "User of the terminal"
-systemctl disable --now nas-os-terminal.socket || true
-user=$(sed -n 's/^User=//p' "$TERMINAL_DROPIN/user.conf" 2>/dev/null | tail -n 1)
+stop_unit nas-os-terminal.socket disable --now
+rm -f -- "${NAS_TERMINAL_SOCKET:-${RUNTIME%/*}/nas-os-terminal.sock}"
+user=''
+if [[ -f $TERMINAL_DROPIN/user.conf ]]; then
+  user=$(sed -n 's/^User=//p' "$TERMINAL_DROPIN/user.conf" | tail -n 1)
+fi
 if [[ $user =~ ^[a-z_][a-z0-9_-]{0,31}$ ]] &&
   [[ $(getent passwd "$user" | cut -d: -f5) == "$TERMINAL_COMMENT" ]]; then
   # Its processes first: a user with a running shell cannot be removed.
-  pkill -KILL -u "$user" || true
-  userdel --remove "$user" && echo "   $user removed, with its home"
+  "$RESTORE" --remove-terminal-user "$user"
 else
   echo "   no user of the terminal to remove"
 fi
 rm -rf -- "$TERMINAL_DROPIN"
 
+say "Installed NAS components"
+# Senza --purge: dati e utenti restano gestiti dai passaggi espliciti di questo reset.
+"$LAUNCHER_TOOLS/uninstall.sh"
+"$GATEWAY_TOOLS/uninstall.sh"
+
+say "Original system configuration"
+# Ripristina anche la configurazione e le credenziali Samba precedenti al NAS.
+"$RESTORE" --remove-app-packages
+"$RESTORE" --restore
+
 say "Data"
 rm -f -- "$CREDENTIAL"
-rm -rf -- "$STATE" "${GATEWAY_STATES[@]}" "${APP_STATES[@]}" "$WIZARD_STATE"
+rm -rf -- "$STATE" "${GATEWAY_STATES[@]}" "${APP_STATES[@]}" "$WIZARD_STATE" "$WIZARD_UPDATES"
+rm -rf -- "$ANTIVIRUS_STATE" "${NAS_LOG_DIR:-/var/log/nas-os}" "$RUNTIME"
+rm -f -- "${RUNTIME%/*}/nas-os-antivirus.lock" "${RUNTIME%/*}/nas-os-cleanup.lock"
 echo "   launcher, gateway, applications and token removed; the data disks are untouched"
 
 say "Wizard"
 systemctl daemon-reload
-systemctl start nas-wizard.service || fail "the wizard did not start (journalctl -u nas-wizard)"
-echo "   the wizard answers on port 80"
+systemctl enable --now nas-wizard.service || fail "the wizard did not start (journalctl -u nas-wizard)"
+systemctl is-active --quiet nas-wizard.service || fail 'the wizard did not remain active'
+echo "   the original system configuration is restored and the wizard is running"

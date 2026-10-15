@@ -17,7 +17,8 @@ ExecStart=/usr/local/lib/nas-os/factory-reset.sh
 TimeoutStartSec=30min
 
 NoNewPrivileges=yes
-PrivateTmp=yes
+# Il ripristino deve vedere e smontare i bind mount del NAS nel namespace dell'host.
+PrivateTmp=no
 RestrictRealtime=yes
 LockPersonality=yes
 SystemCallArchitectures=native

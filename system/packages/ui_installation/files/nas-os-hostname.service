@@ -7,5 +7,5 @@ ExecStart=/usr/local/lib/nas-os/apply-hostname.sh
 PrivateTmp=yes
 ProtectSystem=strict
 ProtectHome=yes
-ReadWritePaths=/var/lib/nas-os
+ReadWritePaths=/var/lib/nas-os /etc/hosts
 NoNewPrivileges=yes

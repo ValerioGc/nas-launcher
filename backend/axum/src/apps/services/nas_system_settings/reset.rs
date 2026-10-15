@@ -13,7 +13,8 @@ use crate::{
 
 use super::updates::{self, Component};
 use serde::Serialize;
-use std::{path::PathBuf, time::Duration};
+use std::{os::unix::fs::PermissionsExt, path::PathBuf, time::Duration};
+use tokio::process::Command;
 
 pub const UNIT: &str = "nas-os-reset.service";
 const COMMAND_TIMEOUT: Duration = Duration::from_secs(10);
@@ -26,6 +27,8 @@ pub enum ResetBlock {
     Disabled,
     /// The unit of the wizard is not on the machine, so nothing would configure the NAS again
     NoWizard,
+    /// Lo stato precedente all'installazione non è stato salvato.
+    NoOriginalState,
 }
 
 impl ResetBlock {
@@ -34,6 +37,9 @@ impl ResetBlock {
             Self::Disabled => "The reset is not available on this installation.",
             Self::NoWizard => {
                 "the wizard is not installed on this machine: run install.sh from its package once"
+            }
+            Self::NoOriginalState => {
+                "The original system configuration was not saved; an exact reset is unavailable."
             }
         }
     }
@@ -55,11 +61,13 @@ fn wizard_unit() -> PathBuf {
     )
 }
 
-pub fn availability(real: bool, wizard_installed: bool) -> ResetState {
+pub fn availability(real: bool, wizard_installed: bool, original_saved: bool) -> ResetState {
     let reason = if !real {
         Some(ResetBlock::Disabled)
     } else if !wizard_installed {
         Some(ResetBlock::NoWizard)
+    } else if !original_saved {
+        Some(ResetBlock::NoOriginalState)
     } else {
         None
     };
@@ -70,10 +78,30 @@ pub fn availability(real: bool, wizard_installed: bool) -> ResetState {
 }
 
 pub async fn state() -> ResetState {
-    let installed = tokio::fs::metadata(wizard_unit())
+    let unit_installed = tokio::fs::metadata(wizard_unit())
         .await
         .is_ok_and(|unit| unit.is_file());
-    availability(utils::is_real(Mode::Reset), installed)
+    let home = std::env::var_os("NAS_WIZARD_HOME")
+        .map(PathBuf::from)
+        .unwrap_or_else(|| PathBuf::from("/usr/local/lib/nas-wizard"));
+    let binary_installed = tokio::fs::metadata(home.join("wizard/bin/nas-wizard"))
+        .await
+        .is_ok_and(|binary| binary.is_file() && binary.permissions().mode() & 0o111 != 0);
+    let helper_installed =
+        tokio::fs::metadata(home.join("packages/os_configuration/scripts/uninstall.sh"))
+            .await
+            .is_ok_and(|helper| helper.is_file() && helper.permissions().mode() & 0o111 != 0);
+    let configuration = std::env::var_os("NAS_CONFIGURATION_STATE")
+        .map(PathBuf::from)
+        .unwrap_or_else(|| PathBuf::from("/var/lib/nas-os-configuration"));
+    let original_saved = tokio::fs::metadata(configuration.join("original-ready"))
+        .await
+        .is_ok_and(|marker| marker.is_file());
+    availability(
+        utils::is_real(Mode::Reset),
+        unit_installed && binary_installed && helper_installed,
+        original_saved,
+    )
 }
 
 /// Starts the reset, once the gateway has confirmed the password of the account.
@@ -81,6 +109,37 @@ pub async fn start() -> Result<ResetState, ApiFailure> {
     let current = state().await;
     if let Some(reason) = current.reason {
         return Err(ApiFailure::unavailable(reason.explain()));
+    }
+    let listing = Command::new("systemctl")
+        .args([
+            "list-units",
+            "--plain",
+            "--no-legend",
+            "--state=active,activating,deactivating,reloading",
+            "nas-os-update.service",
+            "nas-os-apt@*.service",
+            "nas-os-app-packages@*.service",
+            "nas-os-storage-initialize.service",
+            "nas-os-storage-rename.service",
+            "nas-os-storage-eject.service",
+        ])
+        .output();
+    let busy = tokio::time::timeout(COMMAND_TIMEOUT, listing)
+        .await
+        .map_err(|_| ApiFailure::unavailable("Checking active NAS operations timed out."))?
+        .map_err(|reason| {
+            ApiFailure::unavailable(format!("cannot check active NAS operations: {reason}"))
+        })?;
+    if !busy.status.success() {
+        return Err(ApiFailure::unavailable(format!(
+            "cannot check active NAS operations: {}",
+            String::from_utf8_lossy(&busy.stderr).trim()
+        )));
+    }
+    if !String::from_utf8_lossy(&busy.stdout).trim().is_empty() {
+        return Err(ApiFailure::unavailable(
+            "Wait for NAS updates, package installation or disk operations before resetting.",
+        ));
     }
     prepare_wizard().await;
     // Not waited for: the unit stops this very launcher.

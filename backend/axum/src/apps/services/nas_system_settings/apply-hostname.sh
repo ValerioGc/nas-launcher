@@ -9,20 +9,57 @@
 
 set -euo pipefail
 
-readonly request=/var/lib/nas-os/hostname
-readonly error=/var/lib/nas-os/hostname.error
+readonly state=${NAS_STATE_DIR:-/var/lib/nas-os}
+readonly hosts=${NAS_HOSTS_FILE:-/etc/hosts}
+readonly request=$state/hostname
+readonly error=$state/hostname.error
+readonly rollback=${NAS_CONFIGURATION_HELPER:-/usr/local/lib/nas-wizard/packages/os_configuration/scripts/uninstall.sh}
 rm -f "$error"
+temporary=$(mktemp)
+diagnostic=$(mktemp)
+previous_hosts=$(mktemp)
+finish() {
+  local status=$?
+  if ((status != 0)); then
+    chmod 0644 "$diagnostic"
+    mv -fT -- "$diagnostic" "$error"
+  else
+    rm -f -- "$diagnostic"
+  fi
+  rm -f -- "$temporary" "$previous_hosts"
+  exit "$status"
+}
+trap finish EXIT
 
 name=$(<"$request") || name=''
 if [[ ! $name =~ ^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$ ]]; then
-  printf '%s\n' 'invalid NAS hostname' >"$error"
+  printf '%s\n' 'invalid NAS hostname' >"$diagnostic"
   exit 1
 fi
 
-if ! hostnamectl hostname "$name" 2>"$error"; then
+[[ -x $rollback ]] || { printf '%s\n' 'system restoration helper is missing' >"$diagnostic"; exit 1; }
+"$rollback" --check 2>"$diagnostic" || exit 1
+
+# Mantiene risolvibile il nome locale senza cambiare le altre associazioni degli host.
+cp -- "$hosts" "$previous_hosts"
+awk -v name="$name" '
+  $1 == "127.0.1.1" {
+    if (!written) print "127.0.1.1\t" name;
+    written = 1;
+    next;
+  }
+  { print }
+  END { if (!written) print "127.0.1.1\t" name }
+' "$hosts" >"$temporary"
+previous=$(hostname)
+if ! hostnamectl --static --transient hostname "$name" 2>"$diagnostic"; then
   exit 1
 fi
-rm -f "$error"
+if ! cat "$temporary" >"$hosts" 2>"$diagnostic"; then
+  cat "$previous_hosts" >"$hosts" || true
+  hostnamectl --static --transient hostname "$previous" || true
+  exit 1
+fi
 
 # The gateway answers HTTPS with a certificate that names the machine, issued again for the new
 # name when it starts. Not waited for: the request that changed the name came through it.

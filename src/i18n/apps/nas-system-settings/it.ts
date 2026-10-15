@@ -62,10 +62,12 @@ export default {
   accountPassword: 'Password dell’account',
   factoryReset: 'Ripristino',
   factoryResetNote:
-    'Riporta launcher e gateway allo stato della prima installazione e riavvia la configurazione guidata. I dischi dati e i relativi file restano invariati.',
+    'Ripristina nome e configurazione di rete originali, rimuove le impostazioni del NAS e riavvia la configurazione guidata. I dischi dati e i relativi file restano invariati.',
   factoryResetAction: 'Ripristina il NAS',
   factoryReset_disabled: 'Ripristino non disponibile in questa installazione.',
   factoryReset_noWizard: 'Ripristino non disponibile, il wizard non è installato.',
+  factoryReset_noOriginalState:
+    'Ripristino non disponibile: questa installazione non ha una copia della configurazione originale del sistema.',
   factoryResetTitle: 'Ripristinare il NAS?',
   factoryResetIntro:
     'Launcher e gateway tornano allo stato della prima installazione e la configurazione guidata si avvia di nuovo.',
@@ -81,7 +83,7 @@ export default {
   factoryResetPasswordNote: 'Richiesta per confermare il ripristino.',
   factoryResetConfirm: 'Ripristina',
   factoryResetRunning:
-    'Ripristino in corso. Al termine si apre la configurazione guidata e la pagina si ricarica automaticamente.',
+    'Ripristino in corso. Vengono ripristinati nome e configurazione di rete originali. Se la pagina si disconnette, riapri la configurazione guidata all’indirizzo ripristinato.',
   wrongAccountPassword: 'La password non è corretta.',
   tooManyPasswordAttempts: 'Troppi tentativi non riusciti. Riprovare tra qualche minuto.',
   gradient: 'Gradiente',
