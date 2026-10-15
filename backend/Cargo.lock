@@ -1029,7 +1029,7 @@ dependencies = [
 
 [[package]]
 name = "nas-os-axum"
-version = "0.1.36"
+version = "0.1.37"
 dependencies = [
  "axum",
  "futures-util",
