@@ -46,7 +46,7 @@ pub struct Machine {
 }
 
 static MACHINE: OnceLock<Machine> = OnceLock::new();
-// I test di reset e spegnimento condividono la simulazione delle operazioni root attive.
+// Reset and power tests share the simulation of the running root operations.
 pub static ROOT_OPERATIONS: tokio::sync::Mutex<()> = tokio::sync::Mutex::const_new(());
 
 /// The applications of the catalogue, each for one test, released from `tests/<id>`.

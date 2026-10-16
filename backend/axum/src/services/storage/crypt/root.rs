@@ -298,29 +298,42 @@ fn load_automatic(uuid: &str) -> Result<Secret, String> {
     if !source.is_file() {
         return Err("the volume has no automatic key".to_owned());
     }
-    let key = raw_output(
-        "systemd-creds",
-        &[
-            "decrypt",
-            &format!("--name={}", credential_name(uuid)),
-            source.to_str().ok_or("invalid credential path")?,
-            "-",
-        ],
-    )?;
-    Secret::write("automatic", &key)
+    Secret::write("automatic", &unseal(&credential_name(uuid), &source)?)
 }
 
 fn save_automatic(uuid: &str, key: &Secret) -> Result<(), String> {
-    let sealed = raw_output(
+    seal(
+        &credential_name(uuid),
+        key,
+        &credential(uuid),
+        "the automatic key",
+    )
+}
+
+/// The plain bytes of a systemd credential.
+pub(in crate::services::storage) fn unseal(name: &str, source: &Path) -> Result<Vec<u8>, String> {
+    raw_output(
         "systemd-creds",
         &[
-            "encrypt",
-            &format!("--name={}", credential_name(uuid)),
-            key.arg(),
+            "decrypt",
+            &format!("--name={name}"),
+            source.to_str().ok_or("invalid credential path")?,
             "-",
         ],
+    )
+}
+
+/// Seals a secret as the systemd credential `name`, written whole and readable by root only.
+pub(in crate::services::storage) fn seal(
+    name: &str,
+    secret: &Secret,
+    target: &Path,
+    what: &str,
+) -> Result<(), String> {
+    let sealed = raw_output(
+        "systemd-creds",
+        &["encrypt", &format!("--name={name}"), secret.arg(), "-"],
     )?;
-    let target = credential(uuid);
     if let Some(parent) = target.parent() {
         fs::create_dir_all(parent).map_err(|error| error.to_string())?;
     }
@@ -332,8 +345,8 @@ fn save_automatic(uuid: &str, key: &Secret) -> Result<(), String> {
         .mode(0o600)
         .open(&temporary)
         .and_then(|mut file| file.write_all(&sealed))
-        .map_err(|error| format!("cannot keep the automatic key: {error}"))?;
-    fs::rename(&temporary, &target).map_err(|error| error.to_string())
+        .map_err(|error| format!("cannot keep {what}: {error}"))?;
+    fs::rename(&temporary, target).map_err(|error| error.to_string())
 }
 
 /// The key the request gave, or the automatic one, checked to open the container.

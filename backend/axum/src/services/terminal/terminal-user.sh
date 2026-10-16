@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 #
-# Crea l'utente della console con il nome dell'account del wizard, senza password né sudo.
-# La configurazione del NAS passa il nome su stdin; il socket e il relativo servizio
-# restano gestiti dal launcher anche quando l'interfaccia del terminale è un'app esterna.
+# Creates the console user with the name of the wizard's account, without password or sudo.
+# The NAS configuration passes the name on stdin; the socket and its service stay with the
+# launcher even though the terminal's interface is an external app.
 #
 #   printf '%s' admin | sudo /usr/local/lib/nas-os/terminal-user.sh
 

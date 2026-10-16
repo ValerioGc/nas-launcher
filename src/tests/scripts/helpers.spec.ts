@@ -746,6 +746,8 @@ describe('factory-reset.sh', () => {
     writeFileSync(path('var/lib/nas-os/launcher.db'), 'db');
     writeFileSync(path('var/lib/private/nas-os-gateway/gateway.db'), 'accounts');
     writeFileSync(path('etc/credstore.encrypted/nas-os.launcher-token'), 'secret');
+    writeFileSync(path('etc/credstore.encrypted/nas-os.smb-n-0123abcd'), 'sealed');
+    writeFileSync(path('etc/credstore.encrypted/nas-os.luks-0f3a'), 'sealed');
     for (const file of [
       'nas-os-terminal.sock',
       'nas-os-share-password.sock',
@@ -852,11 +854,13 @@ describe('factory-reset.sh', () => {
       'run/nas-os-antivirus.lock',
       'run/nas-os-cleanup.lock',
       'etc/credstore.encrypted/nas-os.launcher-token',
+      'etc/credstore.encrypted/nas-os.smb-n-0123abcd',
       'etc/systemd/system/nas-os-terminal@.service.d',
       'etc/systemd/system/nas-app@nas-file-manager.service.d',
     ]) {
       expect(exists(removed), removed).toBe(false);
     }
+    expect(exists('etc/credstore.encrypted/nas-os.luks-0f3a')).toBe(true);
     expect(calls).toContain('systemctl disable --now nas-os-gateway.service');
     expect(calls).toContain('systemctl disable --now nas-os.service');
     expect(calls).toContain('systemctl disable --now nas-os-storage.timer');

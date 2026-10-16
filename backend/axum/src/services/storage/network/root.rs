@@ -5,16 +5,14 @@
 use super::{definitions, definitions_path, target, validate, Definition, NetworkRequest};
 use crate::services::storage::{
     crypt::{
-        root::{credstore, held, random, raw_output, set_held, users_of, Secret},
+        root::{credstore, held, random, seal, set_held, unseal, users_of, Secret},
         Answer,
     },
     output, output_logged, owner, reconcile, Grant,
 };
 use std::{
     fs,
-    io::Write,
     net::IpAddr,
-    os::unix::fs::OpenOptionsExt,
     path::{Path, PathBuf},
 };
 
@@ -165,45 +163,18 @@ fn mount(
 }
 
 fn password_of(id: &str) -> Result<String, String> {
-    let source = credential(id);
-    let sealed = source.to_str().ok_or("invalid credential path")?;
-    let bytes = raw_output(
-        "systemd-creds",
-        &[
-            "decrypt",
-            &format!("--name={}", credential_name(id)),
-            sealed,
-            "-",
-        ],
-    )?;
+    let bytes = unseal(&credential_name(id), &credential(id))?;
     String::from_utf8(bytes).map_err(|_| "unreadable password".to_owned())
 }
 
 fn save_password(id: &str, password: &str) -> Result<(), String> {
     let plain = Secret::write("password", password.as_bytes())?;
-    let sealed = raw_output(
-        "systemd-creds",
-        &[
-            "encrypt",
-            &format!("--name={}", credential_name(id)),
-            plain.arg(),
-            "-",
-        ],
-    )?;
-    let target = credential(id);
-    if let Some(parent) = target.parent() {
-        fs::create_dir_all(parent).map_err(|error| error.to_string())?;
-    }
-    let temporary = target.with_extension("new");
-    fs::OpenOptions::new()
-        .write(true)
-        .create(true)
-        .truncate(true)
-        .mode(0o600)
-        .open(&temporary)
-        .and_then(|mut file| file.write_all(&sealed))
-        .map_err(|error| format!("cannot keep the password: {error}"))?;
-    fs::rename(&temporary, &target).map_err(|error| error.to_string())
+    seal(
+        &credential_name(id),
+        &plain,
+        &credential(id),
+        "the password",
+    )
 }
 
 fn save_definitions(list: &[Definition]) -> Result<(), String> {

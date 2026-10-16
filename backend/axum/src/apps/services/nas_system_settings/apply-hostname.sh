@@ -40,7 +40,7 @@ fi
 [[ -x $rollback ]] || { printf '%s\n' 'system restoration helper is missing' >"$diagnostic"; exit 1; }
 "$rollback" --check 2>"$diagnostic" || exit 1
 
-# Mantiene risolvibile il nome locale senza cambiare le altre associazioni degli host.
+# Keeps the local name resolvable without changing the other host entries.
 cp -- "$hosts" "$previous_hosts"
 awk -v name="$name" '
   $1 == "127.0.1.1" {

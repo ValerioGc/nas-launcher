@@ -1,4 +1,4 @@
-# La PTY dell'app esterna viene avviata con l'utente configurato dal wizard.
+# The PTY of the external app runs as the user the wizard configured.
 
 [Unit]
 Description=nas-os: interactive terminal session

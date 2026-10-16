@@ -1,4 +1,4 @@
-//! Servizi di sistema per la console e il journal dell'app esterna nas-system-terminal.
+//! System services for the console and the journal of the external app nas-system-terminal.
 
 use crate::{
     apps::services::nas_system_settings::is_colour,

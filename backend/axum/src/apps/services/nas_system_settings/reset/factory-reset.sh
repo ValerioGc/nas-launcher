@@ -139,21 +139,24 @@ fi
 rm -rf -- "$TERMINAL_DROPIN"
 
 say "Installed NAS components"
-# Senza --purge: dati e utenti restano gestiti dai passaggi espliciti di questo reset.
+# Without --purge: data and users are handled by the explicit steps of this reset.
 "$LAUNCHER_TOOLS/uninstall.sh"
 "$GATEWAY_TOOLS/uninstall.sh"
 
 say "Original system configuration"
-# Ripristina anche la configurazione e le credenziali Samba precedenti al NAS.
+# Also restores the Samba configuration and credentials from before the NAS.
 "$RESTORE" --remove-app-packages
 "$RESTORE" --restore
 
 say "Data"
 rm -f -- "$CREDENTIAL"
+# The passwords of the network disks, whose definitions went with /etc/nas-os. The automatic keys
+# of the encrypted data disks stay, as with the removal of the launcher: they open the disks.
+rm -f -- "${CREDENTIAL%/*}"/nas-os.smb-*
 rm -rf -- "$STATE" "${GATEWAY_STATES[@]}" "${APP_STATES[@]}" "$WIZARD_STATE" "$WIZARD_UPDATES"
 rm -rf -- "$ANTIVIRUS_STATE" "${NAS_LOG_DIR:-/var/log/nas-os}" "$RUNTIME"
 rm -f -- "${RUNTIME%/*}/nas-os-antivirus.lock" "${RUNTIME%/*}/nas-os-cleanup.lock"
-echo "   launcher, gateway, applications and token removed; the data disks are untouched"
+echo "   launcher, gateway, applications, token and network disk passwords removed; the data disks are untouched"
 
 say "Wizard"
 systemctl daemon-reload

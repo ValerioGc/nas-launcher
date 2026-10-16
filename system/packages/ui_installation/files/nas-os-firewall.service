@@ -1,7 +1,7 @@
 # Access list of the NAS: this is what turns the rules saved in the launcher into a real filter.
 #
-# Launcher e gateway avviano questo helper per la lista di accesso e la porta HTTPS salvate.
-# La regola polkit autorizza soltanto l'avvio di questa unità.
+# Launcher and gateway start this helper for the saved access list and HTTPS port.
+# The polkit rule allows only the start of this unit.
 #
 # It runs as root because nftables is written by root: that is why the work is here and not inside
 # the launcher, which is not root.

@@ -9,6 +9,18 @@ uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 - [TODO: describe the next change or pending work.]
 
+### Fixed
+
+- The factory reset removes the encrypted passwords of the network disks
+  (`/etc/credstore.encrypted/nas-os.smb-*`), whose definitions it already removed; the automatic
+  keys of the encrypted data disks stay, since they open the disks. Untested on a machine.
+
+### Changed
+
+- The sealing of the systemd credentials of the encrypted disks and of the network disks is one
+  helper (`seal`/`unseal`) instead of two copies. The remaining Italian code comments are in
+  English; the unused `$font_mono` token is gone.
+
 ### Added
 
 - The release package leaves in `release-assets/` only the version just built and the one before

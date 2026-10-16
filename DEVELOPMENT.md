@@ -160,13 +160,16 @@ quella unit) con `--no-block`, perché la unit ferma il launcher stesso, e lo sc
 - cancella l'utente del terminale con la sua home, solo se è quello che ha creato
   `ui_configuration` (il commento `nas-os terminal`);
 - cancella gli stati del launcher, del gateway (account e sessioni), delle applicazioni e del
-  wizard, e il token delle release;
+  wizard, il token delle release e le password dei dischi di rete; le chiavi automatiche dei dischi
+  cifrati restano, perché aprono i dischi;
 - rimuove entrambe le tabelle firewall del NAS e il controllo Wi-Fi, ripristina nome del computer,
   rete, DNS, Samba e stato dei servizi dalla copia iniziale protetta del wizard; gli aggiornamenti
   dei pacchetti Debian restano installati;
 - avvia `nas-wizard.service`, che lo script di avvio del wizard ha lasciato sulla macchina.
 
-Smonta soltanto i mount introdotti dal NAS; i file sui dischi dati restano intatti. Senza wizard
+Smonta soltanto i mount introdotti dal NAS e chiude i dischi cifrati che ha aperto, prima di
+togliere i pacchetti; i file sui dischi dati restano intatti. Un pacchetto installato dal NAS da cui
+un aggiornamento di Debian ha fatto dipendere un pacchetto preesistente resta, alla versione che ha. Senza wizard
 eseguibile e relativa unit non cancella niente (`noWizard`). Senza la copia iniziale restituisce
 `noOriginalState`: non registra lo stato di un NAS già configurato come se fosse quello originale.
 `GET /api/system/reset` restituisce anche `disabled` dove `NAS_RESET_MODE` non è `real`. Lo script

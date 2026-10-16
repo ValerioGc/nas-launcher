@@ -80,7 +80,7 @@ function appOf(frame: string) {
 /** The message of one type an application sends. */
 type MessageOf<T extends AppMessage['type']> = Extract<AppMessage, { type: T }>;
 
-/** Apre la console sulla porta HTTPS del gateway; l'app non può navigare il frame principale. */
+/** Opens the console on the gateway's HTTPS port: the app cannot navigate the top frame. */
 function navigateHttps(port: number) {
   const page = globalThis.location;
   const target = new URL(page.href);

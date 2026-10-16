@@ -27,7 +27,7 @@ pub enum ResetBlock {
     Disabled,
     /// The unit of the wizard is not on the machine, so nothing would configure the NAS again
     NoWizard,
-    /// Lo stato precedente all'installazione non è stato salvato.
+    /// The state from before the installation was never saved
     NoOriginalState,
 }
 
