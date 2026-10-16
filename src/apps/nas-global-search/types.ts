@@ -65,4 +65,4 @@ export interface SearchEntry {
 /**
  * Defines the columns by which search results can be sorted.
  */
-export type SearchSortColumn = 'name' | 'path' | 'type' | 'extension' | 'size' | 'modified';
+export type SearchSortColumn = 'name' | 'path' | 'type' | 'size' | 'modified';

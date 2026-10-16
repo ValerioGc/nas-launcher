@@ -55,9 +55,6 @@ export default {
   notice_powerSimulated_message: 'System {action} simulated, the system was not changed.',
   notice_powerRefused_title: 'System action refused',
   notice_powerRefused_message: 'System {action} refused ({reason}).',
-  notice_powerStarted_title: 'System action started',
-  notice_powerStarted_message:
-    'System {action} started. The NAS is unreachable until it completes.',
   notice_powerPostponed_title: 'Scheduled action postponed',
   notice_powerPostponed_message:
     'Scheduled {action} postponed for {count} operations in progress. The wait lasts one hour at most, except for updates and disk operations.',

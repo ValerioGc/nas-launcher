@@ -82,9 +82,9 @@ export function noticeParts(item: AppNotification): NoticeParts | null {
   return after === undefined ? null : { before, link, after, target };
 }
 
-/** Whether nas-log-manager has something to show for a notification: its warnings and errors. */
+/** Whether nas-log-manager has something to show for a notification: a warning or an error with a log file. */
 export function hasLog(item: AppNotification) {
-  return item.tone === 'warning' || item.tone === 'error';
+  return (item.tone === 'warning' || item.tone === 'error') && Boolean(item.log);
 }
 
 /**

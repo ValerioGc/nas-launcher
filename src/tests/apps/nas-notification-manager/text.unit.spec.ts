@@ -38,10 +38,13 @@ describe('the text of a notification', () => {
     expect(noticeParts(notice({ key: 'toString' }))).toBeNull();
   });
 
-  it('leaves the log to the warnings and errors', () => {
+  it('leaves the log to the warnings and errors that have a log file', () => {
     expect(hasLog(notice({ tone: 'info' }))).toBe(false);
     expect(hasLog(notice({ tone: 'success' }))).toBe(false);
-    expect(hasLog(notice({ tone: 'warning' }))).toBe(true);
-    expect(hasLog(notice({ tone: 'error' }))).toBe(true);
+    expect(hasLog(notice({ tone: 'warning', log: '/var/log/nas-os/a.log' }))).toBe(true);
+    expect(hasLog(notice({ tone: 'error', log: '/var/log/nas-os/a.log' }))).toBe(true);
+    expect(hasLog(notice({ tone: 'info', log: '/var/log/nas-os/a.log' }))).toBe(false);
+    expect(hasLog(notice({ tone: 'error' }))).toBe(false);
+    expect(hasLog(notice({ tone: 'warning', log: null }))).toBe(false);
   });
 });

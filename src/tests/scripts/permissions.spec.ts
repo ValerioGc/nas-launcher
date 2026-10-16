@@ -434,7 +434,8 @@ describe('the systemd units', () => {
     expect(helper).toContain('StandardInput=socket');
     expect(helper).toContain('RuntimeDirectoryMode=0700');
     expect(code('files/nas-os-storage.service')).toContain('RuntimeDirectoryMode=0700');
-    expect(production).toMatch(/^NAS_ENCRYPTION_MODE=off$/m);
+    expect(production).toMatch(/^NAS_ENCRYPTION_MODE=real$/m);
+    expect(production).toMatch(/^NAS_NETWORK_DISKS_MODE=real$/m);
     const install = read('install.sh');
     expect(install.indexOf('groupadd --system nas-os-crypt')).toBeLessThan(
       install.indexOf('files/nas-os.service'),

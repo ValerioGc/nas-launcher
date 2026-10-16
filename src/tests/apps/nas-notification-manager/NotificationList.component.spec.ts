@@ -76,17 +76,20 @@ describe('NotificationList', () => {
     expect(unknown.get('[data-testid="notification_source_4"]').text()).toBe('Sistema');
   });
 
-  it('offers the log only for the warnings and errors, which nas-log-manager holds', () => {
+  it('offers the log only for the warnings and errors with a log file', () => {
+    const log = '/var/log/nas-os/backup.log';
     useNotificationsStore().data = [
-      { ...backup, tone: 'info' },
-      { ...backup, id: '2', tone: 'warning' },
-      { ...backup, id: '3', tone: 'error' },
+      { ...backup, tone: 'info', log },
+      { ...backup, id: '2', tone: 'warning', log },
+      { ...backup, id: '3', tone: 'error', log },
+      { ...backup, id: '4', tone: 'warning' },
     ];
     const wrapper = mount(NotificationList);
 
     expect(wrapper.find('[data-testid="notification_log_1"]').exists()).toBe(false);
     expect(wrapper.find('[data-testid="notification_log_2"]').exists()).toBe(true);
     expect(wrapper.find('[data-testid="notification_log_3"]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid="notification_log_4"]').exists()).toBe(false);
   });
 
   it('opens the place a notification names from the words of its message', async () => {

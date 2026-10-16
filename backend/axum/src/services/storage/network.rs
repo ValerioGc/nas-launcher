@@ -8,8 +8,8 @@
 //! `/srv/storage/<id>` with the user of the wizard as owner, and publishes them to Explorer, the
 //! backups and the sync as `network` volumes. The kernel reaches the server on TCP 445, which the
 //! base firewall lets out only towards the addresses of the local network the root helper put in
-//! its sets `nas_smb_servers` and `nas_smb_servers6`. Off until it is tried on a machine:
-//! `NAS_NETWORK_DISKS_MODE=real`.
+//! its sets `nas_smb_servers` and `nas_smb_servers6`. Needs `NAS_NETWORK_DISKS_MODE=real`, the
+//! default of `production.env`.
 
 pub mod root;
 

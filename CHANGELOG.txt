@@ -11,12 +11,22 @@ uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
+- The magnifier of a notification opens nas-log-manager only for a warning or an error with a log
+  file: before, it showed on every warning and error and opened an empty detail.
+- A restart or a shutdown no longer writes the warning "System action started": the page already
+  says it while the NAS is away. The notice of a refused or simulated action stays.
+- The restart window of the NAS shows its message once instead of twice.
 - The factory reset removes the encrypted passwords of the network disks
   (`/etc/credstore.encrypted/nas-os.smb-*`), whose definitions it already removed; the automatic
   keys of the encrypted data disks stay, since they open the disks. Untested on a machine.
 
 ### Changed
 
+- The results table of the search has no extension column: the name already shows it. The
+  extension filter stays.
+- The encryption of the data disks (`NAS_ENCRYPTION_MODE`) and the network disks
+  (`NAS_NETWORK_DISKS_MODE`) are on by default in `production.env`; `off` in
+  `/etc/nas-os/nas-os.local.env` turns them off. Untested on a machine.
 - The sealing of the systemd credentials of the encrypted disks and of the network disks is one
   helper (`seal`/`unseal`) instead of two copies. The remaining Italian code comments are in
   English; the unused `$font_mono` token is gone.

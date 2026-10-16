@@ -234,8 +234,8 @@ La chiave automatica è una credenziale cifrata di systemd (`/etc/credstore.encr
 chiave della macchina e TPM se presente); la riconciliazione apre con essa i volumi dopo l'avvio,
 senza crypttab, così un errore non blocca il boot. Un volume bloccato dall'utente resta in
 `/var/lib/nas-os/storage-held` e non viene riaperto, neanche dopo un riavvio; le chiavi presenti
-le scrive la riconciliazione in `/var/lib/nas-os/storage-crypt.json`. È spenta finché non si prova
-su una macchina: `NAS_ENCRYPTION_MODE=real` in `/etc/nas-os/nas-os.local.env` la accende. La
+le scrive la riconciliazione in `/var/lib/nas-os/storage-crypt.json`. È accesa di predefinito:
+`NAS_ENCRYPTION_MODE=off` in `/etc/nas-os/nas-os.local.env` la spegne. La
 disinstallazione lascia le chiavi automatiche al loro posto e stampa come aprire un volume a mano.
 Lo stesso socket porta le richieste dei dischi di rete (SMB): server, condivisione, utente e dominio
 stanno in `/etc/nas-os/network-disks.json`, la password nella credenziale cifrata
@@ -245,8 +245,8 @@ file della cartella runtime, tolto dopo il montaggio. La riconciliazione monta s
 (`storage-held`), ognuna entro 20 secondi e tutte entro 30, dopo aver pubblicato i dischi locali,
 e le pubblica a Explorer, Backup e Sync come volumi `network`. Il kernel raggiunge il server sulla
 445 solo verso gli indirizzi della rete locale messi nei set `nas_smb_servers` e
-`nas_smb_servers6` del firewall di base; Samba non ricondivide un disco di rete. Spenta finché non
-si prova su una macchina: `NAS_NETWORK_DISKS_MODE=real`. La disinstallazione completa toglie le
+`nas_smb_servers6` del firewall di base; Samba non ricondivide un disco di rete. Accesa di
+predefinito, `NAS_NETWORK_DISKS_MODE=off` la spegne. La disinstallazione completa toglie le
 password dei dischi di rete.
 nas-disk-manager può anche rinominare i volumi ext2/ext3/ext4 scrivibili tramite l'unità root fissa
 `nas-os-storage-rename.service`; il launcher accetta la richiesta soltanto da nas-disk-manager e il

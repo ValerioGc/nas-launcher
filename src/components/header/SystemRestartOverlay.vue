@@ -17,7 +17,7 @@ const shown = computed({
 <template>
   <CommonModal v-model="shown" :title="t('restartInProgressTitle')" hide-close-button>
     <div class="system_restart_content" aria-live="polite" data-testid="system_restart_overlay">
-      <CommonSpinner centered :label="t('restartInProgress')" />
+      <CommonSpinner centered compact :label="t('restartInProgressTitle')" />
       <p>{{ t('restartInProgress') }}</p>
     </div>
   </CommonModal>

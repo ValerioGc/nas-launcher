@@ -255,7 +255,7 @@ systemctl is-active --quiet nas-os-storage-crypt.socket && ok "encryption socket
 if [[ $(setting NAS_ENCRYPTION_MODE) == real ]]; then
   ok "encryption mode: real"
 else
-  ok "encryption mode: off (NAS_ENCRYPTION_MODE=real in nas-os.local.env turns it on)"
+  ok "encryption mode: off (NAS_ENCRYPTION_MODE=off in nas-os.local.env)"
 fi
 command -v parted >/dev/null && ok "parted available for disk initialization" || no "parted missing: disks cannot be initialized"
 command -v mkfs.ext4 >/dev/null && ok "mkfs.ext4 available for disk initialization" || no "e2fsprogs missing: ext4 volumes cannot be created"

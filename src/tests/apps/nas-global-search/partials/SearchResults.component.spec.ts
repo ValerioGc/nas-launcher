@@ -43,15 +43,15 @@ const props = {
 beforeEach(() => setLocale('it'));
 
 describe('search results table', () => {
-  it('sorts all six fields with numeric size, chronological dates and natural names', async () => {
+  it('sorts all five fields with numeric size, chronological dates and natural names', async () => {
     const wrapper = mount(SearchResults, { props });
     const order = () =>
       wrapper.findAll('tbody button').map((button) => button.attributes('data-testid'));
     expect(order()).toEqual(['search_result_2', 'search_result_1']);
+    expect(wrapper.findAll('th')).toHaveLength(5);
     for (const [field, first] of [
       ['path', '2'],
       ['type', '2'],
-      ['extension', '1'],
       ['size', '2'],
       ['modified', '1'],
       ['name', '2'],

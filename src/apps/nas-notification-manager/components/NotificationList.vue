@@ -67,8 +67,8 @@ const toneIcons: Record<AppNotification['tone'], string> = {
           <NoticeMessage :item="item" />
 
           <div class="app_toolbar notification_actions">
-            <!-- The log is nas-log-manager's to show, warnings and errors only: without it, or for
-                 a notification it does not hold, there is nothing to open. -->
+            <!-- The log is nas-log-manager's to show, for a warning or an error with a log file:
+                 without one there is nothing to open. -->
             <button
               v-if="hasLog(item)"
               type="button"

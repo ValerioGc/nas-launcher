@@ -201,21 +201,6 @@ pub async fn run(db: &SqlitePool, action: PowerAction) -> Result<PowerOutcome, A
         Err(_) => {}
     }
 
-    notifications::record(
-        db,
-        "system",
-        Tone::Warning,
-        Notice::new(
-            "powerStarted",
-            "System action started",
-            format!(
-                "System {} started. The NAS is unreachable until it completes.",
-                action.id()
-            ),
-        )
-        .with("action", action.id()),
-    )
-    .await;
     Ok(PowerOutcome {
         accepted: true,
         simulated: false,

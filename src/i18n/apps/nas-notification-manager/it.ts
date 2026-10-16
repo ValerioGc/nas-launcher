@@ -55,9 +55,6 @@ export default {
   notice_powerSimulated_message: 'Azione di {action} simulata, il sistema non è stato modificato.',
   notice_powerRefused_title: 'Azione di sistema rifiutata',
   notice_powerRefused_message: 'Azione di {action} rifiutata dal sistema ({reason}).',
-  notice_powerStarted_title: 'Azione di sistema avviata',
-  notice_powerStarted_message:
-    'Azione di {action} avviata. Il NAS non è raggiungibile fino al termine.',
   notice_powerPostponed_title: 'Azione pianificata rimandata',
   notice_powerPostponed_message:
     'Azione pianificata di {action} rimandata per {count} operazioni in corso. L’attesa massima è di un’ora, salvo aggiornamenti e operazioni sui dischi.',

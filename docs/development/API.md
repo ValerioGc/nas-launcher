@@ -63,13 +63,11 @@ the interface formats it. **This is the way in for the applications
 and for the system**: whoever has something to report posts it here, and it lands in the same log
 the shell reads. It is not an authorisation boundary yet.
 
-`GET /notifications/{id}/log` is what nas-log-manager shows behind a notification. With a `log`,
-the last 256 KiB of that file, which has to resolve under `/var/log` (**400** otherwise, **503** if
-it cannot be read). Without one, the journal of the unit that wrote it, from ten minutes before to
-two after: `nas-app@<source>.service` for an installed application, the helper of the launcher for
-an update, a package upgrade, the access list or the wake alarm, `nas-os.service` for the rest. At
-most the last 1000 lines, as `{ "kind": "file" | "journal", "origin": "<file or unit>", "lines":
-[...] }`.
+`GET /notifications/{id}/log` is what nas-log-manager shows behind a warning or an error with a
+`log`: the last 256 KiB of that file, which has to resolve under `/var/log` (**400** otherwise,
+**503** if it cannot be read), at most the last 1000 lines, as `{ "kind": "file", "origin":
+"<file>", "lines": [...] }`. Another tone answers **400**, a notification without `log` **404**:
+the notification center shows the magnifier only when there is a file to open.
 
 `GET /notifications/sources` returns the sources that appear in the log, which is what the filter
 selector of the application offers instead of asking for an identifier that has to be known in

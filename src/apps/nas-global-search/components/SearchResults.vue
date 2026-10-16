@@ -51,7 +51,6 @@ const columns: { key: SearchSortColumn; label: string }[] = [
   { key: 'name', label: 'name' },
   { key: 'path', label: 'filePath' },
   { key: 'type', label: 'fileType' },
-  { key: 'extension', label: 'extension' },
   { key: 'size', label: 'size' },
   { key: 'modified', label: 'modified' },
 ];
@@ -197,7 +196,6 @@ function formatSize(bytes: number) {
             <span class="search_result_path" :title="result.path">{{ result.path }}</span>
           </td>
           <td>{{ t(typeLabels[result.type]) }}</td>
-          <td>{{ result.extension || '-' }}</td>
           <td class="search_result_size">{{ formatSize(result.size) }}</td>
           <td>{{ formatDate(result.modified) || '-' }}</td>
         </tr>

@@ -13,7 +13,7 @@
 //! automatic key is random and kept as the encrypted credential `nas-os.luks-<uuid>` of systemd
 //! (the key of the machine, and the TPM where there is one): the reconciliation opens the container
 //! with it after the boot, unless the person closed the volume, which stays closed until opened
-//! again. Everything needs `NAS_ENCRYPTION_MODE=real`, off by default until it is tried on a machine.
+//! again. Everything needs `NAS_ENCRYPTION_MODE=real`, the default of `production.env`.
 
 pub mod root;
 
