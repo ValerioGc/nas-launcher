@@ -139,13 +139,17 @@ async fn waits_for_the_operations_under_way_then_interrupts_them() {
     };
 
     // Nothing under way: the action goes at once and nobody is told.
-    let quick = Duration::from_millis(5);
-    let sleep = |every| async move {
-        tokio::time::sleep(every).await;
-        false
-    };
-    assert!(wait_for_work(&db, PowerAction::Shutdown, (quick, quick), sleep).await);
+    assert!(
+        wait_for_work(
+            &db,
+            PowerAction::Shutdown,
+            (WORK_CHECK, Duration::MAX),
+            |_| async { panic!("idle actions must not wait") }
+        )
+        .await
+    );
     assert_eq!(count("powerPostponed").await, 0);
+    assert_eq!(count("powerInterrupting").await, 0);
 
     tasks::register(
         &db,
@@ -161,25 +165,33 @@ async fn waits_for_the_operations_under_way_then_interrupts_them() {
     )
     .await
     .expect("task");
+    // Keep the limit out of reach so database/systemctl latency cannot skip the postponement.
+    // A change of the rules while waiting makes the action be planned again, not run.
+    assert!(
+        !wait_for_work(
+            &db,
+            PowerAction::Restart,
+            (WORK_CHECK, Duration::MAX),
+            |every| async move {
+                assert_eq!(every, WORK_CHECK);
+                true
+            }
+        )
+        .await
+    );
+    assert_eq!(count("powerPostponed").await, 1);
+    assert_eq!(count("powerInterrupting").await, 0);
+
+    // An expired limit interrupts immediately, without depending on a short real-time deadline.
     assert!(
         wait_for_work(
             &db,
-            PowerAction::Restart,
-            (quick, Duration::from_millis(30)),
-            sleep
+            PowerAction::Shutdown,
+            (WORK_CHECK, Duration::ZERO),
+            |_| async { panic!("expired actions must not wait") }
         )
         .await
     );
     assert_eq!(count("powerPostponed").await, 1);
     assert_eq!(count("powerInterrupting").await, 1);
-    // A change of the rules meanwhile: the action is planned again, not run.
-    assert!(
-        !wait_for_work(
-            &db,
-            PowerAction::Shutdown,
-            (quick, Duration::from_secs(60)),
-            |_| async { true }
-        )
-        .await
-    );
 }
