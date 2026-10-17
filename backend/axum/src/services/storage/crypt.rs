@@ -85,6 +85,20 @@ pub enum Request {
     Header { uuid: String },
 }
 
+impl Request {
+    /// A password or a key goes or comes back: only over an encrypted connection.
+    pub fn carries_secret(&self) -> bool {
+        match self {
+            Self::Format { password, .. } | Self::Automatic { password, .. } => password.is_some(),
+            Self::Unlock { .. }
+            | Self::Password { .. }
+            | Self::Recovery { .. }
+            | Self::Header { .. } => true,
+            Self::Lock { .. } => false,
+        }
+    }
+}
+
 /// What the root unit answers.
 #[derive(Debug, Clone, Default, PartialEq, Eq, Deserialize, Serialize, utoipa::ToSchema)]
 #[serde(rename_all = "camelCase")]

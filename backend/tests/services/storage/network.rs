@@ -91,3 +91,31 @@ async fn nothing_is_asked_while_network_disks_are_off() {
             .is_err()
     );
 }
+
+#[test]
+fn a_password_only_goes_with_a_request_that_says_so() {
+    let save = |password: Option<&str>| NetworkRequest::NetworkSave {
+        id: None,
+        name: "Studio".to_owned(),
+        server: "192.168.1.40".to_owned(),
+        share: "dati".to_owned(),
+        username: "anna".to_owned(),
+        domain: None,
+        password: password.map(str::to_owned),
+        automatic: true,
+    };
+    assert!(save(Some("secret")).carries_secret());
+    assert!(!save(None).carries_secret());
+    assert!(NetworkRequest::NetworkTest {
+        server: "192.168.1.40".to_owned(),
+        share: "dati".to_owned(),
+        username: "anna".to_owned(),
+        domain: None,
+        password: "secret".to_owned(),
+    }
+    .carries_secret());
+    assert!(!NetworkRequest::NetworkForget {
+        id: "n-1".to_owned()
+    }
+    .carries_secret());
+}

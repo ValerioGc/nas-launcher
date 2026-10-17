@@ -221,7 +221,7 @@ async fn starts_the_reset_and_changes_the_network_through_nmcli() {
     let wired = network::connect_wired(&db).await;
     // Left only when the Wi-Fi is not the way the launcher is reached: either answer is right.
     let _ = network::disconnect_wifi(&db).await;
-    if network::status(false).await.is_ok() {
+    if network::status(&db, false).await.is_ok() {
         assert!(wifi.is_ok() && wired.is_ok());
         assert!(!machine
             .calls("nmcli device wifi connect home ifname wlan9")

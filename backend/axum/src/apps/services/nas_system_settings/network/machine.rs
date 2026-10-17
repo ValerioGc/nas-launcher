@@ -17,6 +17,15 @@ pub struct Available {
     pub active: bool,
 }
 
+/// A network card NetworkManager lists, wired or wireless, with its state (`connected`,
+/// `disconnected`, `unavailable`, `unmanaged`, ...).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Device {
+    pub name: String,
+    pub wireless: bool,
+    pub state: String,
+}
+
 #[derive(Debug, Clone)]
 pub struct Interface {
     pub name: String,
@@ -161,6 +170,68 @@ pub async fn scan(rescan: bool) -> Result<Vec<Available>, WifiProblem> {
 
 pub async fn wired_available() -> bool {
     device("ethernet").await.is_some()
+}
+
+/// The wired and wireless cards NetworkManager lists, none when it does not answer.
+pub async fn devices() -> Vec<Device> {
+    run("nmcli", &["-t", "-f", "DEVICE,TYPE,STATE", "device"])
+        .await
+        .unwrap_or_default()
+        .lines()
+        .filter_map(|line| parse_device(&fields(line)))
+        .collect()
+}
+
+fn parse_device(row: &[String]) -> Option<Device> {
+    let [name, kind, state] = row else {
+        return None;
+    };
+    let wireless = match kind.as_str() {
+        "wifi" => true,
+        "ethernet" => false,
+        _ => return None,
+    };
+    (!name.is_empty()).then(|| Device {
+        name: name.clone(),
+        wireless,
+        state: state.clone(),
+    })
+}
+
+/// The card of the default route: the one the NAS is reached through.
+pub async fn carrying() -> Option<String> {
+    default_route().await.map(|(interface, _)| interface)
+}
+
+/// A cable is plugged into a wired card and that card has an address, whoever manages it
+/// (NetworkManager or `/etc/network/interfaces`).
+/// `NAS_NET_SYSFS` points it elsewhere, for the tests: never the cards of the host running them.
+pub async fn wired_connected() -> bool {
+    let root = std::env::var_os("NAS_NET_SYSFS").unwrap_or_else(|| "/sys/class/net".into());
+    let Ok(mut entries) = tokio::fs::read_dir(root).await else {
+        return false;
+    };
+    while let Ok(Some(entry)) = entries.next_entry().await {
+        let name = entry.file_name().to_string_lossy().into_owned();
+        let path = entry.path();
+        let physical = tokio::fs::metadata(path.join("device")).await.is_ok();
+        let wireless = tokio::fs::metadata(path.join("wireless")).await.is_ok();
+        let carrier = tokio::fs::read_to_string(path.join("carrier"))
+            .await
+            .is_ok_and(|value| value.trim() == "1");
+        if !physical || wireless || !carrier {
+            continue;
+        }
+        if address(&name).await.is_some() {
+            return true;
+        }
+    }
+    false
+}
+
+/// Brings a card back: it joins the network it knows, if there is one to join.
+pub async fn connect_device(interface: &str) -> Result<(), String> {
+    run_checked("nmcli", &["device", "connect", interface]).await
 }
 
 pub async fn join_wifi(ssid: &str, password: Option<&str>) -> Result<(), String> {

@@ -276,6 +276,23 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/storage/security': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Whether the system of the NAS is encrypted and has a TPM 2.0, as the wizard found them */
+    get: operations['getStorageSecurity'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/storage/network': {
     parameters: {
       query?: never;
@@ -784,6 +801,23 @@ export interface paths {
     put?: never;
     /** Leaves the wireless network when that is not the way in */
     post: operations['postNetworkDisconnect'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/network/adapter': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Turns a network card off, or back on; never the one the NAS is reached through */
+    post: operations['postNetworkAdapter'];
     delete?: never;
     options?: never;
     head?: never;
@@ -1349,6 +1383,25 @@ export interface components {
       accepted: boolean;
       task?: string | null;
     };
+    /** @description A network card of the NAS and whether it can be turned off or on from the page. */
+    Adapter: {
+      interface: string;
+      kind: components['schemas']['LinkKind'];
+      state: components['schemas']['AdapterState'];
+      enabled: boolean;
+      /** @description It carries the network the NAS is reached through */
+      inUse: boolean;
+      canToggle: boolean;
+    };
+    AdapterRequest: {
+      interface: string;
+      enabled: boolean;
+    };
+    /**
+     * @description What a card is doing, as NetworkManager says it.
+     * @enum {string}
+     */
+    AdapterState: 'connected' | 'disconnected' | 'unavailable' | 'unmanaged';
     /** @description What the root unit answers. */
     Answer: {
       /** @description The new recovery key, shown once. */
@@ -1779,6 +1832,9 @@ export interface components {
       connection: components['schemas']['Connection'];
       wifi: components['schemas']['WifiNetwork'][];
       wiredAvailable: boolean;
+      /** @description A cable is plugged in and has an address: no wireless network is joined meanwhile */
+      wiredConnected: boolean;
+      adapters: components['schemas']['Adapter'][];
       canConnect: boolean;
       canDisconnect: boolean;
       wifiProblem?: components['schemas']['WifiProblem'] | null;
@@ -2107,6 +2163,14 @@ export interface components {
       state: string;
       detail: string;
     };
+    /**
+     * @description Whether the system is on LUKS and there is a TPM 2.0, as the wizard found them; `None` when it
+     *     did not say (a development copy, or a NAS installed before it wrote the state).
+     */
+    SystemSecurity: {
+      systemEncrypted?: boolean | null;
+      tpm?: boolean | null;
+    };
     SystemUpdates: {
       packages: components['schemas']['Package'][];
       running?: components['schemas']['Job'] | null;
@@ -2195,7 +2259,7 @@ export interface components {
      * @description Why no wireless network could be listed, for the page to say so instead of "none found".
      * @enum {string}
      */
-    WifiProblem: 'noNetworkManager' | 'noDevice' | 'listFailed';
+    WifiProblem: 'noNetworkManager' | 'noDevice' | 'listFailed' | 'disabled';
     WifiRequest: {
       ssid: string;
       password?: string | null;
@@ -2948,6 +3012,44 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['Answer'];
+        };
+      };
+      /** @description The request was refused */
+      '4XX': {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ApiError'];
+        };
+      };
+      /** @description The launcher or the machine could not answer */
+      '5XX': {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ApiError'];
+        };
+      };
+    };
+  };
+  getStorageSecurity: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['SystemSecurity'];
         };
       };
       /** @description The request was refused */
@@ -4406,6 +4508,48 @@ export interface operations {
       cookie?: never;
     };
     requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['NetworkState'];
+        };
+      };
+      /** @description The request was refused */
+      '4XX': {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ApiError'];
+        };
+      };
+      /** @description The launcher or the machine could not answer */
+      '5XX': {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ApiError'];
+        };
+      };
+    };
+  };
+  postNetworkAdapter: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['AdapterRequest'];
+      };
+    };
     responses: {
       /** @description Success */
       200: {

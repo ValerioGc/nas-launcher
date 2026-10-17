@@ -234,8 +234,12 @@ La chiave automatica è una credenziale cifrata di systemd (`/etc/credstore.encr
 chiave della macchina e TPM se presente); la riconciliazione apre con essa i volumi dopo l'avvio,
 senza crypttab, così un errore non blocca il boot. Un volume bloccato dall'utente resta in
 `/var/lib/nas-os/storage-held` e non viene riaperto, neanche dopo un riavvio; le chiavi presenti
-le scrive la riconciliazione in `/var/lib/nas-os/storage-crypt.json`. È accesa di predefinito:
-`NAS_ENCRYPTION_MODE=off` in `/etc/nas-os/nas-os.local.env` la spegne. La
+le scrive la riconciliazione in `/var/lib/nas-os/storage-crypt.json`. È accesa di predefinito,
+anche su un sistema non cifrato: `NAS_ENCRYPTION_MODE=off` in `/etc/nas-os/nas-os.local.env` la
+spegne. Lo script di avvio del wizard scrive in `/var/lib/nas-wizard/security` se il sistema è su
+LUKS e se c'è un TPM 2.0; il launcher lo segnala una volta (`systemUnprotected`) e lo passa
+all'app Dischi (`GET /storage/security`, richiesta `disk-security`), che dice cosa vale la chiave
+automatica su quella macchina. La
 disinstallazione lascia le chiavi automatiche al loro posto e stampa come aprire un volume a mano.
 Lo stesso socket porta le richieste dei dischi di rete (SMB): server, condivisione, utente e dominio
 stanno in `/etc/nas-os/network-disks.json`, la password nella credenziale cifrata

@@ -3,7 +3,7 @@
   "apps": [
     {
       "id": "nas-picture-manager",
-      "name": "Picture Manager",
+      "name": "Immagini",
       "info": "Organizza e sfoglia le foto salvate sul NAS.",
       "provider": "github",
       "repository": "ValerioGc/nas-picture-manager",
@@ -91,7 +91,7 @@
     },
     {
       "id": "nas-file-manager",
-      "name": "Explorer",
+      "name": "File",
       "info": "Esplora e gestisce i file del NAS.",
       "provider": "github",
       "repository": "ValerioGc/nas-file-manager",

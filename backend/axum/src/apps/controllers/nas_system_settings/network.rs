@@ -1,5 +1,7 @@
 use crate::{
-    apps::services::nas_system_settings::network::{self, NetworkState, WifiRequest},
+    apps::services::nas_system_settings::network::{
+        self, AdapterRequest, NetworkState, WifiRequest,
+    },
     http::error::ApiFailure,
     http::extract::ValidJson,
     http::state::AppState,
@@ -10,14 +12,14 @@ use utoipa_axum::{router::OpenApiRouter, routes};
 
 /// The current connection and the networks seen
 #[utoipa::path(get, path = "/network", responses((status = OK, body = NetworkState)))]
-pub(crate) async fn status() -> Result<Json<NetworkState>, ApiFailure> {
-    network::status(false).await.map(Json)
+pub(crate) async fn status(State(db): State<SqlitePool>) -> Result<Json<NetworkState>, ApiFailure> {
+    network::status(&db, false).await.map(Json)
 }
 
 /// Looks for networks again and answers with the state
 #[utoipa::path(post, path = "/network/scan", responses((status = OK, body = NetworkState)))]
-async fn scan() -> Result<Json<NetworkState>, ApiFailure> {
-    network::status(true).await.map(Json)
+async fn scan(State(db): State<SqlitePool>) -> Result<Json<NetworkState>, ApiFailure> {
+    network::status(&db, true).await.map(Json)
 }
 
 /// Joins a wireless network from the list
@@ -46,6 +48,20 @@ async fn disconnect(State(db): State<SqlitePool>) -> Result<Json<NetworkState>, 
     network::disconnect_wifi(&db).await.map(Json)
 }
 
+/// Turns a network card off, or back on; never the one the NAS is reached through
+#[utoipa::path(
+    post,
+    path = "/network/adapter",
+    request_body = AdapterRequest,
+    responses((status = OK, body = NetworkState))
+)]
+async fn set_adapter(
+    State(db): State<SqlitePool>,
+    ValidJson(input): ValidJson<AdapterRequest>,
+) -> Result<Json<NetworkState>, ApiFailure> {
+    network::set_adapter(&db, input).await.map(Json)
+}
+
 pub fn routes() -> OpenApiRouter<AppState> {
     OpenApiRouter::new()
         .routes(routes!(status))
@@ -53,4 +69,5 @@ pub fn routes() -> OpenApiRouter<AppState> {
         .routes(routes!(connect_wifi))
         .routes(routes!(connect_wired))
         .routes(routes!(disconnect))
+        .routes(routes!(set_adapter))
 }

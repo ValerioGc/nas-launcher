@@ -122,6 +122,7 @@ function lock({ uuid, locked }: DiskPayload): Call | null {
 const CALLS: Record<DiskRequest, (payload: DiskPayload) => Call | null> = {
   'disk-inventory': inventory,
   'disk-encryption': () => () => request<boolean>('/storage/encryption'),
+  'disk-security': () => () => request<unknown>('/storage/security'),
   'disk-crypt': withSecrets(CRYPT_OPERATIONS, '/storage/encryption'),
   'smb-disks': () => () => request<unknown>('/storage/network'),
   'smb-disk': withSecrets(NETWORK_OPERATIONS, '/storage/network'),

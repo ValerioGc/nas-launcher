@@ -55,6 +55,12 @@ describe('what the disk manager may ask about encryption', () => {
     expect(request).toHaveBeenCalledWith('/storage/encryption');
   });
 
+  it('says whether the system is encrypted and has a TPM', async () => {
+    await diskCall('disk-security', {})?.();
+
+    expect(request).toHaveBeenCalledWith('/storage/security');
+  });
+
   it('sends a request of encryption and follows a format to its end', async () => {
     vi.mocked(request)
       .mockReset()

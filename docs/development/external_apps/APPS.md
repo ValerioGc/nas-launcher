@@ -222,6 +222,12 @@ What that asks of you:
   reaches the launcher, not you. A redirect of yours to `/login` is put back under the prefix.
 - **Listen on the socket, on nothing else.** It is handed to you as `--listen`; the directory is
   there already and the permissions are the template's business, not yours.
+- **Answer the launcher only.** Every application shares the group of the folder of the sockets,
+  so the file lets any of them connect: check the user at the other end of each connection
+  (`peer_cred`) and keep it only when it is root, the owner of the folder of the sockets (the
+  launcher) or your own user. The applications of nas-os do it in `launcher_only.rs`, a wrapper
+  of the `UnixListener` handed to `axum::serve`; without it another application could reach your
+  API with headers it made up.
 - **Keep the path short.** A unix socket path is a fixed field of 108 bytes in the kernel: worth
   knowing when you point `NAS_APP_SOCKETS` at a development directory.
 - **Keep to your frame: copy `src/services/frameGuard.ts` and call `guardFrame()` first in your

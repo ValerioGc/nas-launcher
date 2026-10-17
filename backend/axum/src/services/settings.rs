@@ -22,9 +22,10 @@ pub enum Section {
     Catalogue,
     Antivirus,
     Discovery,
+    Network,
 }
 impl Section {
-    pub const ALL: [Section; 10] = [
+    pub const ALL: [Section; 11] = [
         Section::General,
         Section::Notifications,
         Section::Access,
@@ -35,6 +36,7 @@ impl Section {
         Section::Catalogue,
         Section::Antivirus,
         Section::Discovery,
+        Section::Network,
     ];
 
     pub fn id(self) -> &'static str {
@@ -49,6 +51,7 @@ impl Section {
             Section::Catalogue => "catalogue",
             Section::Antivirus => "antivirus",
             Section::Discovery => "discovery",
+            Section::Network => "network",
         }
     }
 

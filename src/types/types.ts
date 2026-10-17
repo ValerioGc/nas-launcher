@@ -241,6 +241,7 @@ export type DiagnosticReply = `${DiagnosticRequest}-result`;
 export type DiskRequest =
   | 'disk-inventory'
   | 'disk-encryption'
+  | 'disk-security'
   | 'disk-crypt'
   | 'smb-disks'
   | 'smb-disk'

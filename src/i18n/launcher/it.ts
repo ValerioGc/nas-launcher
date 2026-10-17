@@ -14,7 +14,7 @@ export default {
   appOpening: 'Apertura di {name} in corso',
   retry: 'Riprova',
   appsUnavailable: 'Applicazioni non disponibili',
-  explorerUnavailable: 'Explorer non installato.',
+  explorerUnavailable: 'App File non installata.',
   settingsUnavailable: 'Impostazioni non disponibili',
   save: 'Salva',
   saved: 'Impostazioni salvate.',

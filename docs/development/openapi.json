@@ -871,6 +871,44 @@
         }
       }
     },
+    "/api/storage/security": {
+      "get": {
+        "summary": "Whether the system of the NAS is encrypted and has a TPM 2.0, as the wizard found them",
+        "operationId": "getStorageSecurity",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SystemSecurity"
+                }
+              }
+            }
+          },
+          "4XX": {
+            "description": "The request was refused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "5XX": {
+            "description": "The launcher or the machine could not answer",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/storage/network": {
       "get": {
         "summary": "The network disks the NAS mounts, connected or not.",
@@ -2439,6 +2477,54 @@
       "post": {
         "summary": "Leaves the wireless network when that is not the way in",
         "operationId": "postNetworkDisconnect",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NetworkState"
+                }
+              }
+            }
+          },
+          "4XX": {
+            "description": "The request was refused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "5XX": {
+            "description": "The launcher or the machine could not answer",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/network/adapter": {
+      "post": {
+        "summary": "Turns a network card off, or back on; never the one the NAS is reached through",
+        "operationId": "postNetworkAdapter",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdapterRequest"
+              }
+            }
+          },
+          "required": true
+        },
         "responses": {
           "200": {
             "description": "Success",
@@ -4579,6 +4665,50 @@
           }
         }
       },
+      "Adapter": {
+        "type": "object",
+        "description": "A network card of the NAS and whether it can be turned off or on from the page.",
+        "required": ["interface", "kind", "state", "enabled", "inUse", "canToggle"],
+        "properties": {
+          "interface": {
+            "type": "string"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/LinkKind"
+          },
+          "state": {
+            "$ref": "#/components/schemas/AdapterState"
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "inUse": {
+            "type": "boolean",
+            "description": "It carries the network the NAS is reached through"
+          },
+          "canToggle": {
+            "type": "boolean"
+          }
+        }
+      },
+      "AdapterRequest": {
+        "type": "object",
+        "required": ["interface", "enabled"],
+        "properties": {
+          "interface": {
+            "type": "string"
+          },
+          "enabled": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
+      "AdapterState": {
+        "type": "string",
+        "description": "What a card is doing, as NetworkManager says it.",
+        "enum": ["connected", "disconnected", "unavailable", "unmanaged"]
+      },
       "Answer": {
         "type": "object",
         "description": "What the root unit answers.",
@@ -5781,7 +5911,15 @@
       },
       "NetworkState": {
         "type": "object",
-        "required": ["connection", "wifi", "wiredAvailable", "canConnect", "canDisconnect"],
+        "required": [
+          "connection",
+          "wifi",
+          "wiredAvailable",
+          "wiredConnected",
+          "adapters",
+          "canConnect",
+          "canDisconnect"
+        ],
         "properties": {
           "connection": {
             "$ref": "#/components/schemas/Connection"
@@ -5794,6 +5932,16 @@
           },
           "wiredAvailable": {
             "type": "boolean"
+          },
+          "wiredConnected": {
+            "type": "boolean",
+            "description": "A cable is plugged in and has an address: no wireless network is joined meanwhile"
+          },
+          "adapters": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Adapter"
+            }
           },
           "canConnect": {
             "type": "boolean"
@@ -6730,6 +6878,18 @@
           }
         }
       },
+      "SystemSecurity": {
+        "type": "object",
+        "description": "Whether the system is on LUKS and there is a TPM 2.0, as the wizard found them; `None` when it\ndid not say (a development copy, or a NAS installed before it wrote the state).",
+        "properties": {
+          "systemEncrypted": {
+            "type": ["boolean", "null"]
+          },
+          "tpm": {
+            "type": ["boolean", "null"]
+          }
+        }
+      },
       "SystemUpdates": {
         "type": "object",
         "required": ["packages", "manageable"],
@@ -6968,7 +7128,7 @@
       "WifiProblem": {
         "type": "string",
         "description": "Why no wireless network could be listed, for the page to say so instead of \"none found\".",
-        "enum": ["noNetworkManager", "noDevice", "listFailed"]
+        "enum": ["noNetworkManager", "noDevice", "listFailed", "disabled"]
       },
       "WifiRequest": {
         "type": "object",

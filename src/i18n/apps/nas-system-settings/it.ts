@@ -185,6 +185,17 @@ export default {
   launcherNoRepository:
     'Nessun repository configurato per il launcher, aggiornamento non disponibile.',
   disconnectWifi: 'Disconnetti il Wi-Fi',
+  networkAdapters: 'Schede di rete',
+  adapterState_connected: 'Connessa',
+  adapterState_disconnected: 'Non connessa',
+  adapterState_unavailable: 'Non disponibile',
+  adapterState_unmanaged: 'Gestita dal sistema',
+  adapterOff: 'Disattivata',
+  adapterInUse: 'In uso',
+  adapterEnabled: 'Scheda {name} attiva',
+  adapterInUseHint: 'La scheda in uso non può essere disattivata.',
+  wifiProblem_disabled: 'Scheda Wi-Fi disattivata',
+  wifiWhileWired: 'Con il cavo di rete collegato non è possibile collegarsi anche al Wi-Fi.',
   launcherUpdateTitle: 'Aggiornamento del NAS',
   launcherUpdateConfirm:
     'Le nuove versioni vengono scaricate e installate insieme dopo una copia di sicurezza di database e configurazione. In caso di errore viene ripristinata la versione precedente. Durante l’aggiornamento il NAS non è raggiungibile per alcuni minuti e può riavviarsi.',

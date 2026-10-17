@@ -16,7 +16,8 @@ spegne il computer su cui sta programmando:
   (`NAS_POWER_MODE=real`). Una regola aspetta al massimo un'ora i task delle app in corso, mai un
   lavoro di root (aggiornamento, apt, dischi, pacchetti di un'app), che blocca anche il comando
   manuale con un 409.
-- **Rete**: lettura del collegamento, ricerca delle reti e connessione, da NetworkManager
+- **Rete**: lettura del collegamento, ricerca delle reti e connessione, da NetworkManager; un
+  collegamento alla volta (con il cavo niente Wi-Fi) e schede disattivabili, mai quella in uso
   (`NAS_NETWORK_MODE=real`).
 - **Indirizzi ammessi**: un elenco di indirizzi e intervalli CIDR, applicato
   dal launcher e, come set `nftables`, davanti a tutto il NAS (`NAS_FIREWALL_MODE=real`).

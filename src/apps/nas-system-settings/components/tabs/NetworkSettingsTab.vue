@@ -3,7 +3,11 @@
 import { computed, onMounted, ref } from 'vue';
 import { t } from '@/i18n';
 import { useResource } from '@/composables/useResource';
-import type { NetworkState, WifiNetwork } from '@/apps/nas-system-settings/types/network';
+import type {
+  NetworkAdapter,
+  NetworkState,
+  WifiNetwork,
+} from '@/apps/nas-system-settings/types/network';
 import wifiIcon from '@/assets/icons/network/wifi.svg';
 import lanIcon from '@/assets/icons/network/lan.svg';
 import lockIcon from '@/assets/icons/network/lock.svg';
@@ -15,6 +19,7 @@ import CommonEmpty from '@/components/commons/CommonEmpty.vue';
 import CommonIcon from '@/components/commons/CommonIcon.vue';
 import CommonSkeleton from '@/components/commons/CommonSkeleton.vue';
 import CommonSpinner from '@/components/commons/CommonSpinner.vue';
+import CommonSwitch from '@/components/commons/CommonSwitch.vue';
 
 const { data, loading, error, busy, load, act } = useResource<NetworkState | null>(
   '/network',
@@ -29,6 +34,10 @@ const password = ref('');
 const scanning = ref(false);
 
 const joining = ref('');
+/** The network a connection was asked for while the cable is plugged in, to say why it cannot. */
+const blocked = ref('');
+/** Grows when a change of a card fails: its switch is drawn again in the state it really has. */
+const switches = ref(0);
 const connection = computed(() => data.value?.connection ?? null);
 
 /**
@@ -67,7 +76,9 @@ const details = computed(() => {
  * failure says how to look into it.
  */
 function hint(problem: NetworkState['wifiProblem']) {
-  return problem && problem !== 'noDevice' ? t(`wifiProblemHint_${problem}`) : undefined;
+  return problem && problem !== 'noDevice' && problem !== 'disabled'
+    ? t(`wifiProblemHint_${problem}`)
+    : undefined;
 }
 
 function needsPassword(network: WifiNetwork) {
@@ -80,6 +91,13 @@ function needsPassword(network: WifiNetwork) {
  * @param network The Wi-Fi network to connect to.
  */
 async function start(network: WifiNetwork) {
+  // One way in at a time: on the cable the list is there to see, not to join.
+  if (data.value?.wiredConnected) {
+    blocked.value = network.ssid;
+    asking.value = null;
+    return;
+  }
+  blocked.value = '';
   if (needsPassword(network)) {
     asking.value = asking.value?.ssid === network.ssid ? null : network;
     password.value = '';
@@ -128,6 +146,19 @@ async function useWired() {
   joining.value = 'wired';
   try {
     await act('/network/wired', 'POST', {}, CONNECT_TIMEOUT);
+  } finally {
+    joining.value = '';
+  }
+}
+
+/** Turns a card off or back on; the backend never turns off the one in use. */
+async function toggle(adapter: NetworkAdapter, enabled: boolean) {
+  joining.value = `adapter_${adapter.interface}`;
+  try {
+    const body = { interface: adapter.interface, enabled };
+    if (!(await act('/network/adapter', 'POST', body, CONNECT_TIMEOUT))) {
+      switches.value += 1;
+    }
   } finally {
     joining.value = '';
   }
@@ -220,6 +251,46 @@ onMounted(scan);
     </section>
 
     <section
+      v-if="data?.adapters.length"
+      class="app_panel settings_group"
+      :aria-label="t('networkAdapters')"
+      data-testid="network_adapters"
+    >
+      <h2>{{ t('networkAdapters') }}</h2>
+      <ul class="network_adapters">
+        <li
+          v-for="adapter in data.adapters"
+          :key="adapter.interface"
+          class="network_row network_line"
+          :data-testid="`network_adapter_${adapter.interface}`"
+        >
+          <CommonIcon :src="adapter.kind === 'wifi' ? wifiIcon : lanIcon" />
+          <span class="network_ssid">
+            {{ adapter.kind === 'wifi' ? t('wifi') : t('wiredNetwork') }}
+            <small class="muted">{{ adapter.interface }}</small>
+          </span>
+          <span v-if="adapter.inUse" class="network_badge network_badge_current">
+            {{ t('adapterInUse') }}
+          </span>
+          <span class="muted">
+            {{ adapter.enabled ? t(`adapterState_${adapter.state}`) : t('adapterOff') }}
+          </span>
+          <CommonSpinner v-if="joining === `adapter_${adapter.interface}`" size="small" compact />
+          <CommonSwitch
+            :key="`${adapter.interface}_${switches}`"
+            :model-value="adapter.enabled"
+            :label="t('adapterEnabled', { name: adapter.interface })"
+            hide-label
+            :disabled="!adapter.canToggle || busy"
+            :title="adapter.inUse && adapter.enabled ? t('adapterInUseHint') : undefined"
+            :testid="`network_adapter_toggle_${adapter.interface}`"
+            @update:model-value="toggle(adapter, $event)"
+          />
+        </li>
+      </ul>
+    </section>
+
+    <section
       class="app_panel settings_group"
       :aria-label="t('availableNetworks')"
       :aria-busy="!data"
@@ -290,6 +361,14 @@ onMounted(scan);
                 {{ t(joining === network.ssid ? 'connecting' : 'connect') }}
               </button>
             </div>
+
+            <output
+              v-if="blocked === network.ssid"
+              class="muted network_note"
+              :data-testid="`network_blocked_${network.ssid}`"
+            >
+              {{ t('wifiWhileWired') }}
+            </output>
 
             <form
               v-if="asking?.ssid === network.ssid"
@@ -404,6 +483,23 @@ onMounted(scan);
 .network_badge_current {
   border-color: var(--accent);
   color: var(--accent);
+}
+
+.network_adapters {
+  @extend %stack;
+  gap: $space_2;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+
+  small {
+    margin-left: $space_2;
+  }
+}
+
+.network_note {
+  margin: 0;
+  padding-top: $space_2;
 }
 
 .network_connect {

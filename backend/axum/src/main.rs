@@ -3,7 +3,7 @@ use std::{net::SocketAddr, process::ExitCode};
 use nas_os_axum::{
     apps::services::{
         antivirus, nas_app_manager,
-        nas_system_settings::{access, discovery, power::schedule, updates},
+        nas_system_settings::{access, discovery, network, power::schedule, updates},
     },
     http::app_channel,
     services::{
@@ -138,10 +138,11 @@ async fn serve() -> Result<(), Box<dyn std::error::Error>> {
     tokio::spawn(provisioning::resume(db.clone()));
     tokio::spawn(nas_app_manager::watch_updates(db.clone()));
     tokio::spawn(database::keep_copy(db.clone(), path.clone()));
+    tokio::spawn(network::keep_disabled(db.clone()));
     access::apply_saved(&db).await;
     discovery::apply_saved(&db).await;
     updates::report_previous(&db).await;
-    setup::report_development(&db).await;
+    setup::report_security(&db).await;
     storage::crypt::report_spare_keys(&db).await;
 
     manifest::ensure_sockets_directory().await;

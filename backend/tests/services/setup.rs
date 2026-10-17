@@ -78,34 +78,55 @@ async fn a_name_that_cannot_be_a_hostname_leaves_the_configuration_open() {
     assert!(still_open(&db).await.is_ok());
 }
 
+#[test]
+fn reads_the_security_the_wizard_found() {
+    assert_eq!(
+        parse_security("system=plain\ntpm=present\n"),
+        SystemSecurity {
+            system_encrypted: Some(false),
+            tpm: Some(true),
+        }
+    );
+    let protected = parse_security("system=encrypted\ntpm=present\n");
+    assert!(!protected.unprotected());
+    assert!(parse_security("system=encrypted\ntpm=missing\n").unprotected());
+    assert_eq!(
+        parse_security("garbage\nsystem=maybe"),
+        SystemSecurity::default()
+    );
+    assert!(!SystemSecurity::default().unprotected());
+}
+
 #[tokio::test]
-async fn a_nas_in_development_mode_is_reported_until_the_warning_is_read() {
+async fn a_system_without_protection_is_reported_once() {
     let db = database::open_in_memory().await.expect("database");
     let directory = std::env::temp_dir().join(format!("nas-setup-mark-{}", std::process::id()));
     std::fs::create_dir_all(&directory).expect("directory");
-    let mark = directory.join("security-development");
+    let state = directory.join("security");
     let warnings = || async {
         sqlx::query_scalar::<_, i64>(
-            "SELECT COUNT(*) FROM notifications WHERE key = 'developmentMode'",
+            "SELECT COUNT(*) FROM notifications WHERE key = 'systemUnprotected'",
         )
         .fetch_one(&db)
         .await
         .expect("notifications")
     };
 
-    report_development_mark(&db, &mark).await;
+    report_security_state(&db, &state).await;
+    std::fs::write(&state, "system=encrypted\ntpm=present\n").expect("state");
+    report_security_state(&db, &state).await;
     assert_eq!(warnings().await, 0);
 
-    std::fs::write(&mark, "development").expect("mark");
-    report_development_mark(&db, &mark).await;
-    report_development_mark(&db, &mark).await;
+    std::fs::write(&state, "system=plain\ntpm=missing\n").expect("state");
+    report_security_state(&db, &state).await;
+    report_security_state(&db, &state).await;
     assert_eq!(warnings().await, 1);
 
     sqlx::query("UPDATE notifications SET read = 1")
         .execute(&db)
         .await
         .expect("read");
-    report_development_mark(&db, &mark).await;
-    assert_eq!(warnings().await, 2);
+    report_security_state(&db, &state).await;
+    assert_eq!(warnings().await, 1);
     std::fs::remove_dir_all(&directory).expect("removed");
 }

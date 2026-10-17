@@ -27,6 +27,25 @@ const live = {
     { ssid: 'Ospiti', signal: 40, security: 'WPA2', known: false },
   ],
   wiredAvailable: true,
+  wiredConnected: false,
+  adapters: [
+    {
+      interface: 'wlp1s0',
+      kind: 'wifi',
+      state: 'connected',
+      enabled: true,
+      inUse: true,
+      canToggle: false,
+    },
+    {
+      interface: 'enp2s0',
+      kind: 'lan',
+      state: 'unavailable',
+      enabled: true,
+      inUse: false,
+      canToggle: true,
+    },
+  ],
   canConnect: true,
   canDisconnect: false,
   wifiProblem: null,
@@ -197,6 +216,82 @@ describe('network settings', () => {
 
     await wrapper.get('[data-testid="network_connect_Ospiti"]').trigger('click');
     expect(wrapper.find('[data-testid="network_password"]').exists()).toBe(false);
+    expect(request).not.toHaveBeenCalledWith('/network/wifi', expect.anything());
+    wrapper.unmount();
+  });
+
+  it('lists the cards, keeps the one in use on and turns another one off', async () => {
+    const wrapper = mount(NetworkSettingsTab);
+    await flushPromises();
+    const cards = wrapper.get('[data-testid="network_adapters"]');
+    expect(cards.get('h2').text()).toBe('Schede di rete');
+
+    const wifi = wrapper.get('[data-testid="network_adapter_wlp1s0"]');
+    expect(wifi.text()).toContain('In uso');
+    expect(wifi.text()).toContain('Connessa');
+    const inUse = wrapper.get('[data-testid="network_adapter_toggle_wlp1s0"]');
+    expect(inUse.attributes('title')).toBe('La scheda in uso non può essere disattivata.');
+    expect(inUse.get('input').attributes('disabled')).toBeDefined();
+
+    const wired = wrapper.get('[data-testid="network_adapter_enp2s0"]');
+    expect(wired.text()).toContain('Rete via cavo');
+    expect(wired.text()).toContain('Non disponibile');
+    await wrapper.get('[data-testid="network_adapter_toggle_enp2s0_input"]').setValue(false);
+    await flushPromises();
+    expect(request).toHaveBeenCalledWith(
+      '/network/adapter',
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({ interface: 'enp2s0', enabled: false }),
+      }),
+    );
+    wrapper.unmount();
+  });
+
+  it('draws a card again as it is when turning it off fails, and says it is off', async () => {
+    vi.mocked(request).mockImplementation(async (path, options) => {
+      if (options?.method === 'POST' && path === '/network/adapter') {
+        throw new Error('this card cannot be turned off');
+      }
+      return path === '/network'
+        ? live
+        : { ...live, adapters: [{ ...live.adapters[1], enabled: false }] };
+    });
+    const wrapper = mount(NetworkSettingsTab);
+    await flushPromises();
+    const toggle = () =>
+      wrapper.get<HTMLInputElement>('[data-testid="network_adapter_toggle_enp2s0_input"]');
+    await toggle().setValue(false);
+    await flushPromises();
+    expect(wrapper.text()).toContain('this card cannot be turned off');
+    expect(toggle().element.checked).toBe(true);
+
+    vi.mocked(request).mockResolvedValue({
+      ...live,
+      adapters: [{ ...live.adapters[1], enabled: false }],
+      wifi: [],
+      wifiProblem: 'disabled',
+    });
+    await wrapper.get('[data-testid="network_scan"]').trigger('click');
+    await flushPromises();
+    expect(wrapper.get('[data-testid="network_adapter_enp2s0"]').text()).toContain('Disattivata');
+    expect(wrapper.get('[data-testid="network_none"]').text()).toBe('Scheda Wi-Fi disattivata');
+    wrapper.unmount();
+  });
+
+  it('shows the networks with the cable plugged in, and says why it joins none', async () => {
+    vi.mocked(request).mockResolvedValue({ ...live, wiredConnected: true });
+    const wrapper = mount(NetworkSettingsTab);
+    await flushPromises();
+
+    await wrapper.get('[data-testid="network_connect_Ospiti"]').trigger('click');
+    expect(wrapper.get('[data-testid="network_blocked_Ospiti"]').text()).toBe(
+      'Con il cavo di rete collegato non è possibile collegarsi anche al Wi-Fi.',
+    );
+    expect(wrapper.find('[data-testid="network_password"]').exists()).toBe(false);
+    await wrapper.get('[data-testid="network_connect_Studio"]').trigger('click');
+    expect(wrapper.find('[data-testid="network_blocked_Ospiti"]').exists()).toBe(false);
+    expect(wrapper.find('[data-testid="network_blocked_Studio"]').exists()).toBe(true);
     expect(request).not.toHaveBeenCalledWith('/network/wifi', expect.anything());
     wrapper.unmount();
   });

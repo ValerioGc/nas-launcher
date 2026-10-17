@@ -1,14 +1,27 @@
 //! Network settings backed by [`machine`]; unreadable state returns an error.
+//!
+//! One way in at a time: with a cable plugged in the NAS joins no wireless network. A card can be
+//! turned off only while another one carries the network, and [`keep_disabled`] keeps it off; if
+//! the NAS is left with no way out at all, the card comes back on its own.
 
 mod machine;
 
 use crate::{
     http::error::ApiFailure,
-    services::notifications::{self, Notice, Tone},
+    services::{
+        notifications::{self, Notice, Tone},
+        settings::{self, Section},
+    },
     utils::{self, Mode},
 };
+use axum::http::StatusCode;
 use serde::{Deserialize, Serialize};
 use sqlx::SqlitePool;
+use std::time::Duration;
+
+/// How often the cards turned off are checked: one that came back while another carries the
+/// network is turned off again.
+const KEEP_DISABLED_EVERY: Duration = Duration::from_secs(30);
 
 /// How the NAS is connected to the network.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, utoipa::ToSchema)]
@@ -54,6 +67,44 @@ pub enum WifiProblem {
     NoDevice,
     /// The device did not give its list of networks
     ListFailed,
+    /// The Wi-Fi card was turned off from the page
+    Disabled,
+}
+
+/// What a card is doing, as NetworkManager says it.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, utoipa::ToSchema)]
+#[serde(rename_all = "lowercase")]
+pub enum AdapterState {
+    Connected,
+    Disconnected,
+    /// No cable, or no radio
+    Unavailable,
+    /// Left to `/etc/network/interfaces`: NetworkManager does not touch it
+    Unmanaged,
+}
+
+impl AdapterState {
+    fn from_nmcli(state: &str) -> Self {
+        match state {
+            "connected" => Self::Connected,
+            "unavailable" => Self::Unavailable,
+            "unmanaged" => Self::Unmanaged,
+            _ => Self::Disconnected,
+        }
+    }
+}
+
+/// A network card of the NAS and whether it can be turned off or on from the page.
+#[derive(Debug, Clone, Serialize, Deserialize, utoipa::ToSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct Adapter {
+    pub interface: String,
+    pub kind: LinkKind,
+    pub state: AdapterState,
+    pub enabled: bool,
+    /// It carries the network the NAS is reached through
+    pub in_use: bool,
+    pub can_toggle: bool,
 }
 
 #[derive(Clone, Serialize, Deserialize, utoipa::ToSchema)]
@@ -62,6 +113,9 @@ pub struct NetworkState {
     pub connection: Connection,
     pub wifi: Vec<WifiNetwork>,
     pub wired_available: bool,
+    /// A cable is plugged in and has an address: no wireless network is joined meanwhile
+    pub wired_connected: bool,
+    pub adapters: Vec<Adapter>,
     pub can_connect: bool,
     pub can_disconnect: bool,
     pub wifi_problem: Option<WifiProblem>,
@@ -74,16 +128,72 @@ pub struct WifiRequest {
     pub password: Option<String>,
 }
 
+#[derive(Deserialize, utoipa::ToSchema)]
+#[serde(deny_unknown_fields)]
+pub struct AdapterRequest {
+    pub interface: String,
+    pub enabled: bool,
+}
+
+/// The cards turned off from the page, by interface name.
+#[derive(Debug, Default, Clone, Serialize, Deserialize)]
+#[serde(default, rename_all = "camelCase")]
+pub struct NetworkSettings {
+    pub disabled: Vec<String>,
+}
+
+async fn disabled(db: &SqlitePool) -> Vec<String> {
+    settings::read::<NetworkSettings>(db, Section::Network)
+        .await
+        .map(|saved| saved.disabled)
+        .unwrap_or_default()
+}
+
+/// The cards as the page shows them: off means turned off from here.
+fn adapters(devices: &[machine::Device], carrying: &str, off: &[String]) -> Vec<Adapter> {
+    let editable = utils::is_real(Mode::Network);
+    devices
+        .iter()
+        .map(|device| {
+            let state = AdapterState::from_nmcli(&device.state);
+            let enabled = !off.contains(&device.name);
+            let in_use = device.name == carrying;
+            Adapter {
+                interface: device.name.clone(),
+                kind: if device.wireless {
+                    LinkKind::Wifi
+                } else {
+                    LinkKind::Lan
+                },
+                state,
+                enabled,
+                in_use,
+                can_toggle: editable && state != AdapterState::Unmanaged && (!enabled || !in_use),
+            }
+        })
+        .collect()
+}
+
 fn unreadable() -> ApiFailure {
     ApiFailure::unavailable("the network of this machine cannot be read")
 }
 
-pub async fn status(rescan: bool) -> Result<NetworkState, ApiFailure> {
+pub async fn status(db: &SqlitePool, rescan: bool) -> Result<NetworkState, ApiFailure> {
     let interface = machine::read().await.ok_or_else(unreadable)?;
     let interface_name = interface.name.clone();
-    let (found, wifi_problem) = match machine::scan(rescan).await {
-        Ok(found) => (found, None),
-        Err(problem) => (Vec::new(), Some(problem)),
+    let off = disabled(db).await;
+    let devices = machine::devices().await;
+    let wifi_off = devices
+        .iter()
+        .any(|device| device.wireless && off.contains(&device.name));
+    // A card turned off is not asked for networks: there is nothing to join through it.
+    let (found, wifi_problem) = if wifi_off {
+        (Vec::new(), Some(WifiProblem::Disabled))
+    } else {
+        match machine::scan(rescan).await {
+            Ok(found) => (found, None),
+            Err(problem) => (Vec::new(), Some(problem)),
+        }
     };
     let wifi = found
         .into_iter()
@@ -116,6 +226,8 @@ pub async fn status(rescan: bool) -> Result<NetworkState, ApiFailure> {
         },
         wifi,
         wired_available: machine::wired_available().await,
+        wired_connected: machine::wired_connected().await,
+        adapters: adapters(&devices, &interface_name, &off),
         can_connect: utils::is_real(Mode::Network),
         can_disconnect: utils::is_real(Mode::Network) && leavable(&interface_name).await.is_some(),
         wifi_problem,
@@ -154,6 +266,22 @@ pub async fn connect_wifi(
     if ssid.is_empty() || ssid.len() > 32 {
         return Err(ApiFailure::bad("invalid network name"));
     }
+    // One way in at a time: on the cable the NAS stays on the cable.
+    if machine::wired_connected().await {
+        return Err(ApiFailure(
+            StatusCode::CONFLICT,
+            "the network cable is connected: the NAS does not join a wireless network too"
+                .to_owned(),
+        ));
+    }
+    let off = disabled(db).await;
+    if machine::devices()
+        .await
+        .iter()
+        .any(|device| device.wireless && disabled_now(&device.name, &off))
+    {
+        return Err(ApiFailure::bad("the Wi-Fi card is turned off"));
+    }
 
     let password = request
         .password
@@ -182,7 +310,7 @@ pub async fn connect_wifi(
         .with("network", ssid),
     )
     .await;
-    status(false).await
+    status(db, false).await
 }
 
 pub async fn connect_wired(db: &SqlitePool) -> Result<NetworkState, ApiFailure> {
@@ -194,6 +322,14 @@ pub async fn connect_wired(db: &SqlitePool) -> Result<NetworkState, ApiFailure> 
     }
     if !machine::wired_available().await {
         return Err(ApiFailure::bad("no wired interface available"));
+    }
+    let off = disabled(db).await;
+    if machine::devices()
+        .await
+        .iter()
+        .any(|device| !device.wireless && disabled_now(&device.name, &off))
+    {
+        return Err(ApiFailure::bad("the wired card is turned off"));
     }
 
     if let Err(reason) = machine::join_wired().await {
@@ -210,7 +346,7 @@ pub async fn connect_wired(db: &SqlitePool) -> Result<NetworkState, ApiFailure> 
         ),
     )
     .await;
-    status(false).await
+    status(db, false).await
 }
 
 pub async fn disconnect_wifi(db: &SqlitePool) -> Result<NetworkState, ApiFailure> {
@@ -244,7 +380,112 @@ pub async fn disconnect_wifi(db: &SqlitePool) -> Result<NetworkState, ApiFailure
         .with("network", network),
     )
     .await;
-    status(false).await
+    status(db, false).await
+}
+
+fn disabled_now(interface: &str, off: &[String]) -> bool {
+    off.iter().any(|name| name == interface)
+}
+
+/// Turns a card off or back on. The card the NAS is reached through is never turned off: a NAS
+/// that takes its own way in away cannot be told to put it back.
+pub async fn set_adapter(
+    db: &SqlitePool,
+    request: AdapterRequest,
+) -> Result<NetworkState, ApiFailure> {
+    let carrying = machine::read().await.ok_or_else(unreadable)?.name;
+    if !utils::is_real(Mode::Network) {
+        return Err(refuse_disabled());
+    }
+    let devices = machine::devices().await;
+    let Some(device) = devices
+        .iter()
+        .find(|device| device.name == request.interface)
+    else {
+        return Err(ApiFailure::bad("there is no such network card"));
+    };
+    if AdapterState::from_nmcli(&device.state) == AdapterState::Unmanaged {
+        return Err(ApiFailure::bad(
+            "this card is not managed by NetworkManager: it cannot be turned off from here",
+        ));
+    }
+
+    let mut off = disabled(db).await;
+    off.retain(|name| name != &device.name);
+    if request.enabled {
+        settings::write(db, Section::Network, &NetworkSettings { disabled: off }).await?;
+        // Nothing to join is not a failure: the card is on, and joins a network when there is one.
+        let _ = machine::connect_device(&device.name).await;
+    } else {
+        if device.name == carrying {
+            return Err(ApiFailure::bad(
+                "this is the card the NAS is reached through: it cannot be turned off from here",
+            ));
+        }
+        off.push(device.name.clone());
+        settings::write(db, Section::Network, &NetworkSettings { disabled: off }).await?;
+        if AdapterState::from_nmcli(&device.state) == AdapterState::Connected {
+            if let Err(reason) = machine::leave(&device.name).await {
+                return Err(refused(db, reason).await);
+            }
+        }
+    }
+
+    let (key, title, message) = if request.enabled {
+        ("networkAdapterOn", "Network card on", "turned on")
+    } else {
+        ("networkAdapterOff", "Network card off", "turned off")
+    };
+    notifications::record(
+        db,
+        "nas-system-settings",
+        Tone::Info,
+        Notice::new(
+            key,
+            title,
+            format!("Network card {} {message}.", device.name),
+        )
+        .with("interface", device.name.clone()),
+    )
+    .await;
+    status(db, false).await
+}
+
+/// What [`keep_disabled`] does to a card turned off from the page, given the card of the default
+/// route. `Some(false)` disconnects it, `Some(true)` brings it back, `None` leaves it.
+fn keep_off(device: &machine::Device, carrying: Option<&str>) -> Option<bool> {
+    let connected = AdapterState::from_nmcli(&device.state) == AdapterState::Connected;
+    match carrying {
+        // No way out at all: the card comes back, so the NAS can be reached again.
+        None => (!connected).then_some(true),
+        Some(route) if route != device.name && connected => Some(false),
+        _ => None,
+    }
+}
+
+/// Keeps the cards turned off from the page off while another card carries the network, and
+/// brings one back when the NAS would otherwise be unreachable. Only where changes are real.
+pub async fn keep_disabled(db: SqlitePool) {
+    if !utils::is_real(Mode::Network) {
+        return;
+    }
+    loop {
+        let off = disabled(&db).await;
+        if !off.is_empty() {
+            let carrying = machine::carrying().await;
+            for device in machine::devices().await {
+                if !disabled_now(&device.name, &off) {
+                    continue;
+                }
+                let _ = match keep_off(&device, carrying.as_deref()) {
+                    Some(true) => machine::connect_device(&device.name).await,
+                    Some(false) => machine::leave(&device.name).await,
+                    None => Ok(()),
+                };
+            }
+        }
+        tokio::time::sleep(KEEP_DISABLED_EVERY).await;
+    }
 }
 
 async fn refused(db: &SqlitePool, reason: String) -> ApiFailure {

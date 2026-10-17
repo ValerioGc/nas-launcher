@@ -820,6 +820,7 @@ export function useAppBridge() {
         break;
       case 'disk-inventory':
       case 'disk-encryption':
+      case 'disk-security':
       case 'disk-crypt':
       case 'smb-disks':
       case 'smb-disk':

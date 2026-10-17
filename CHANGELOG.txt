@@ -7,6 +7,13 @@ uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Security
+
+- The requests of the encryption of the disks and of the network disks that carry or give back a
+  password or a key (format with a password, unlock, password, recovery key, header backup, saving
+  or trying a network disk) need `x-nas-secure: 1`, set by the gateway only over TLS or from the
+  monitor of the NAS: over plain HTTP they answer 403.
+
 - [TODO: describe the next change or pending work.]
 
 ### Fixed
@@ -22,6 +29,12 @@ uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- A system that is not encrypted, or without a TPM 2.0, is no longer the development mode: the
+  wizard writes what it found in `/var/lib/nas-wizard/security`, the launcher says it once with
+  the notification `systemUnprotected` and hands it to the app Dischi (`GET /storage/security`,
+  request `disk-security`). The mark `security-development` is no longer read.
+- The catalogue names the apps "File" (was Explorer) and "Immagini" (was Picture Manager), and so
+  do the texts of the launcher.
 - The results table of the search has no extension column: the name already shows it. The
   extension filter stays.
 - The encryption of the data disks (`NAS_ENCRYPTION_MODE`) and the network disks
@@ -33,6 +46,10 @@ uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- The network settings list the network cards, wired and wireless: one can be turned off while
+  another card carries the network, never the one in use, and comes back on its own if the NAS is
+  left with no network. With a cable plugged in the Wi-Fi networks stay visible, but the NAS joins
+  none and the page says why. Untested on a machine.
 - The release package leaves in `release-assets/` only the version just built and the one before
   it (`scripts/release/prune_assets.mjs`): older packages, user manuals and the installation
   manuals left from before the split of the projects go.

@@ -62,3 +62,24 @@ async fn reads_this_machine_without_changing_it() {
     assert!(run_checked("false", &[]).await.is_err());
     assert!(run_checked("nas-os-missing-program", &[]).await.is_err());
 }
+
+#[test]
+fn keeps_only_the_wired_and_wireless_cards_nmcli_lists() {
+    let row = |line: &str| parse_device(&fields(line));
+    assert_eq!(
+        row("enp0s3:ethernet:unmanaged"),
+        Some(Device {
+            name: "enp0s3".to_owned(),
+            wireless: false,
+            state: "unmanaged".to_owned(),
+        })
+    );
+    assert_eq!(
+        row("wlan0:wifi:connected").map(|device| device.wireless),
+        Some(true)
+    );
+    assert_eq!(row("lo:loopback:unmanaged"), None);
+    assert_eq!(row("p2p-dev-wlan0:wifi-p2p:disconnected"), None);
+    assert_eq!(row(":ethernet:disconnected"), None);
+    assert_eq!(row("broken line"), None);
+}

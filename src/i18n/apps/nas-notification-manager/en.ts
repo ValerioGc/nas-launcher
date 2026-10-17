@@ -45,10 +45,10 @@ export default {
   noticeValue_terminal: 'terminal',
   noticeValue_apps: 'application manager',
   noticeValue_catalogue: 'application catalogue',
-  notice_searchWatchesNear_title: 'Explorer search near its limit',
+  notice_searchWatchesNear_title: 'Files search near its limit',
   notice_searchWatchesNear_message:
-    'Folders watched by Explorer {watched} out of a limit of {limit}. Past the limit, the search in the extra folders updates every 10 minutes.',
-  notice_searchWatchesOver_title: 'Explorer search past its limit',
+    'Folders watched by Files {watched} out of a limit of {limit}. Past the limit, the search in the extra folders updates every 10 minutes.',
+  notice_searchWatchesOver_title: 'Files search past its limit',
   notice_searchWatchesOver_message:
     '{folders} folders are past the watch limit ({limit}). In these folders the search updates every 10 minutes.',
   notice_powerSimulated_title: 'System action simulated',
@@ -89,6 +89,9 @@ export default {
   notice_developmentMode_title: 'NAS in development mode',
   notice_developmentMode_message:
     'This NAS was installed without an encrypted system or a TPM 2.0: whoever takes one of its disks can read the data on it.',
+  notice_systemUnprotected_title: 'System disk not protected',
+  notice_systemUnprotected_message:
+    'The system of this NAS is not on an encrypted disk, or there is no TPM 2.0: whoever takes its disks away can read the NAS on them. The installation manual explains what this means.',
   notice_appNotStarted_title: 'Application not started',
   notice_appNotStarted_message: '{app} installed, start failed ({reason}).',
   notice_settingsSaved_title: 'Settings saved',
@@ -125,6 +128,10 @@ export default {
   notice_networkWired_message: 'NAS connected to the wired network.',
   notice_networkLeft_title: 'Network disconnected',
   notice_networkLeft_message: 'NAS disconnected from the wireless network {network}.',
+  notice_networkAdapterOn_title: 'Network card on',
+  notice_networkAdapterOn_message: 'Network card {interface} turned on.',
+  notice_networkAdapterOff_title: 'Network card off',
+  notice_networkAdapterOff_message: 'Network card {interface} turned off.',
   notice_networkFailed_title: 'Network not changed',
   notice_networkFailed_message: 'Network connection unchanged ({reason}).',
   notice_appUpdatesAvailable_title: 'Updates available',

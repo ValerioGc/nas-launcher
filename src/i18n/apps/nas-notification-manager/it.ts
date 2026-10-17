@@ -45,10 +45,10 @@ export default {
   noticeValue_terminal: 'del terminale',
   noticeValue_apps: 'del gestore applicazioni',
   noticeValue_catalogue: 'del catalogo applicazioni',
-  notice_searchWatchesNear_title: 'Ricerca di Explorer vicina al limite',
+  notice_searchWatchesNear_title: 'Ricerca dell’app File vicina al limite',
   notice_searchWatchesNear_message:
-    'Cartelle monitorate da Explorer {watched} su un limite di {limit}. Oltre il limite, la ricerca nelle cartelle aggiuntive si aggiorna ogni 10 minuti.',
-  notice_searchWatchesOver_title: 'Ricerca di Explorer oltre il limite',
+    'Cartelle monitorate dall’app File {watched} su un limite di {limit}. Oltre il limite, la ricerca nelle cartelle aggiuntive si aggiorna ogni 10 minuti.',
+  notice_searchWatchesOver_title: 'Ricerca dell’app File oltre il limite',
   notice_searchWatchesOver_message:
     '{folders} cartelle superano il limite di monitoraggio ({limit}). In queste cartelle la ricerca si aggiorna ogni 10 minuti.',
   notice_powerSimulated_title: 'Azione di sistema simulata',
@@ -89,6 +89,9 @@ export default {
   notice_developmentMode_title: 'NAS in modalità sviluppo',
   notice_developmentMode_message:
     'Il NAS è installato senza sistema cifrato o TPM 2.0: chi prende uno dei suoi dischi può leggerne i dati.',
+  notice_systemUnprotected_title: 'Disco di sistema non protetto',
+  notice_systemUnprotected_message:
+    'Il sistema del NAS non è su un disco cifrato, o manca un TPM 2.0: chi porta via i suoi dischi può leggerne i dati. Il manuale di installazione spiega cosa comporta.',
   notice_appNotStarted_title: 'Applicazione non avviata',
   notice_appNotStarted_message: '{app} installata, avvio non riuscito ({reason}).',
   notice_settingsSaved_title: 'Impostazioni salvate',
@@ -128,6 +131,10 @@ export default {
   notice_networkWired_message: 'NAS collegato alla rete via cavo.',
   notice_networkLeft_title: 'Rete scollegata',
   notice_networkLeft_message: 'NAS scollegato dalla rete wireless {network}.',
+  notice_networkAdapterOn_title: 'Scheda di rete attivata',
+  notice_networkAdapterOn_message: 'Scheda di rete {interface} attivata.',
+  notice_networkAdapterOff_title: 'Scheda di rete disattivata',
+  notice_networkAdapterOff_message: 'Scheda di rete {interface} disattivata.',
   notice_networkFailed_title: 'Rete non cambiata',
   notice_networkFailed_message: 'Collegamento di rete invariato ({reason}).',
   notice_appUpdatesAvailable_title: 'Aggiornamenti disponibili',

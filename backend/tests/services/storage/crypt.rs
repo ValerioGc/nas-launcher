@@ -191,3 +191,36 @@ async fn a_volume_with_the_automatic_key_alone_is_reported_until_read() {
     std::env::remove_var("NAS_STORAGE_STATE_DIR");
     std::fs::remove_dir_all(&directory).expect("removed");
 }
+
+#[test]
+fn a_password_or_a_key_only_goes_with_a_request_that_says_so() {
+    let uuid = || "0f8fad5b-d9cb-469f-a165-70867728950e".to_owned();
+    let format = |password: Option<&str>| Request::Format {
+        device: "sdb".to_owned(),
+        identity: "wwn/1".to_owned(),
+        label: "Dati".to_owned(),
+        encrypt: true,
+        automatic: true,
+        password: password.map(str::to_owned),
+    };
+    assert!(!format(None).carries_secret());
+    assert!(format(Some("long enough")).carries_secret());
+    assert!(!Request::Lock { uuid: uuid() }.carries_secret());
+    assert!(Request::Header { uuid: uuid() }.carries_secret());
+    assert!(Request::Recovery {
+        uuid: uuid(),
+        current: None
+    }
+    .carries_secret());
+    assert!(Request::Unlock {
+        uuid: uuid(),
+        password: "long enough".to_owned()
+    }
+    .carries_secret());
+    assert!(!Request::Automatic {
+        uuid: uuid(),
+        enabled: false,
+        password: None
+    }
+    .carries_secret());
+}

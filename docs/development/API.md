@@ -194,6 +194,40 @@ the default route, and the interface draws the button from it.
 | No wireless connection at all      | **400** there is nothing to leave   |
 | `NAS_NETWORK_MODE=real` is missing | **503** naming the variable         |
 
+### One way in at a time
+
+`wiredConnected` is true when a cable is plugged into a wired card that has an address, whoever
+manages it (NetworkManager or `/etc/network/interfaces`, read from sysfs and `ip`). Meanwhile
+`POST /network/wifi` answers **409** `the network cable is connected`: the list of the wireless
+networks stays there to see, and the page says why it joins none.
+
+### Network cards
+
+`adapters` lists the wired and wireless cards NetworkManager knows, each with `interface`, `kind`
+(`lan` or `wifi`), `state` (`connected`, `disconnected`, `unavailable`, `unmanaged`), `enabled`,
+`inUse` (it carries the default route) and `canToggle`. `POST /network/adapter` wants
+`{ interface, enabled }`:
+
+- turning off saves the card in the `network` settings section and disconnects it
+  (`nmcli device disconnect`); the card in use answers **400**, and so does a card left to
+  `/etc/network/interfaces` (`unmanaged`), which NetworkManager does not touch;
+- turning on removes it from the list and tries `nmcli device connect`, which may find nothing to
+  join: that is not a failure;
+- a Wi-Fi card turned off is not asked for networks (`wifiProblem: "disabled"`), and
+  `POST /network/wifi` and `POST /network/wired` refuse a card turned off with **400**.
+
+A request of `POST /storage/encryption` or `POST /storage/network` that carries a password or a
+key, or gives one back (a format with a password, unlock, password, recovery key, header backup,
+the automatic key with a password, saving a network disk with its password, trying one) needs
+`x-nas-secure: 1`, which only the gateway sets, on a request that came over TLS or from the monitor
+of the NAS: otherwise **403** `a password or a key travels only over HTTPS`.
+
+Every 30 seconds the launcher checks the cards turned off: one that came back while another card
+carries the default route is disconnected again, and one is brought back when the NAS has no
+default route at all, so it can be reached again. Only `network-control` is used, the polkit rule
+grants nothing more. From a console, `nmcli device connect <card>` brings a card back until the
+page turns it on, or until the next check if another card carries the network.
+
 ## Desktop
 
 Every icon is a row of `desktop_shortcuts`, so **it stays after a restart**:

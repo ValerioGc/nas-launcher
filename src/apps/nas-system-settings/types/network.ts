@@ -26,6 +26,16 @@ export interface WifiNetwork {
   known: boolean;
 }
 
+/** A network card of the NAS: off means turned off from the page, in use the one it is reached through. */
+export interface NetworkAdapter {
+  interface: string;
+  kind: 'lan' | 'wifi';
+  state: 'connected' | 'disconnected' | 'unavailable' | 'unmanaged';
+  enabled: boolean;
+  inUse: boolean;
+  canToggle: boolean;
+}
+
 /**
  * Represents the current state of the network, including the active connection, available Wi-Fi networks.
  */
@@ -33,6 +43,9 @@ export interface NetworkState {
   connection: NetworkConnection;
   wifi: WifiNetwork[];
   wiredAvailable: boolean;
+  /** A cable is plugged in: no Wi-Fi network is joined meanwhile. */
+  wiredConnected: boolean;
+  adapters: NetworkAdapter[];
   canConnect: boolean;
   canDisconnect: boolean;
   wifiProblem: WifiProblem | null;
@@ -40,6 +53,6 @@ export interface NetworkState {
 
 /**
  * Why no wireless network could be listed: NetworkManager does not answer, it knows no Wi-Fi
- * device, or the device gave no list.
+ * device, the device gave no list, or the card was turned off from the page.
  */
-export type WifiProblem = 'noNetworkManager' | 'noDevice' | 'listFailed';
+export type WifiProblem = 'noNetworkManager' | 'noDevice' | 'listFailed' | 'disabled';

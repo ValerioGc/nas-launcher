@@ -58,6 +58,17 @@ pub enum NetworkRequest {
     NetworkForget { id: String },
 }
 
+impl NetworkRequest {
+    /// A password goes with it: only over an encrypted connection.
+    pub fn carries_secret(&self) -> bool {
+        match self {
+            Self::NetworkSave { password, .. } => password.is_some(),
+            Self::NetworkTest { .. } => true,
+            _ => false,
+        }
+    }
+}
+
 /// A share as root keeps it: no password.
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, utoipa::ToSchema)]
 #[serde(rename_all = "camelCase")]

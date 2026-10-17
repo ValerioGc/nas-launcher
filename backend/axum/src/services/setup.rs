@@ -20,9 +20,25 @@ use serde::{Deserialize, Serialize};
 use sqlx::SqlitePool;
 use std::path::Path;
 
-/// Where the entry script of the wizard notes that it installed the NAS in development mode,
-/// without an encrypted system or a TPM 2.0.
-const DEVELOPMENT_MARK: &str = "/var/lib/nas-wizard/security-development";
+/// What the entry script of the wizard found about the security of the machine, at every install
+/// and update: `system=encrypted|plain` and `tpm=present|missing`.
+const SECURITY_STATE: &str = "/var/lib/nas-wizard/security";
+
+/// Whether the system is on LUKS and there is a TPM 2.0, as the wizard found them; `None` when it
+/// did not say (a development copy, or a NAS installed before it wrote the state).
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, utoipa::ToSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct SystemSecurity {
+    pub system_encrypted: Option<bool>,
+    pub tpm: Option<bool>,
+}
+
+impl SystemSecurity {
+    /// Something is known to be missing.
+    pub fn unprotected(self) -> bool {
+        self.system_encrypted == Some(false) || self.tpm == Some(false)
+    }
+}
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, utoipa::ToSchema)]
 pub struct SetupState {
@@ -97,31 +113,67 @@ fn unavailable() -> ApiFailure {
     ApiFailure::unavailable("the setup state cannot be read")
 }
 
-/// Warns at every start, while the warning before is unread, that the NAS was installed without
-/// the security it needs.
-pub async fn report_development(db: &SqlitePool) {
-    report_development_mark(db, Path::new(DEVELOPMENT_MARK)).await;
+fn parse_security(text: &str) -> SystemSecurity {
+    let mut state = SystemSecurity::default();
+    for line in text.lines() {
+        match line.trim().split_once('=') {
+            Some(("system", value)) => {
+                state.system_encrypted = match value {
+                    "encrypted" => Some(true),
+                    "plain" => Some(false),
+                    _ => None,
+                }
+            }
+            Some(("tpm", value)) => {
+                state.tpm = match value {
+                    "present" => Some(true),
+                    "missing" => Some(false),
+                    _ => None,
+                }
+            }
+            _ => {}
+        }
+    }
+    state
 }
 
-async fn report_development_mark(db: &SqlitePool, mark: &Path) {
-    if tokio::fs::metadata(mark).await.is_err() {
+async fn read_security(path: &Path) -> SystemSecurity {
+    tokio::fs::read_to_string(path)
+        .await
+        .map(|text| parse_security(&text))
+        .unwrap_or_default()
+}
+
+/// The security of the machine as the wizard found it.
+pub async fn system_security() -> SystemSecurity {
+    read_security(Path::new(SECURITY_STATE)).await
+}
+
+/// Says once, the first time the launcher finds it out, that the system is not encrypted or has no
+/// TPM 2.0: a choice of the person, which the installation manual explains.
+pub async fn report_security(db: &SqlitePool) {
+    report_security_state(db, Path::new(SECURITY_STATE)).await;
+}
+
+async fn report_security_state(db: &SqlitePool, path: &Path) {
+    if !read_security(path).await.unprotected() {
         return;
     }
-    let unread: bool = sqlx::query_scalar(
-        "SELECT EXISTS (SELECT 1 FROM notifications WHERE key = 'developmentMode' AND read = 0)",
+    let told: bool = sqlx::query_scalar(
+        "SELECT EXISTS (SELECT 1 FROM notifications WHERE key = 'systemUnprotected')",
     )
     .fetch_one(db)
     .await
     .unwrap_or(true);
-    if !unread {
+    if !told {
         notifications::record(
             db,
             "nas-security-center",
             Tone::Warning,
             Notice::new(
-                "developmentMode",
-                "NAS in development mode",
-                "This NAS was installed without an encrypted system or a TPM 2.0: whoever takes one of its disks can read the data on it.",
+                "systemUnprotected",
+                "System disk not protected",
+                "The system of this NAS is not on an encrypted disk, or there is no TPM 2.0: whoever takes its disks away can read the NAS on them. The installation manual explains what this means.",
             ),
         )
         .await;

@@ -275,6 +275,8 @@ impl Machine {
                 std::env::set_var("NAS_APPS_DIR", root.join("apps"));
                 std::env::set_var("NAS_LOG_DIR", root.join("logs"));
                 std::env::set_var("NAS_CATALOGUE_PATH", root.join("catalogue.json"));
+                // No cable plugged in: the network cards of the host are not this machine's.
+                std::env::set_var("NAS_NET_SYSFS", root.join("net"));
                 std::env::set_var("NAS_GITHUB_API", &base);
                 std::env::set_var("NAS_GITLAB_API", &base);
                 std::env::set_var("NAS_PACKAGES_MODE", "real");
