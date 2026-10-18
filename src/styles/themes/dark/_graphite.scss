@@ -1,0 +1,12 @@
+// Grafite: a neutral dark theme, greys without a tint. The accent stays the one chosen in the settings.
+:root[data-theme='dark'][data-palette='graphite'] {
+  --theme-background: #1b1c1e;
+  --theme-foreground: #eeeff1;
+
+  --surface: #232427;
+  --surface-sunken: #161719;
+  --surface-hover: #2e3034;
+  --surface-border: #3a3c41;
+  --surface-muted: #a9acb3;
+  --backdrop: #0a0a0b99;
+}

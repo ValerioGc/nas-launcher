@@ -1,0 +1,17 @@
+/*
+ * Allows the nas-os service user to start validated process-action instances.
+ * The instance identifies an action, PID, and process start time. The privileged
+ * helper checks the target and protects essential services and kernel threads.
+ */
+polkit.addRule(function (action, subject) {
+  if (
+    action.id === 'org.freedesktop.systemd1.manage-units' &&
+    subject.user === 'nas-os' &&
+    /^nas-os-process@(terminate|restart)-[1-9][0-9]{0,9}-[0-9]{1,20}\.service$/.test(
+      action.lookup('unit') || ''
+    ) &&
+    action.lookup('verb') === 'start'
+  ) {
+    return polkit.Result.YES;
+  }
+});

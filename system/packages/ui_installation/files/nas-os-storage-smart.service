@@ -1,0 +1,12 @@
+[Unit]
+Description=Read S.M.A.R.T. data from one NAS data disk
+After=local-fs.target nas-os.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/nas-os-axum --read-storage-smart /var/lib/nas-os/storage-smart.json
+TimeoutStartSec=30
+CapabilityBoundingSet=CAP_SYS_ADMIN CAP_SYS_RAWIO CAP_DAC_READ_SEARCH
+NoNewPrivileges=yes
+ProtectHome=yes
+RestrictAddressFamilies=AF_UNIX

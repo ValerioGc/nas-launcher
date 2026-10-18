@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+  <title>Pulizia</title>
+  <defs>
+    <linearGradient id="badge" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f2b866"/>
+      <stop offset="1" stop-color="#c9752e"/>
+    </linearGradient>
+  </defs>
+  <rect x="2" y="2" width="20" height="20" rx="5.5" fill="url(#badge)"/>
+  <g fill="none" stroke="#ffffff" stroke-width="1.7"
+     stroke-linecap="round" stroke-linejoin="round">
+    <path d="M14.6 5.6 11.4 10"/>
+    <path d="M9.2 10h5.2l1.9 8H7.3z"/>
+    <path d="M10.4 13.4 10 18M13.1 13.4l.4 4.6"/>
+  </g>
+</svg>

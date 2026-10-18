@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+     stroke="#899aeb" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+  <title>Wireless network</title>
+  <path d="M2.8 8.6a14 14 0 0 1 18.4 0"/>
+  <path d="M5.8 12.2a9.5 9.5 0 0 1 12.4 0"/>
+  <path d="M8.8 15.8a5 5 0 0 1 6.4 0"/>
+  <circle cx="12" cy="19.2" r="1.1" fill="#899aeb" stroke="none"/>
+</svg>

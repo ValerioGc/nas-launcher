@@ -1,0 +1,26 @@
+# Applies the saved NAS access list and HTTPS port through a privileged helper.
+# The launcher and gateway can start this unit under the matching polkit rule.
+# Updating nftables requires root privileges.
+
+[Unit]
+Description=nas-os: apply the access list to nftables
+Documentation=https://github.com/ValerioGc/nas-launcher
+After=nftables.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/lib/nas-os/apply-access-rules.sh
+
+# Retains CAP_NET_ADMIN and host network access for netfilter updates.
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+ProtectKernelModules=yes
+RestrictNamespaces=yes
+RestrictRealtime=yes
+RestrictSUIDSGID=yes
+LockPersonality=yes
+MemoryDenyWriteExecute=yes
+SystemCallArchitectures=native
+SystemCallFilter=@system-service

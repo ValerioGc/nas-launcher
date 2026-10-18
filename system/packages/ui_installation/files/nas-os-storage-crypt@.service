@@ -1,0 +1,22 @@
+# Handles data-disk formatting, LUKS2 volume operations, and SMB network disks.
+# Passwords and keys pass through the socket and a root-only runtime directory.
+# They are excluded from command arguments and journal output.
+
+[Unit]
+Description=Encryption of one NAS data disk
+After=local-fs.target nas-os.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/nas-os-axum --storage-crypt
+StandardInput=socket
+StandardOutput=socket
+StandardError=journal
+RuntimeDirectory=nas-os-storage-crypt/%i
+RuntimeDirectoryMode=0700
+TimeoutStartSec=15min
+CapabilityBoundingSet=CAP_SYS_ADMIN CAP_CHOWN CAP_FOWNER CAP_DAC_OVERRIDE CAP_DAC_READ_SEARCH CAP_IPC_LOCK CAP_SYS_PTRACE CAP_NET_ADMIN
+NoNewPrivileges=yes
+PrivateMounts=no
+ProtectHome=yes
+RestrictAddressFamilies=AF_UNIX AF_NETLINK AF_INET AF_INET6

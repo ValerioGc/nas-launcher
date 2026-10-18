@@ -1,0 +1,18 @@
+# Accepts privileged storage requests from the nas-os-crypt group.
+# The launcher belongs to this group. Application processes use the separate
+# nas-os group and cannot connect to this socket.
+
+[Unit]
+Description=Encryption of the NAS data disks, from the launcher
+
+[Socket]
+ListenStream=/run/nas-os-storage-crypt.sock
+SocketUser=root
+SocketGroup=nas-os-crypt
+SocketMode=0660
+Accept=yes
+MaxConnections=2
+RemoveOnStop=yes
+
+[Install]
+WantedBy=sockets.target

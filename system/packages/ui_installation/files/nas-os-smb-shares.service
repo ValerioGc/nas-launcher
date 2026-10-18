@@ -1,0 +1,34 @@
+# Applies validated application share requests through apply-smb-shares.sh.
+# The helper updates Samba configuration and enables TCP 445 on the local network
+# while folders are shared. The launcher starts it after share changes and at startup.
+
+[Unit]
+Description=Folders of the NAS shared on the local network
+After=nas-os-base-firewall.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/lib/nas-os/apply-smb-shares.sh
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=yes
+ReadOnlyPaths=/var/lib/nas-os
+ReadWritePaths=-/etc/samba -/run/samba -/var/cache/samba -/var/lib/samba
+NoNewPrivileges=yes
+CapabilityBoundingSet=CAP_DAC_READ_SEARCH CAP_NET_ADMIN
+RestrictAddressFamilies=AF_UNIX AF_NETLINK
+PrivateDevices=yes
+ProtectProc=invisible
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectKernelLogs=yes
+ProtectControlGroups=yes
+ProtectClock=yes
+ProtectHostname=yes
+RestrictNamespaces=yes
+RestrictRealtime=yes
+RestrictSUIDSGID=yes
+LockPersonality=yes
+MemoryDenyWriteExecute=yes
+SystemCallArchitectures=native
+SystemCallFilter=@system-service

@@ -1,0 +1,11 @@
+[Unit]
+Description=Refresh NAS data volumes after device changes
+
+[Timer]
+OnBootSec=20s
+OnUnitActiveSec=1min
+Unit=nas-os-storage.service
+
+[Install]
+WantedBy=timers.target
+

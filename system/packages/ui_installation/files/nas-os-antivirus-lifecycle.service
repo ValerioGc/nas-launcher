@@ -1,0 +1,23 @@
+[Unit]
+Description=Optional antivirus scans at OS startup and shutdown
+After=local-fs.target network-online.target
+Before=nas-os.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/bin/flock /run/nas-os-antivirus.lock /usr/local/bin/nas-os-axum --antivirus-lifecycle boot
+ExecStop=/usr/bin/flock /run/nas-os-antivirus.lock /usr/local/bin/nas-os-axum --antivirus-lifecycle shutdown
+TimeoutStartSec=24h
+TimeoutStopSec=24h
+UMask=0077
+PrivateTmp=no
+NoNewPrivileges=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,18 @@
+# Runs Debian package maintenance requested by the launcher.
+# The refresh instance updates the package index. The upgrade instance installs
+# selected updates. Polkit permits starting only these two instances.
+# The units are not enabled at boot. Apt requires root access to system paths,
+# network downloads, and execution of Debian maintainer scripts.
+
+[Unit]
+Description=nas-os: %i the Debian packages
+Documentation=https://github.com/ValerioGc/nas-launcher
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/lib/nas-os/apt-updates.sh %i
+TimeoutStartSec=1h
+ProtectHome=yes
+PrivateTmp=yes

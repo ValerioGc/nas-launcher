@@ -1,0 +1,20 @@
+# Runs a validated cleanup request through nas-os-axum --cleanup-job.
+# The helper reads the request from /var/lib/nas-os, measures or executes an
+# allowed operation, and writes the result. The launcher starts the unit explicitly.
+
+[Unit]
+Description=Cleanup of the system requested by the NAS Cleanup app
+After=local-fs.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/flock /run/nas-os-cleanup.lock /usr/local/bin/nas-os-axum --cleanup-job
+TimeoutStartSec=2h
+# Uses host temporary directories and permits apt to remove kernels and modules.
+# A private temporary directory or read-only /usr would prevent these operations.
+# Network access is unnecessary.
+PrivateTmp=no
+NoNewPrivileges=yes
+ProtectKernelTunables=yes
+ProtectControlGroups=yes
+RestrictAddressFamilies=AF_UNIX

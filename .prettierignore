@@ -1,0 +1,19 @@
+# Dependencies and generated output
+/node_modules/
+/dist/
+/backend/target/
+/backend/data/
+**/coverage/
+**/clippy-report.json
+/.scannerwork/
+/release-assets/
+/test-results/
+/src/tests/e2e/.features-gen/
+/package-lock.json
+/pnpm-lock.yaml
+
+# Local editor settings
+/.vscode/
+
+# SFCs retain their block spacing through scripts/format-sfc-spacing.mjs.
+*.vue

@@ -1,0 +1,14 @@
+/*
+ * Allows the nas-os service user to start nas-os-app-grants@<id>.service.
+ * The helper writes validated manifest permissions to an application unit drop-in.
+ */
+polkit.addRule(function (action, subject) {
+  if (
+    action.id === 'org.freedesktop.systemd1.manage-units' &&
+    subject.user === 'nas-os' &&
+    /^nas-os-app-grants@[A-Za-z0-9_-]{1,64}\.service$/.test(action.lookup('unit') || '') &&
+    action.lookup('verb') === 'start'
+  ) {
+    return polkit.Result.YES;
+  }
+});

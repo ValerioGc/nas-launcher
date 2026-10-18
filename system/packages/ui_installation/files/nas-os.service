@@ -1,0 +1,56 @@
+# Runs the NAS launcher under its dedicated service account on Debian 13.
+# Operation modes in /etc/nas-os/nas-os.env select real or simulated behavior.
+# Polkit rules grant access to the required privileged helpers.
+
+[Unit]
+Description=nas-os
+Documentation=https://github.com/ValerioGc/nas-launcher
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=exec
+User=nas-os
+Group=nas-os
+SupplementaryGroups=systemd-journal nas-os-crypt
+ExecStart=/usr/local/bin/nas-os-axum
+EnvironmentFile=/etc/nas-os/nas-os.env
+EnvironmentFile=-/etc/nas-os/nas-os.local.env
+ImportCredential=nas-os.*
+RuntimeDirectory=nas-os/apps nas-os/launcher
+RuntimeDirectoryMode=3770
+RuntimeDirectoryPreserve=yes
+Environment=NAS_APP_SOCKETS=/run/nas-os/apps
+Environment=NAS_LAUNCHER_SOCKET=/run/nas-os/launcher/apps.sock
+Environment=TOKIO_WORKER_THREADS=4 MALLOC_ARENA_MAX=2
+StateDirectory=nas-os
+StateDirectoryMode=0710
+LogsDirectory=nas-os
+LogsDirectoryMode=0750
+UMask=0077
+Restart=on-failure
+RestartSec=2
+
+CapabilityBoundingSet=
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6 AF_NETLINK
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectKernelLogs=yes
+ProtectClock=yes
+ProtectHostname=yes
+PrivateDevices=yes
+ProtectControlGroups=yes
+RestrictNamespaces=yes
+RestrictRealtime=yes
+RestrictSUIDSGID=yes
+LockPersonality=yes
+MemoryDenyWriteExecute=yes
+SystemCallArchitectures=native
+SystemCallFilter=@system-service
+
+[Install]
+WantedBy=multi-user.target

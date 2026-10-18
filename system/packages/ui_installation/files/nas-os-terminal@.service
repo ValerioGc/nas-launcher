@@ -1,0 +1,18 @@
+# Runs the external terminal application's PTY under the account provisioned by the wizard.
+
+[Unit]
+Description=nas-os: interactive terminal session
+Documentation=https://github.com/ValerioGc/nas-system-terminal
+
+[Service]
+User=nobody
+SupplementaryGroups=nas-os
+ExecStart=/var/lib/nas-os/apps/nas-system-terminal/bin/nas-system-terminal-axum --shell
+StandardInput=socket
+StandardOutput=socket
+StandardError=journal
+WorkingDirectory=~
+Environment=TERM=xterm-256color
+NoNewPrivileges=no
+PrivateTmp=yes
+KillMode=control-group

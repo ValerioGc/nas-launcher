@@ -1,0 +1,19 @@
+# Starts one nas-os-terminal@.service instance per launcher connection.
+# Only the nas-os group can connect. The terminal-user.sh helper enables the socket
+# after the terminal account has been provisioned.
+
+[Unit]
+Description=nas-os: shells of the terminal
+Documentation=https://github.com/ValerioGc/nas-launcher
+
+[Socket]
+ListenStream=/run/nas-os-terminal.sock
+Accept=yes
+SocketUser=root
+SocketGroup=nas-os
+SocketMode=0660
+MaxConnections=4
+RemoveOnStop=yes
+
+[Install]
+WantedBy=sockets.target

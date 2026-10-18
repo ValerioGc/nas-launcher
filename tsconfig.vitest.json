@@ -1,0 +1,16 @@
+{
+  "extends": "./tsconfig.app.json",
+  "include": ["src/tests/**/*.ts", "src/tests/**/*.vue", "env.d.ts"],
+  "exclude": [],
+  "compilerOptions": {
+    "lib": ["ESNext", "DOM"],
+    "types": ["node", "jsdom"],
+    "allowJs": true,
+    "paths": {
+      "@/*": ["./src/*"],
+      "@tests/*": ["./src/tests/*"],
+      "@scripts/*": ["./scripts/*"]
+    },
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.vitest.tsbuildinfo"
+  }
+}

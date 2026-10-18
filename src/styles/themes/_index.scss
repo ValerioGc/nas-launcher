@@ -1,0 +1,10 @@
+// The themes on top of the two defaults of `theme.scss`, one file each: every file sets the
+// surfaces and the text of one `data-palette` for its type (`data-theme`), never the accent, which
+// stays the one chosen in the settings. A new theme is a file here, a `@use` below and its id in
+// `src/apps/nas-system-settings/themes.ts`, with its name in the catalogues.
+@use 'light/sand';
+@use 'light/lavender';
+@use 'light/glacier';
+@use 'dark/graphite';
+@use 'dark/midnight';
+@use 'dark/forest';

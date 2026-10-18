@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "apps": [
+    {
+      "id": "fileExplorer",
+      "name": "File explorer",
+      "info": "Browses the files of the NAS.",
+      "provider": "github",
+      "repository": "example/nas-file-explorer",
+      "asset": "file-explorer-{version}-linux-x64.tar.gz"
+    },
+    {
+      "id": "mediaServer",
+      "name": "Media server",
+      "info": "Plays what is on the disks.",
+      "provider": "gitlab",
+      "repository": "example/nas-media-server",
+      "asset": "media-server-{version}-linux-x64.tar.gz"
+    }
+  ]
+}

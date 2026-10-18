@@ -1,0 +1,20 @@
+# Resets launcher, gateway, and application state while preserving data disks.
+# The launcher starts the unit after gateway verification of the account password.
+# The helper requires root to stop services, remove state and users, and restart
+# the setup wizard. It stops the requesting launcher and runs independently.
+
+[Unit]
+Description=nas-os: reset the NAS and start the wizard again
+Documentation=https://github.com/ValerioGc/nas-launcher
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/lib/nas-os/factory-reset.sh
+TimeoutStartSec=30min
+
+NoNewPrivileges=yes
+# Uses the host mount namespace to unmount NAS bind mounts during reset.
+PrivateTmp=no
+RestrictRealtime=yes
+LockPersonality=yes
+SystemCallArchitectures=native

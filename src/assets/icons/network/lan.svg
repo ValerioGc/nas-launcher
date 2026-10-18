@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+     stroke="#899aeb" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+  <title>Wired network</title>
+  <rect x="8.5" y="3" width="7" height="5" rx="1.2"/>
+  <rect x="2.5" y="16" width="6" height="5" rx="1.2"/>
+  <rect x="15.5" y="16" width="6" height="5" rx="1.2"/>
+  <path d="M12 8v4"/>
+  <path d="M5.5 16v-4h13v4"/>
+</svg>

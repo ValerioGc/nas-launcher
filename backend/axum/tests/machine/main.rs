@@ -1,0 +1,11 @@
+mod antivirus;
+mod apps;
+mod binary;
+mod mail;
+mod manager;
+mod packages;
+mod routes;
+mod storage;
+mod support;
+mod system;
+mod updates;

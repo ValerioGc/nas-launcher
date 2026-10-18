@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256" fill="none" role="img" aria-labelledby="title desc">
+  <title id="title">Explorer</title>
+  <desc id="desc">A folder with two files on a blue background.</desc>
+  <defs>
+    <linearGradient id="background" x1="24" y1="16" x2="232" y2="240" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#3266D6"/>
+      <stop offset="1" stop-color="#183B91"/>
+    </linearGradient>
+    <linearGradient id="folder" x1="48" y1="84" x2="207" y2="199" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFFFFF"/>
+      <stop offset="1" stop-color="#DCE9FF"/>
+    </linearGradient>
+  </defs>
+  <rect width="256" height="256" rx="56" fill="url(#background)"/>
+  <path d="M48 92c0-9 7-16 16-16h45c5 0 9 2 12 6l10 12h61c9 0 16 7 16 16v84c0 9-7 16-16 16H64c-9 0-16-7-16-16V92Z" fill="#AFCBFF"/>
+  <path d="M48 120c0-9 7-16 16-16h128c9 0 16 7 16 16v74c0 9-7 16-16 16H64c-9 0-16-7-16-16v-74Z" fill="url(#folder)"/>
+  <rect x="79" y="139" width="46" height="46" rx="10" fill="#3266D6"/>
+  <path d="M92 153h20m-20 10h20m-20 10h13" stroke="#FFFFFF" stroke-width="4" stroke-linecap="round"/>
+  <rect x="135" y="139" width="42" height="46" rx="10" fill="#78A5F5"/>
+  <path d="M147 153h18m-18 10h18m-18 10h11" stroke="#FFFFFF" stroke-width="4" stroke-linecap="round"/>
+</svg>

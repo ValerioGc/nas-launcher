@@ -1,0 +1,66 @@
+@page {
+  background: #0d1117;
+}
+
+html,
+body {
+  background: #0d1117;
+  color: #c9d1d9;
+  font-size: 15px !important;
+}
+
+body :not(pre) > code {
+  background: #21262d;
+  color: #e6edf3;
+  overflow-wrap: anywhere;
+  border-color: #30363d;
+  font-size: 0.95em;
+}
+
+h1,
+h2,
+h3,
+h4,
+strong,
+b {
+  color: #f0f6fc;
+}
+
+a {
+  color: #58a6ff;
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+hr {
+  border-color: #30363d;
+}
+
+pre {
+  break-inside: avoid;
+}
+
+pre code {
+  border-color: #30363d;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+p {
+  orphans: 3;
+  widows: 3;
+}
+
+h2,
+h3,
+h4 {
+  break-after: avoid;
+}
+
+.page-break {
+  break-after: page;
+  page-break-after: always;
+}

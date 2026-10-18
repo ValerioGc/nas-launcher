@@ -1,0 +1,13 @@
+[Unit]
+Description=Rename one NAS data volume
+After=local-fs.target nas-os.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/nas-os-axum --rename-storage /var/lib/nas-os/storage-rename.json
+TimeoutStartSec=60
+CapabilityBoundingSet=CAP_SYS_ADMIN CAP_DAC_OVERRIDE
+NoNewPrivileges=yes
+PrivateMounts=no
+ProtectHome=yes
+RestrictAddressFamilies=AF_UNIX

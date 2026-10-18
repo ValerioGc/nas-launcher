@@ -1,0 +1,15 @@
+/*
+ * Allows the nas-os service user to start, stop, restart, and clean application units.
+ * Unit names must match nas-app@<id>.service. Identifiers contain 1 to 64 ASCII
+ * letters, digits, underscores, or hyphens. Enabling units at boot is excluded.
+ */
+polkit.addRule(function (action, subject) {
+  if (
+    action.id === 'org.freedesktop.systemd1.manage-units' &&
+    subject.user === 'nas-os' &&
+    /^nas-app@[A-Za-z0-9_-]{1,64}\.service$/.test(action.lookup('unit') || '') &&
+    ['start', 'stop', 'restart', 'clean'].indexOf(action.lookup('verb')) !== -1
+  ) {
+    return polkit.Result.YES;
+  }
+});

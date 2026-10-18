@@ -1,0 +1,12 @@
+[Unit]
+Description=Eject one external disk of the NAS
+After=local-fs.target nas-os.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/nas-os-axum --eject-storage /var/lib/nas-os/storage-eject.json
+TimeoutStartSec=120
+CapabilityBoundingSet=CAP_SYS_ADMIN CAP_CHOWN CAP_FOWNER CAP_DAC_OVERRIDE
+NoNewPrivileges=yes
+PrivateMounts=no
+RestrictAddressFamilies=AF_UNIX

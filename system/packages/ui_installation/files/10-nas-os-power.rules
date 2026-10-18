@@ -1,0 +1,27 @@
+/*
+ * Grants the nas-os service user permission to restart and shut down the NAS.
+ * Multiple-session actions are allowed, but inhibitor overrides are excluded.
+ * Scheduled shutdowns can start nas-os-wake.service to set the hardware clock alarm.
+ */
+polkit.addRule(function (action, subject) {
+  var allowed = [
+    'org.freedesktop.login1.reboot',
+    'org.freedesktop.login1.reboot-multiple-sessions',
+    'org.freedesktop.login1.power-off',
+    'org.freedesktop.login1.power-off-multiple-sessions',
+  ];
+  if (allowed.indexOf(action.id) !== -1 && subject.user === 'nas-os') {
+    return polkit.Result.YES;
+  }
+});
+
+polkit.addRule(function (action, subject) {
+  if (
+    action.id === 'org.freedesktop.systemd1.manage-units' &&
+    subject.user === 'nas-os' &&
+    action.lookup('unit') === 'nas-os-wake.service' &&
+    action.lookup('verb') === 'start'
+  ) {
+    return polkit.Result.YES;
+  }
+});

@@ -1,0 +1,12 @@
+// Sabbia: a warm light theme, paper and sand. The accent stays the one chosen in the settings.
+:root[data-theme='light'][data-palette='sand'] {
+  --theme-background: #f6f1e7;
+  --theme-foreground: #2b2419;
+
+  --surface: #fffdf8;
+  --surface-sunken: #efe7d8;
+  --surface-hover: #e6dbc6;
+  --surface-border: #d8cab0;
+  --surface-muted: #6f6150;
+  --backdrop: #3a2e1d4d;
+}

@@ -1,0 +1,25 @@
+# Encrypts the shared release token in the root-owned credential store.
+# The launcher writes a private request file and starts this unit through polkit.
+# The request file is removed after execution. The helper restarts the launcher
+# to load the updated credential. The unit is not enabled at boot.
+
+[Unit]
+Description=nas-os: store the shared release token
+Documentation=https://github.com/ValerioGc/nas-launcher
+
+[Service]
+Type=oneshot
+StandardInput=file:/var/lib/nas-os/launcher-token.new
+ExecStart=/usr/local/lib/nas-os/launcher-token.sh
+ExecStopPost=/bin/rm -f /var/lib/nas-os/launcher-token.new
+TimeoutStartSec=2min
+
+NoNewPrivileges=yes
+ProtectHome=yes
+PrivateTmp=yes
+PrivateNetwork=yes
+RestrictRealtime=yes
+RestrictSUIDSGID=yes
+LockPersonality=yes
+SystemCallArchitectures=native
+SystemCallFilter=@system-service

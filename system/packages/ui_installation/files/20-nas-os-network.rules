@@ -1,0 +1,15 @@
+/*
+ * Grants the nas-os service user permission to scan Wi-Fi networks, manage
+ * connections, and save system connection profiles. Network and Wi-Fi enable or
+ * disable actions are excluded.
+ */
+polkit.addRule(function (action, subject) {
+  var allowed = [
+    'org.freedesktop.NetworkManager.wifi.scan',
+    'org.freedesktop.NetworkManager.network-control',
+    'org.freedesktop.NetworkManager.settings.modify.system',
+  ];
+  if (allowed.indexOf(action.id) !== -1 && subject.user === 'nas-os') {
+    return polkit.Result.YES;
+  }
+});

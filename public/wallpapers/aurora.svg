@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080" preserveAspectRatio="xMidYMid slice">
+<defs><linearGradient id="night" x2="0" y2="1"><stop stop-color="#09152c"/><stop offset="1" stop-color="#102c3b"/></linearGradient><filter id="glow" x="-50%" y="-100%" width="200%" height="300%"><feGaussianBlur stdDeviation="55"/></filter></defs>
+<path fill="url(#night)" d="M0 0h1920v1080H0z"/>
+<g fill="none" filter="url(#glow)" stroke-width="110"><path stroke="#36ba9a" opacity=".6" d="M-100 570C450 30 600 660 1080 320S1650 520 2020 120"/><path stroke="#7b69d9" opacity=".45" d="M-100 330C430 0 630 490 1120 190S1650 360 2020 40"/></g>
+<path fill="#081c29" d="M0 950 250 900 500 960 850 860 1200 940 1520 850 1920 930v150H0z"/>
+</svg>

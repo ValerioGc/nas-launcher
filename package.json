@@ -1,0 +1,97 @@
+{
+  "name": "nas-os",
+  "version": "0.9.0",
+  "private": true,
+  "type": "module",
+  "description": "Custom Launcher for NAS OS on a Debian-based system",
+  "author": {
+    "name": "ValerioGc"
+  },
+  "engines": {
+    "node": "^22.18.0 || >=24.12.0"
+  },
+  "browserslist": [
+    "chrome >= 111",
+    "edge >= 111",
+    "firefox >= 114",
+    "safari >= 16.4",
+    "ios_saf >= 16.4"
+  ],
+  "scripts": {
+    "dev": "vite",
+    "preview": "vite preview",
+    "backend:dev": "set -a && . ./config/development.env && set +a && cargo run --manifest-path backend/axum/Cargo.toml",
+    "build": "run-p type-check \"build-only {@}\" --",
+    "build-only": "vite build",
+    "type-check": "vue-tsc --build",
+    "format": "prettier --write . && eslint . --fix && node scripts/format-sfc-spacing.mjs",
+    "format:check": "prettier --check . && node scripts/format-sfc-spacing.mjs --check",
+    "format:sfc": "node scripts/format-sfc-spacing.mjs",
+    "lock:npm": "npm install --package-lock-only --ignore-scripts",
+    "api:generate": "node scripts/openapi.mjs",
+    "api:check": "node scripts/openapi.mjs --check",
+    "release:test": "node scripts/release/prepare_release.mjs",
+    "release:package": "node scripts/release/build_package.mjs",
+    "release:merge": "node scripts/release/merge_release.mjs",
+    "lint": "run-s \"lint:*\"",
+    "lint:eslint": "eslint . --cache",
+    "lint:lock": "node scripts/npm-lock.mjs --check",
+    "manual:build": "node scripts/release/build_user_manual.cjs",
+    "podman:sonar:down": "podman compose -f podman-compose.sonar.yml down",
+    "podman:sonar:logs": "podman compose -f podman-compose.sonar.yml logs -f",
+    "podman:sonar:up": "podman compose -f podman-compose.sonar.yml up -d",
+    "coverage:rust": "node -e \"require('fs').mkdirSync('backend/coverage',{recursive:true})\" && cargo llvm-cov --manifest-path backend/Cargo.toml --lcov --output-path backend/coverage/lcov.info",
+    "test": "vitest run --passWithNoTests",
+    "test:coverage": "vitest run --coverage --passWithNoTests",
+    "test:sonar": "pnpm run test:coverage && pnpm run coverage:rust && cargo clippy --manifest-path backend/Cargo.toml --all-targets --message-format=json > backend/clippy-report.json && podman run --rm --userns=keep-id:uid=1000,gid=1000 --network host -e SONAR_TOKEN -e SONAR_HOST_URL=http://127.0.0.1:9000 -v \"$PWD:/usr/src:Z\" docker.io/sonarsource/sonar-scanner-cli:latest",
+    "test:unit": "vitest run --project unit --project scripts",
+    "test:component": "vitest run --project component",
+    "test:e2e": "playwright install chromium && bddgen && playwright test",
+    "test:e2e:ui": "playwright install chromium && bddgen && playwright test --ui",
+    "postinstall": "node scripts/npm-lock.mjs --sync"
+  },
+  "dependencies": {
+    "pinia": "^4.0.3",
+    "vue": "^3.5.44",
+    "vue-router": "^5.3.1"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@fullhuman/postcss-purgecss": "^8.0.0",
+    "@playwright/test": "^1.64.0",
+    "@tsconfig/node24": "^24.0.4",
+    "@types/jsdom": "^30.0.0",
+    "@types/node": "^26.6.5",
+    "@vitejs/plugin-vue": "^6.0.10",
+    "@vitest/coverage-v8": "^5.0.4",
+    "@vue/compiler-core": "^3.5.42",
+    "@vue/test-utils": "^2.5.1",
+    "@vue/tsconfig": "^0.9.1",
+    "autoprefixer": "^10.6.1",
+    "cssnano": "^9.8.0",
+    "eslint": "^10.12.0",
+    "eslint-plugin-vue": "~10.11.1",
+    "globals": "^17.13.0",
+    "jiti": "^2.7.0",
+    "jsdom": "^30.1.2",
+    "md-to-pdf": "^5.2.5",
+    "npm-run-all2": "^9.0.2",
+    "openapi-typescript": "^7.13.0",
+    "playwright-bdd": "^9.2.0",
+    "postcss": "^8.5.30",
+    "postcss-combine-duplicated-selectors": "^11.0.0",
+    "prettier": "3.9.10",
+    "sass": "^1.105.1",
+    "typescript": "~6.0.0",
+    "typescript-eslint": "^8.71.2",
+    "vite": "^8.3.4",
+    "vitest": "^5.0.4",
+    "vue-eslint-parser": "^10.4.1",
+    "vue-tsc": "^3.3.13"
+  },
+  "overrides": {
+    "openapi-typescript": {
+      "typescript": "$typescript"
+    }
+  }
+}

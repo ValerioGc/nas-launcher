@@ -1,0 +1,117 @@
+// Standalone counterpart of _apps.scss for apps rendered in their own iframe.
+// Keep this file in each external app package: the shell's stylesheet cannot cross the frame.
+:root {
+  --nas-background: #f5f7f6;
+  --nas-foreground: #172027;
+  --nas-surface: #ffffff;
+  --nas-sunken: #eef3f7;
+  --nas-hover: #dfe9f1;
+  --nas-border: #cbd8e1;
+  --nas-muted: #526776;
+  --nas-accent: #12866f;
+}
+
+:root[data-theme='dark'] {
+  --nas-background: #172027;
+  --nas-foreground: #f2f7f5;
+  --nas-surface: #131f29;
+  --nas-sunken: #0e1922;
+  --nas-hover: #1c2d3b;
+  --nas-border: #24394a;
+  --nas-muted: #a4b6c3;
+  --nas-accent: #3fd39b;
+}
+
+.app_surface {
+  --nas-text: var(--theme-foreground, var(--text, var(--nas-foreground)));
+  --nas-panel: var(--surface-bg, var(--surface, var(--nas-surface)));
+  --nas-outline: var(--surface-border, var(--border, var(--nas-border)));
+  --nas-rollover: var(--surface-hover, var(--surface-soft, var(--nas-hover)));
+  --nas-error: var(--status-error, var(--danger, #b12838));
+
+  min-width: 0;
+  color: var(--nas-text);
+  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+  line-height: 1.5;
+
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
+  button,
+  input,
+  select,
+  textarea {
+    font: inherit;
+  }
+
+  button {
+    cursor: pointer;
+  }
+
+  button:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--accent, #3c8fbe);
+    outline-offset: 2px;
+  }
+
+  input:not([type='checkbox']):not([type='range']):not([type='color']),
+  select,
+  textarea {
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  input[type='checkbox'],
+  input[type='range'] {
+    accent-color: var(--accent, #3c8fbe);
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+  }
+
+  th,
+  td {
+    border-bottom: 1px solid var(--nas-outline);
+  }
+
+  button[aria-pressed='true'],
+  button[aria-selected='true'] {
+    border-color: var(--accent, #3c8fbe);
+  }
+
+  img {
+    object-fit: contain;
+  }
+
+  .app_error {
+    color: var(--nas-error);
+  }
+
+  .app_toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .app_panel {
+    border: 1px solid var(--nas-outline);
+    border-radius: 0.75rem;
+    background: var(--nas-panel);
+  }
+
+  .app_scroll {
+    min-width: 0;
+    overflow: auto;
+  }
+}

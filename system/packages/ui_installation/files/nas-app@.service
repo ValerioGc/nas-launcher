@@ -1,0 +1,67 @@
+# Runs one installed application per unit instance through run-app.sh.
+# The launcher manages each instance using the application's validated manifest.
+# A dynamic service user isolates application processes. Membership in the nas-os
+# group allows the launcher to connect to the application socket.
+
+[Unit]
+Description=NAS application %i
+Documentation=https://github.com/ValerioGc/nas-launcher/blob/master/docs/development/external_apps/APPS.md
+After=nas-os.service nas-os-base-firewall.service
+Requires=nas-os-base-firewall.service
+StopWhenUnneeded=no
+
+[Service]
+NFTSet=cgroup:inet:nas_base:nas_apps_out
+Type=exec
+ExecStart=/usr/local/lib/nas-os/run-app.sh %i
+WorkingDirectory=/var/lib/nas-os/apps/%i
+DynamicUser=yes
+SupplementaryGroups=nas-os
+# Preserves group write access to sockets created in the shared setgid directory.
+UMask=0007
+Restart=on-failure
+RestartSec=2
+
+# Creates a private writable state directory at /var/lib/nas-app/%i.
+StateDirectory=nas-app/%i
+StateDirectoryMode=0700
+
+# Allows writes to the shared application socket directory.
+ReadWritePaths=/run/nas-os/apps
+
+# Hides host data, logs, launcher state, devices, and other processes by default.
+# The application package remains readable. Manifest-approved permissions are
+# applied through nas-app@<id>.service.d/grants.conf.
+TemporaryFileSystem=/srv:ro /mnt:ro /media:ro /var/log:ro /var/lib/nas-os:ro
+BindReadOnlyPaths=/var/lib/nas-os/apps/%i
+InaccessiblePaths=-/sys -/run/udev
+ProtectProc=invisible
+ProcSubset=pid
+CapabilityBoundingSet=
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+# Blocks loopback access except the systemd-resolved stub resolver.
+# Applications reach the launcher through its Unix socket, which identifies the
+# caller by cgroup and restricts requests to that application's permissions.
+IPAddressDeny=localhost
+IPAddressAllow=127.0.0.53
+Environment=NAS_LAUNCHER_SOCKET=/run/nas-os/launcher/apps.sock
+# Limits runtime workers and allocator arenas to reduce per-application memory use.
+Environment=TOKIO_WORKER_THREADS=2 MALLOC_ARENA_MAX=2
+NoNewPrivileges=yes
+MemoryDenyWriteExecute=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectKernelLogs=yes
+ProtectClock=yes
+ProtectHostname=yes
+ProtectControlGroups=yes
+RestrictNamespaces=yes
+RestrictRealtime=yes
+RestrictSUIDSGID=yes
+LockPersonality=yes
+SystemCallArchitectures=native
+SystemCallFilter=@system-service

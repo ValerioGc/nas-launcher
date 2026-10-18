@@ -1,0 +1,15 @@
+/*
+ * Allows the nas-os service user to start nas-os-smb-shares.service.
+ * The helper validates share requests, configures Samba, and opens TCP 445 to the
+ * local network while folders are shared.
+ */
+polkit.addRule(function (action, subject) {
+  if (
+    action.id === 'org.freedesktop.systemd1.manage-units' &&
+    subject.user === 'nas-os' &&
+    action.lookup('unit') === 'nas-os-smb-shares.service' &&
+    action.lookup('verb') === 'start'
+  ) {
+    return polkit.Result.YES;
+  }
+});

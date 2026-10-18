@@ -1,0 +1,16 @@
+/*
+ * Allows the nas-os service user to start nas-os-apt@refresh.service and
+ * nas-os-apt@upgrade.service. These privileged helpers refresh the Debian package
+ * index and install selected updates.
+ */
+polkit.addRule(function (action, subject) {
+  if (
+    action.id === 'org.freedesktop.systemd1.manage-units' &&
+    subject.user === 'nas-os' &&
+    ['nas-os-apt@refresh.service', 'nas-os-apt@upgrade.service'].indexOf(action.lookup('unit')) !==
+      -1 &&
+    action.lookup('verb') === 'start'
+  ) {
+    return polkit.Result.YES;
+  }
+});

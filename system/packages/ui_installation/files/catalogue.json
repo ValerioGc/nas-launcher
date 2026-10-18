@@ -1,0 +1,126 @@
+{
+  "version": 1,
+  "apps": [
+    {
+      "id": "nas-picture-manager",
+      "name": "Immagini",
+      "info": "Organizza e sfoglia le foto salvate sul NAS.",
+      "provider": "github",
+      "repository": "ValerioGc/nas-picture-manager",
+      "asset": "nas-picture-manager-{version}-linux-x64.tar.gz",
+      "category": "media",
+      "system": false,
+      "preinstall": false
+    },
+    {
+      "id": "nas-disk-manager",
+      "name": "Dischi",
+      "info": "Stato, spazio libero e salute dei dischi del NAS.",
+      "provider": "github",
+      "repository": "ValerioGc/nas-disk-manager",
+      "asset": "nas-disk-manager-{version}-linux-x64.tar.gz",
+      "category": "storage",
+      "system": true,
+      "preinstall": true
+    },
+    {
+      "id": "nas-log-manager",
+      "name": "Visualizzatore log",
+      "info": "Log dettagliati collegati alle notifiche del NAS.",
+      "provider": "github",
+      "repository": "ValerioGc/nas-log-manager",
+      "asset": "nas-log-manager-{version}-linux-x64.tar.gz",
+      "category": "system",
+      "system": true,
+      "preinstall": true
+    },
+    {
+      "id": "nas-security-center",
+      "name": "Centro sicurezza",
+      "info": "Indirizzi ammessi, blocco dei tentativi e accessi rifiutati del NAS.",
+      "provider": "github",
+      "repository": "ValerioGc/nas-security-center",
+      "asset": "nas-security-center-{version}-linux-x64.tar.gz",
+      "category": "system",
+      "preinstall": true,
+      "system": true
+    },
+    {
+      "id": "nas-cleanup-manager",
+      "name": "Pulizia",
+      "info": "Libera spazio sul disco del sistema: temporanei, log, pacchetti, kernel vecchi e cache.",
+      "provider": "github",
+      "repository": "ValerioGc/nas-cleanup-manager",
+      "asset": "nas-cleanup-manager-{version}-linux-x64.tar.gz",
+      "category": "system",
+      "preinstall": false,
+      "system": false
+    },
+    {
+      "id": "nas-sync-manager",
+      "name": "Sincronizzazione",
+      "info": "Sincronizza in tempo reale le cartelle dei PC della rete locale con quelle del NAS.",
+      "provider": "github",
+      "repository": "ValerioGc/nas-sync-manager",
+      "asset": "nas-sync-manager-{version}-linux-x64.tar.gz",
+      "category": "storage",
+      "preinstall": false,
+      "system": false
+    },
+    {
+      "id": "nas-mail-client",
+      "name": "Email",
+      "info": "Invia per email gli accessi rifiutati e gli aggiornamenti del NAS.",
+      "provider": "github",
+      "repository": "ValerioGc/nas-mail-client",
+      "asset": "nas-mail-client-{version}-linux-x64.tar.gz",
+      "category": "system",
+      "system": false,
+      "preinstall": false
+    },
+    {
+      "id": "nas-backup-manager",
+      "name": "Backup",
+      "info": "Copie di sicurezza dei dati del NAS.",
+      "provider": "github",
+      "repository": "ValerioGc/nas-backup-manager",
+      "asset": "nas-backup-manager-{version}-linux-x64.tar.gz",
+      "category": "storage",
+      "system": false,
+      "preinstall": false
+    },
+    {
+      "id": "nas-file-manager",
+      "name": "File",
+      "info": "Esplora e gestisce i file del NAS.",
+      "provider": "github",
+      "repository": "ValerioGc/nas-file-manager",
+      "asset": "nas-file-manager-{version}-linux-x64.tar.gz",
+      "category": "storage",
+      "system": true,
+      "preinstall": true
+    },
+    {
+      "id": "nas-system-monitor",
+      "name": "Monitor sistema",
+      "info": "Sensori, processi e widget del sistema del NAS.",
+      "provider": "github",
+      "repository": "ValerioGc/nas-system-monitor",
+      "asset": "nas-system-monitor-{version}-linux-x64.tar.gz",
+      "category": "system",
+      "system": true,
+      "preinstall": true
+    },
+    {
+      "id": "nas-system-terminal",
+      "name": "Terminale",
+      "info": "Console dei comandi del NAS e log di sistema.",
+      "provider": "github",
+      "repository": "ValerioGc/nas-system-terminal",
+      "asset": "nas-system-terminal-{version}-linux-x64.tar.gz",
+      "category": "system",
+      "system": true,
+      "preinstall": true
+    }
+  ]
+}

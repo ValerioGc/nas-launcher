@@ -1,0 +1,166 @@
+@use '@/styles/global' as *;
+
+.app_view.settings_view {
+  overflow: hidden;
+
+  .app_sections {
+    height: 100%;
+    min-height: 0;
+  }
+
+  .app_sections_nav {
+    @include minimal-scrollbar;
+    overflow-y: auto;
+  }
+
+  .app_sections_content {
+    @include minimal-scrollbar;
+    min-height: 0;
+    overflow-y: auto;
+    padding: $focus_offset;
+  }
+
+  .settings_form {
+    max-width: 60rem;
+    padding-bottom: $space_3;
+  }
+
+  .settings_group {
+    @extend %stack;
+    gap: $space_5;
+  }
+
+  .settings_fields {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: $space_4 $space_5;
+    align-items: start;
+  }
+
+  .settings_field {
+    flex-direction: column;
+    align-items: stretch;
+    min-width: 0;
+
+    input:not([type='checkbox']),
+    select,
+    textarea {
+      width: 100%;
+    }
+
+    // A thin track filled with the accent, and a round thumb.
+    input[type='range'] {
+      min-height: $space_8;
+      appearance: none;
+      background: transparent;
+      cursor: pointer;
+
+      &::-webkit-slider-runnable-track {
+        height: $space_2 * 0.75;
+        border-radius: $radius_large;
+        background: var(--surface-border);
+      }
+
+      &::-webkit-slider-thumb {
+        width: $space_4;
+        height: $space_4;
+        margin-top: -$space_2 * 0.625;
+        border: $border_thin * 2 solid var(--surface);
+        border-radius: 50%;
+        background: var(--accent);
+        box-shadow: $shadow_raised;
+        appearance: none;
+      }
+
+      &::-moz-range-track {
+        height: $space_2 * 0.75;
+        border-radius: $radius_large;
+        background: var(--surface-border);
+      }
+
+      &::-moz-range-progress {
+        height: $space_2 * 0.75;
+        border-radius: $radius_large;
+        background: var(--accent);
+      }
+
+      &::-moz-range-thumb {
+        width: $space_4;
+        height: $space_4;
+        border: $border_thin * 2 solid var(--surface);
+        border-radius: 50%;
+        background: var(--accent);
+      }
+    }
+
+    input[type='color'] {
+      @extend %control;
+      padding: $space_2;
+      cursor: pointer;
+    }
+  }
+
+  .settings_full {
+    grid-column: 1 / -1;
+  }
+
+  // The title of a section with its action at its right.
+  .settings_heading {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: $space_3;
+
+    h2 {
+      margin: 0;
+    }
+  }
+
+  .settings_intro {
+    margin-top: -$space_2;
+  }
+
+  // A short field on the line of its label.
+  .settings_inline {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: $space_3;
+
+    input {
+      width: $metric_min_width * 0.75;
+    }
+  }
+
+  .rules_off {
+    opacity: 0.5;
+    pointer-events: none;
+  }
+
+  // The button that confirms a section, at its right.
+  .settings_actions {
+    justify-content: flex-end;
+  }
+
+  .settings_first_column {
+    grid-column: 1;
+  }
+
+  // A host name is short: the field is as wide as one, not as the panel.
+  .settings_field input.nas_name_input {
+    width: $dropdown_min_width;
+  }
+
+  @media (max-width: $breakpoint_medium) {
+    .app_sections_nav {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      overflow: visible;
+    }
+
+    .settings_fields {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+}

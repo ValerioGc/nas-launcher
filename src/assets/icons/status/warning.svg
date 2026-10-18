@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+     stroke="#dca545" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+  <title>Warning</title>
+  <path d="M12 3.8 21.3 19.7a1.4 1.4 0 0 1-1.2 2.1H3.9a1.4 1.4 0 0 1-1.2-2.1z"/>
+  <path d="M12 9.8v4.4"/>
+  <path d="M12 17.3v.9"/>
+</svg>

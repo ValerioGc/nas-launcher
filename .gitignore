@@ -1,0 +1,33 @@
+# Dependencies and local package-manager state
+node_modules/
+/pnpm-lock.yaml
+/pnpm-workspace.yaml
+
+# Build and analysis output
+/dist/
+/backend/target/
+/backend/data/
+**/coverage/
+**/clippy-report.json
+/.scannerwork/
+.eslintcache
+*.tsbuildinfo
+*.timestamp-*-*.mjs
+
+# Generated releases and browser tests
+/release-assets/
+/release-notes.md
+/src/tests/e2e/.features-gen/
+/test-results/
+
+# Local editor and assistant settings
+/.vscode/
+/.idea/
+/CLAUDE.md
+/.claude/
+*.local
+*.sw?
+
+# Logs and operating system metadata
+*.log
+.DS_Store

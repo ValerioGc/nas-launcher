@@ -1,0 +1,7140 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "nas-os launcher",
+    "version": "0.9.0"
+  },
+  "paths": {
+    "/health": {
+      "get": {
+        "operationId": "getHealth",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Health"
+                }
+              }
+            }
+          },
+          "4XX": {
+            "description": "The request was refused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "5XX": {
+            "description": "The launcher or the machine could not answer",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/caches": {
+      "get": {
+        "operationId": "getCaches",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Cache"
+                  }
+                }
+              }
+            }
+          },
+          "4XX": {
+            "description": "The request was refused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "5XX": {
+            "description": "The launcher or the machine could not answer",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/caches/{app}/{id}": {
+      "delete": {
+        "operationId": "deleteCachesAppId",
+        "parameters": [
+          {
+            "name": "app",
+            "in": "path",
+            "description": "the application the cache belongs to",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "description": "the cache",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Success"
+          },
+          "4XX": {
+            "description": "The request was refused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "5XX": {
+            "description": "The launcher or the machine could not answer",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/capabilities/{capability}": {
+      "get": {
+        "summary": "The installed applications that provide a capability and where the browser reaches them",
+        "operationId": "getCapabilitiesCapability",
+        "parameters": [
+          {
+            "name": "capability",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CapabilityProvider"
+                  }
+                }
+              }
+            }
+          },
+          "4XX": {
+            "description": "The request was refused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "5XX": {
+            "description": "The launcher or the machine could not answer",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/status": {
+      "get": {
+        "summary": "Service name and version and the number of system applications",
+        "operationId": "getStatus",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BackendStatus"
+                }
+              }
+            }
+          },
+          "4XX": {
+            "description": "The request was refused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "5XX": {
+            "description": "The launcher or the machine could not answer",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/mail/status": {
+      "get": {
+        "summary": "Whether the Email app is installed and can send a code to an address",
+        "operationId": "getMailStatus",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MailStatus"
+                }
+              }
+            }
+          },
+          "4XX": {
+            "description": "The request was refused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "5XX": {
+            "description": "The launcher or the machine could not answer",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/system/telemetry": {
+      "get": {
+        "summary": "Compatibility forwarding for older System Monitor clients. The application owns the readings.",
+        "operationId": "getSystemTelemetry",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "4XX": {
+            "description": "The request was refused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "5XX": {
+            "description": "The launcher or the machine could not answer",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/system/processes/{id}": {
+      "post": {
+        "summary": "Terminates a process, or restarts the service it runs in",
+        "operationId": "postSystemProcessesId",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "the id of the process",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProcessRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProcessResult"
+                }
+              }
+            }
+          },
+          "4XX": {
+            "description": "The request was refused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "5XX": {
+            "description": "The launcher or the machine could not answer",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/desktop/shortcuts": {
+      "get": {
+        "summary": "The desktop icons in order",
+        "operationId": "getDesktopShortcuts",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Shortcut"
+                  }
+                }
+              }
+            }
+          },
+          "4XX": {
+            "description": "The request was refused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "5XX": {
+            "description": "The launcher or the machine could not answer",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/desktop/shortcuts/order": {
+      "put": {
+        "summary": "Puts the listed icons first in that order and the others after",
+        "operationId": "putDesktopShortcutsOrder",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Order"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Shortcut"
+                  }
+                }
+              }
+            }
+          },
+          "4XX": {
+            "description": "The request was refused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "5XX": {
+            "description": "The launcher or the machine could not answer",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/desktop/shortcuts/{id}": {
+      "post": {
+        "summary": "Adds the icon of an application and answers with the list",
+        "operationId": "postDesktopShortcutsId",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Shortcut"
+                  }
+                }
+              }
+            }
+          },
+          "4XX": {
+            "description": "The request was refused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "5XX": {
+            "description": "The launcher or the machine could not answer",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Removes the icon of an application and answers with the list",
+        "operationId": "deleteDesktopShortcutsId",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Shortcut"
+                  }
+                }
+              }
+            }
+          },
+          "4XX": {
+            "description": "The request was refused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "5XX": {
+            "description": "The launcher or the machine could not answer",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/desktop/folders": {
+      "post": {
+        "summary": "Saves a folder shortcut from nas-file-manager.",
+        "operationId": "postDesktopFolders",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FolderShortcut"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Shortcut"
+                  }
+                }
+              }
+            }
+          },
+          "4XX": {
+            "description": "The request was refused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "5XX": {
+            "description": "The launcher or the machine could not answer",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Removes only the desktop shortcut, leaving the folder untouched.",
+        "operationId": "deleteDesktopFolders",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FolderPath"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Shortcut"
+                  }
+                }
+              }
+            }
+          },
+          "4XX": {
+            "description": "The request was refused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "5XX": {
+            "description": "The launcher or the machine could not answer",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/setup": {
+      "get": {
+        "operationId": "getSetup",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SetupState"
+                }
+              }
+            }
+          },
+          "4XX": {
+            "description": "The request was refused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "5XX": {
+            "description": "The launcher or the machine could not answer",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/setup/complete": {
+      "post": {
+        "summary": "Saves what the wizard hands to the launcher, once",
+        "operationId": "postSetupComplete",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FirstConfiguration"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SetupState"
+                }
+              }
+            }
+          },
+          "4XX": {
+            "description": "The request was refused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "5XX": {
+            "description": "The launcher or the machine could not answer",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/storage/disks": {
+      "get": {
+        "summary": "The disks and volumes of the machine as the disk manager shows them, the system left out.",
+        "operationId": "getStorageDisks",
+        "parameters": [
+          {
+            "name": "kind",
+            "in": "query",
+            "description": "`local` or `external`; every disk when missing",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Disk"
+                  }
+                }
+              }
+            }
+          },
+          "4XX": {
+            "description": "The request was refused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "5XX": {
+            "description": "The launcher or the machine could not answer",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/storage/encryption": {
+      "get": {
+        "summary": "Whether disk encryption is on for this installation.",
+        "operationId": "getStorageEncryption",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "boolean"
+                }
+              }
+            }
+          },
+          "4XX": {
+            "description": "The request was refused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "5XX": {
+            "description": "The launcher or the machine could not answer",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Formats a data disk, or opens, closes and keys an encrypted volume.",
+        "operationId": "postStorageEncryption",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Request"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Answer"
+                }
+              }
+            }
+          },
+          "4XX": {
+            "description": "The request was refused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "5XX": {
+            "description": "The launcher or the machine could not answer",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/storage/security": {
+      "get": {
+        "summary": "Whether the system of the NAS is encrypted and has a TPM 2.0, as the wizard found them",
+        "operationId": "getStorageSecurity",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SystemSecurity"
+                }
+              }
+            }
+          },
+          "4XX": {
+            "description": "The request was refused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "5XX": {
+            "description": "The launcher or the machine could not answer",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/storage/network": {
+      "get": {
+        "summary": "The network disks the NAS mounts, connected or not.",
+        "operationId": "getStorageNetwork",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NetworkDisks"
+                }
+              }
+            }
+          },
+          "4XX": {
+            "description": "The request was refused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "5XX": {
+            "description": "The launcher or the machine could not answer",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Adds, tries, connects, disconnects or forgets a network disk.",
+        "operationId": "postStorageNetwork",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NetworkRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Answer"
+                }
+              }
+            }
+          },
+          "4XX": {
+            "description": "The request was refused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "5XX": {
+            "description": "The launcher or the machine could not answer",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/storage/disks/external": {
+      "get": {
+        "summary": "Lists connected external disks and whether each can be safely ejected.",
+        "operationId": "getStorageDisksExternal",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ExternalDisk"
+                  }
+                }
+              }
+            }
+          },
+          "4XX": {
+            "description": "The request was refused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "5XX": {
+            "description": "The launcher or the machine could not answer",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/storage/disks/initialize": {
+      "post": {
+        "summary": "Starts the constrained initialization of one empty data disk.",
+        "operationId": "postStorageDisksInitialize",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InitializeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InitializeAccepted"
+                }
+              }
+            }
+          },
+          "4XX": {
+            "description": "The request was refused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "5XX": {
+            "description": "The launcher or the machine could not answer",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/storage/disks/rename": {
+      "post": {
+        "summary": "Renames one writable ext data volume.",
+        "operationId": "postStorageDisksRename",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RenameRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Success"
+          },
+          "4XX": {
+            "description": "The request was refused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "5XX": {
+            "description": "The launcher or the machine could not answer",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/storage/disks/smart": {
+      "post": {
+        "operationId": "postStorageDisksSmart",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SmartRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "4XX": {
+            "description": "The request was refused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "5XX": {
+            "description": "The launcher or the machine could not answer",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/storage/disks/eject": {
+      "post": {
+        "summary": "Ejects an external disk, unless it is marked as not removable.",
+        "operationId": "postStorageDisksEject",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EjectRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Success"
+          },
+          "403": {
+            "description": "the disk is marked as not removable"
+          },
+          "4XX": {
+            "description": "The request was refused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "5XX": {
+            "description": "The launcher or the machine could not answer",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/storage/locks": {
+      "get": {
+        "summary": "The filesystem UUIDs of the disks marked as not removable.",
+        "operationId": "getStorageLocks",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          },
+          "4XX": {
+            "description": "The request was refused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "5XX": {
+            "description": "The launcher or the machine could not answer",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Marks a disk as not removable, or removable again.",
+        "operationId": "postStorageLocks",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LockRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          },
+          "4XX": {
+            "description": "The request was refused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "5XX": {
+            "description": "The launcher or the machine could not answer",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/antivirus": {
+      "get": {
+        "operationId": "getAntivirus",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Status"
+                }
+              }
+            }
+          },
+          "4XX": {
+            "description": "The request was refused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "5XX": {
+            "description": "The launcher or the machine could not answer",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/antivirus/settings": {
+      "put": {
+        "operationId": "putAntivirusSettings",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Settings"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Settings"
+                }
+              }
+            }
+          },
+          "4XX": {
+            "description": "The request was refused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "5XX": {
+            "description": "The launcher or the machine could not answer",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/antivirus/enabled": {
+      "post": {
+        "operationId": "postAntivirusEnabled",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Toggle"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Success"
+          },
+          "4XX": {
+            "description": "The request was refused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "5XX": {
+            "description": "The launcher or the machine could not answer",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/antivirus/scan": {
+      "post": {
+        "operationId": "postAntivirusScan",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ScanRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Success"
+          },
+          "4XX": {
+            "description": "The request was refused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "5XX": {
+            "description": "The launcher or the machine could not answer",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/antivirus/quarantine/{action}": {
+      "post": {
+        "operationId": "postAntivirusQuarantineAction",
+        "parameters": [
+          {
+            "name": "action",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EntryRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Success"
+          },
+          "4XX": {
+            "description": "The request was refused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "5XX": {
+            "description": "The launcher or the machine could not answer",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/antivirus/scanned/forget": {
+      "post": {
+        "summary": "Forgets the files found clean, which the quick scan leaves out while they do not change",
+        "operationId": "postAntivirusScannedForget",
+        "responses": {
+          "204": {
+            "description": "Success"
+          },
+          "4XX": {
+            "description": "The request was refused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "5XX": {
+            "description": "The launcher or the machine could not answer",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/apps": {
+      "get": {
+        "summary": "System and installed applications",
+        "operationId": "getApps",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/App"
+                  }
+                }
+              }
+            }
+          },
+          "4XX": {
+            "description": "The request was refused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "5XX": {
+            "description": "The launcher or the machine could not answer",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/apps/installed": {
+      "get": {
+        "summary": "The same list the App Manager reads next to the available ones",
+        "operationId": "getAppsInstalled",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/App"
+                  }
+                }
+              }
+            }
+          },
+          "4XX": {
+            "description": "The request was refused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "5XX": {
+            "description": "The launcher or the machine could not answer",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/apps/available": {
+      "get": {
+        "summary": "Lists catalogue applications available for installation.",
+        "operationId": "getAppsAvailable",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Offer"
+                  }
+                }
+              }
+            }
+          },
+          "4XX": {
+            "description": "The request was refused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "5XX": {
+            "description": "The launcher or the machine could not answer",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/apps/catalogue": {
+      "get": {
+        "summary": "The catalogue in effect",
+        "operationId": "getAppsCatalogue",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ListedApp"
+                  }
+                }
+              }
+            }
+          },
+          "4XX": {
+            "description": "The request was refused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "5XX": {
+            "description": "The launcher or the machine could not answer",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "summary": "Saves the whole catalogue",
+        "operationId": "putAppsCatalogue",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EditedCatalogue"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ListedApp"
+                  }
+                }
+              }
+            }
+          },
+          "4XX": {
+            "description": "The request was refused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "5XX": {
+            "description": "The launcher or the machine could not answer",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/settings/apps": {
+      "get": {
+        "summary": "The automatic update check",
+        "operationId": "getSettingsApps",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ManagerSettings"
+                }
+              }
+            }
+          },
+          "4XX": {
+            "description": "The request was refused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "5XX": {
+            "description": "The launcher or the machine could not answer",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "summary": "Saves the automatic update check",
+        "operationId": "putSettingsApps",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ManagerSettings"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ManagerSettings"
+                }
+              }
+            }
+          },
+          "4XX": {
+            "description": "The request was refused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "5XX": {
+            "description": "The launcher or the machine could not answer",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/apps/updates": {
+      "post": {
+        "summary": "Checks application repositories for available releases.",
+        "operationId": "postAppsUpdates",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Offer"
+                  }
+                }
+              }
+            }
+          },
+          "4XX": {
+            "description": "The request was refused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "5XX": {
+            "description": "The launcher or the machine could not answer",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/apps/credentials": {
+      "get": {
+        "summary": "Whether the release token is set and what the launcher may do with packages",
+        "operationId": "getAppsCredentials",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Credentials"
+                }
+              }
+            }
+          },
+          "4XX": {
+            "description": "The request was refused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "5XX": {
+            "description": "The launcher or the machine could not answer",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "summary": "Stores the release token without ever returning it",
+        "operationId": "putAppsCredentials",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NewToken"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Accepted"
+                }
+              }
+            }
+          },
+          "4XX": {
+            "description": "The request was refused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "5XX": {
+            "description": "The launcher or the machine could not answer",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/apps/{id}/info": {
+      "get": {
+        "summary": "The metadata of an application",
+        "operationId": "getAppsIdInfo",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AppDetail"
+                }
+              }
+            }
+          },
+          "4XX": {
+            "description": "The request was refused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "5XX": {
+            "description": "The launcher or the machine could not answer",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/apps/{id}/icon": {
+      "get": {
+        "summary": "The icon out of the package of an application",
+        "operationId": "getAppsIdIcon",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "image/*": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "integer",
+                    "format": "int32",
+                    "minimum": 0
+                  }
+                }
+              }
+            }
+          },
+          "4XX": {
+            "description": "The request was refused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "5XX": {
+            "description": "The launcher or the machine could not answer",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/apps/{id}/logo": {
+      "get": {
+        "summary": "The logo of a catalogue entry",
+        "operationId": "getAppsIdLogo",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "image/*": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "integer",
+                    "format": "int32",
+                    "minimum": 0
+                  }
+                }
+              }
+            }
+          },
+          "4XX": {
+            "description": "The request was refused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "5XX": {
+            "description": "The launcher or the machine could not answer",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "summary": "Stores the image in the body as the logo of a catalogue entry",
+        "operationId": "putAppsIdLogo",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "image/*": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "type": "integer",
+                  "format": "int32",
+                  "minimum": 0
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Success"
+          },
+          "4XX": {
+            "description": "The request was refused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "5XX": {
+            "description": "The launcher or the machine could not answer",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Removes the logo of a catalogue entry",
+        "operationId": "deleteAppsIdLogo",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Success"
+          },
+          "4XX": {
+            "description": "The request was refused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "5XX": {
+            "description": "The launcher or the machine could not answer",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/apps/close": {
+      "post": {
+        "summary": "Closes session windows and stops applications without active background work.",
+        "operationId": "postAppsClose",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Closed"
+                }
+              }
+            }
+          },
+          "4XX": {
+            "description": "The request was refused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "5XX": {
+            "description": "The launcher or the machine could not answer",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/apps/{id}/{action}": {
+      "post": {
+        "summary": "Installs updates or removes an application or starts and stops its process",
+        "operationId": "postAppsIdAction",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "action",
+            "in": "path",
+            "description": "install update uninstall start stop restart or close (stop unless it works in background)",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "removeData",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActionAck"
+                }
+              }
+            }
+          },
+          "4XX": {
+            "description": "The request was refused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "5XX": {
+            "description": "The launcher or the machine could not answer",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/network": {
+      "get": {
+        "summary": "The current connection and the networks seen",
+        "operationId": "getNetwork",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NetworkState"
+                }
+              }
+            }
+          },
+          "4XX": {
+            "description": "The request was refused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "5XX": {
+            "description": "The launcher or the machine could not answer",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/network/scan": {
+      "post": {
+        "summary": "Looks for networks again and answers with the state",
+        "operationId": "postNetworkScan",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NetworkState"
+                }
+              }
+            }
+          },
+          "4XX": {
+            "description": "The request was refused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "5XX": {
+            "description": "The launcher or the machine could not answer",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/network/wifi": {
+      "post": {
+        "summary": "Joins a wireless network from the list",
+        "operationId": "postNetworkWifi",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WifiRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NetworkState"
+                }
+              }
+            }
+          },
+          "4XX": {
+            "description": "The request was refused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "5XX": {
+            "description": "The launcher or the machine could not answer",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/network/wired": {
+      "post": {
+        "summary": "Goes back to the cable",
+        "operationId": "postNetworkWired",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NetworkState"
+                }
+              }
+            }
+          },
+          "4XX": {
+            "description": "The request was refused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "5XX": {
+            "description": "The launcher or the machine could not answer",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/network/disconnect": {
+      "post": {
+        "summary": "Leaves the wireless network when that is not the way in",
+        "operationId": "postNetworkDisconnect",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NetworkState"
+                }
+              }
+            }
+          },
+          "4XX": {
+            "description": "The request was refused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "5XX": {
+            "description": "The launcher or the machine could not answer",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/network/adapter": {
+      "post": {
+        "summary": "Turns a network card off, or back on; never the one the NAS is reached through",
+        "operationId": "postNetworkAdapter",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdapterRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NetworkState"
+                }
+              }
+            }
+          },
+          "4XX": {
+            "description": "The request was refused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "5XX": {
+            "description": "The launcher or the machine could not answer",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/access/rules": {
+      "get": {
+        "summary": "The addresses allowed to reach the NAS",
+        "operationId": "getAccessRules",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Rule"
+                  }
+                }
+              }
+            }
+          },
+          "4XX": {
+            "description": "The request was refused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "5XX": {
+            "description": "The launcher or the machine could not answer",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Adds an allowed address and answers with the whole list",
+        "operationId": "postAccessRules",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NewRule"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Rule"
+                  }
+                }
+              }
+            }
+          },
+          "4XX": {
+            "description": "The request was refused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "5XX": {
+            "description": "The launcher or the machine could not answer",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/access/rules/{id}": {
+      "delete": {
+        "summary": "Removes an allowed address and answers with the whole list",
+        "operationId": "deleteAccessRulesId",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Rule"
+                  }
+                }
+              }
+            }
+          },
+          "4XX": {
+            "description": "The request was refused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "5XX": {
+            "description": "The launcher or the machine could not answer",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/access/failures": {
+      "post": {
+        "summary": "Records a refused sign-in",
+        "operationId": "postAccessFailures",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Failure"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Recorded"
+                }
+              }
+            }
+          },
+          "4XX": {
+            "description": "The request was refused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "5XX": {
+            "description": "The launcher or the machine could not answer",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/system/actions/{action}": {
+      "post": {
+        "summary": "Restarts or shuts down the machine, unless a job of root is running",
+        "operationId": "postSystemActionsAction",
+        "parameters": [
+          {
+            "name": "action",
+            "in": "path",
+            "description": "restart or shutdown",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PowerOutcome"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "a job of root is running: the NAS waits for it"
+          },
+          "4XX": {
+            "description": "The request was refused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "5XX": {
+            "description": "The launcher or the machine could not answer",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/system/power": {
+      "get": {
+        "summary": "Whether restart and shutdown are simulated",
+        "operationId": "getSystemPower",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PowerMode"
+                }
+              }
+            }
+          },
+          "4XX": {
+            "description": "The request was refused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "5XX": {
+            "description": "The launcher or the machine could not answer",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/system/power/busy": {
+      "get": {
+        "summary": "Lists operations interrupted by power actions and privileged jobs that block them.",
+        "operationId": "getSystemPowerBusy",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Busy"
+                }
+              }
+            }
+          },
+          "4XX": {
+            "description": "The request was refused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "5XX": {
+            "description": "The launcher or the machine could not answer",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/system/config": {
+      "get": {
+        "summary": "The configuration of the NAS, for the page to encrypt and save. The gateway checks the password\nfirst.",
+        "operationId": "getSystemConfig",
+        "parameters": [
+          {
+            "name": "apps",
+            "in": "query",
+            "description": "The applications whose settings go in the file, separated by commas",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Config"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "the password was not confirmed by the gateway"
+          },
+          "4XX": {
+            "description": "The request was refused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "5XX": {
+            "description": "The launcher or the machine could not answer",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Replaces the configuration with the one of a file the page decrypted. The gateway checks the\npassword first.",
+        "operationId": "postSystemConfig",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Config"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Config"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "the password was not confirmed by the gateway"
+          },
+          "4XX": {
+            "description": "The request was refused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "5XX": {
+            "description": "The launcher or the machine could not answer",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/system/config/apps": {
+      "get": {
+        "summary": "The applications whose settings can go in the file",
+        "operationId": "getSystemConfigApps",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          },
+          "4XX": {
+            "description": "The request was refused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "5XX": {
+            "description": "The launcher or the machine could not answer",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/system/reset": {
+      "get": {
+        "summary": "Whether the NAS can be reset here",
+        "operationId": "getSystemReset",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResetState"
+                }
+              }
+            }
+          },
+          "4XX": {
+            "description": "The request was refused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "5XX": {
+            "description": "The launcher or the machine could not answer",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Resets the NAS and starts the wizard again. The gateway checks the password first.",
+        "operationId": "postSystemReset",
+        "responses": {
+          "202": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResetState"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "the password was not confirmed by the gateway"
+          },
+          "4XX": {
+            "description": "The request was refused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "the reset is not possible here"
+          },
+          "5XX": {
+            "description": "The launcher or the machine could not answer",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/settings/general": {
+      "get": {
+        "operationId": "getSettingsGeneral",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/General"
+                }
+              }
+            }
+          },
+          "4XX": {
+            "description": "The request was refused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "5XX": {
+            "description": "The launcher or the machine could not answer",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "operationId": "putSettingsGeneral",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/General"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/General"
+                }
+              }
+            }
+          },
+          "4XX": {
+            "description": "The request was refused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "5XX": {
+            "description": "The launcher or the machine could not answer",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/settings/access": {
+      "get": {
+        "operationId": "getSettingsAccess",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Access"
+                }
+              }
+            }
+          },
+          "4XX": {
+            "description": "The request was refused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "5XX": {
+            "description": "The launcher or the machine could not answer",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "operationId": "putSettingsAccess",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Access"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Access"
+                }
+              }
+            }
+          },
+          "4XX": {
+            "description": "The request was refused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "5XX": {
+            "description": "The launcher or the machine could not answer",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/settings/discovery": {
+      "get": {
+        "operationId": "getSettingsDiscovery",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Discovery"
+                }
+              }
+            }
+          },
+          "4XX": {
+            "description": "The request was refused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "5XX": {
+            "description": "The launcher or the machine could not answer",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "operationId": "putSettingsDiscovery",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Discovery"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Discovery"
+                }
+              }
+            }
+          },
+          "4XX": {
+            "description": "The request was refused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "5XX": {
+            "description": "The launcher or the machine could not answer",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/settings/power": {
+      "get": {
+        "operationId": "getSettingsPower",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Power"
+                }
+              }
+            }
+          },
+          "4XX": {
+            "description": "The request was refused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "5XX": {
+            "description": "The launcher or the machine could not answer",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "operationId": "putSettingsPower",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Power"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Power"
+                }
+              }
+            }
+          },
+          "4XX": {
+            "description": "The request was refused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "5XX": {
+            "description": "The launcher or the machine could not answer",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/system/updates": {
+      "get": {
+        "summary": "The Debian upgrades available and the job in progress",
+        "operationId": "getSystemUpdates",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SystemUpdates"
+                }
+              }
+            }
+          },
+          "4XX": {
+            "description": "The request was refused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "5XX": {
+            "description": "The launcher or the machine could not answer",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Installs the chosen upgrades",
+        "operationId": "postSystemUpdates",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateSelection"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SystemUpdates"
+                }
+              }
+            }
+          },
+          "4XX": {
+            "description": "The request was refused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "5XX": {
+            "description": "The launcher or the machine could not answer",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/system/updates/refresh": {
+      "post": {
+        "summary": "Refreshes the package index",
+        "operationId": "postSystemUpdatesRefresh",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SystemUpdates"
+                }
+              }
+            }
+          },
+          "4XX": {
+            "description": "The request was refused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "5XX": {
+            "description": "The launcher or the machine could not answer",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/launcher/updates": {
+      "get": {
+        "summary": "The components of the NAS (launcher, gateway, wizard) and the updates the last check found",
+        "operationId": "getLauncherUpdates",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NasUpdates"
+                }
+              }
+            }
+          },
+          "4XX": {
+            "description": "The request was refused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "5XX": {
+            "description": "The launcher or the machine could not answer",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Installs available wizard, gateway, and launcher updates in dependency order.",
+        "operationId": "postLauncherUpdates",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateStarted"
+                }
+              }
+            }
+          },
+          "4XX": {
+            "description": "The request was refused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "5XX": {
+            "description": "The launcher or the machine could not answer",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/launcher/updates/check": {
+      "post": {
+        "summary": "Checks NAS component repositories for available releases.",
+        "operationId": "postLauncherUpdatesCheck",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NasUpdates"
+                }
+              }
+            }
+          },
+          "4XX": {
+            "description": "The request was refused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "5XX": {
+            "description": "The launcher or the machine could not answer",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/notifications": {
+      "get": {
+        "summary": "The notifications that match the filter",
+        "operationId": "getNotifications",
+        "parameters": [
+          {
+            "name": "tone",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "source",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "read",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Notification"
+                  }
+                }
+              }
+            }
+          },
+          "4XX": {
+            "description": "The request was refused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "5XX": {
+            "description": "The launcher or the machine could not answer",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Records a notification",
+        "operationId": "postNotifications",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NewNotification"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Notification"
+                }
+              }
+            }
+          },
+          "4XX": {
+            "description": "The request was refused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "5XX": {
+            "description": "The launcher or the machine could not answer",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/notifications/sources": {
+      "get": {
+        "summary": "The sources present in the log",
+        "operationId": "getNotificationsSources",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          },
+          "4XX": {
+            "description": "The request was refused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "5XX": {
+            "description": "The launcher or the machine could not answer",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/notifications/{id}": {
+      "delete": {
+        "summary": "Deletes a notification",
+        "operationId": "deleteNotificationsId",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Success"
+          },
+          "4XX": {
+            "description": "The request was refused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "5XX": {
+            "description": "The launcher or the machine could not answer",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "summary": "Marks a notification read or unread",
+        "operationId": "patchNotificationsId",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Read"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Notification"
+                }
+              }
+            }
+          },
+          "4XX": {
+            "description": "The request was refused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "5XX": {
+            "description": "The launcher or the machine could not answer",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/notifications/{id}/log": {
+      "get": {
+        "summary": "The log behind a notification",
+        "operationId": "getNotificationsIdLog",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotificationLog"
+                }
+              }
+            }
+          },
+          "4XX": {
+            "description": "The request was refused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "5XX": {
+            "description": "The launcher or the machine could not answer",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/notifications/read": {
+      "post": {
+        "summary": "Marks every unread notification read",
+        "operationId": "postNotificationsRead",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Changed"
+                }
+              }
+            }
+          },
+          "4XX": {
+            "description": "The request was refused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "5XX": {
+            "description": "The launcher or the machine could not answer",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/notifications/read/clear": {
+      "post": {
+        "summary": "Deletes the notifications already read",
+        "operationId": "postNotificationsReadClear",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Removed"
+                }
+              }
+            }
+          },
+          "4XX": {
+            "description": "The request was refused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "5XX": {
+            "description": "The launcher or the machine could not answer",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/settings/notifications": {
+      "get": {
+        "summary": "The delivery preferences",
+        "operationId": "getSettingsNotifications",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotificationSettings"
+                }
+              }
+            }
+          },
+          "4XX": {
+            "description": "The request was refused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "5XX": {
+            "description": "The launcher or the machine could not answer",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "summary": "Saves the delivery preferences",
+        "operationId": "putSettingsNotifications",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NotificationSettings"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotificationSettings"
+                }
+              }
+            }
+          },
+          "4XX": {
+            "description": "The request was refused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "5XX": {
+            "description": "The launcher or the machine could not answer",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/terminal/log": {
+      "get": {
+        "summary": "The system journal as server-sent events with one line each",
+        "operationId": "getTerminalLog",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "text/event-stream": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "4XX": {
+            "description": "The request was refused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "5XX": {
+            "description": "The launcher or the machine could not answer",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/settings/terminal": {
+      "get": {
+        "summary": "Terminal appearance settings.",
+        "operationId": "getSettingsTerminal",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TerminalSettings"
+                }
+              }
+            }
+          },
+          "4XX": {
+            "description": "The request was refused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "5XX": {
+            "description": "The launcher or the machine could not answer",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "summary": "Saves how the terminal looks",
+        "operationId": "putSettingsTerminal",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TerminalSettings"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TerminalSettings"
+                }
+              }
+            }
+          },
+          "4XX": {
+            "description": "The request was refused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "5XX": {
+            "description": "The launcher or the machine could not answer",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/settings/widgets": {
+      "get": {
+        "operationId": "getSettingsWidgets",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WidgetSettings"
+                }
+              }
+            }
+          },
+          "4XX": {
+            "description": "The request was refused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "5XX": {
+            "description": "The launcher or the machine could not answer",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "operationId": "putSettingsWidgets",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WidgetSettings"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WidgetSettings"
+                }
+              }
+            }
+          },
+          "4XX": {
+            "description": "The request was refused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "5XX": {
+            "description": "The launcher or the machine could not answer",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/tasks": {
+      "get": {
+        "summary": "The register of ongoing operations",
+        "operationId": "getTasks",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Task"
+                  }
+                }
+              }
+            }
+          },
+          "4XX": {
+            "description": "The request was refused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "5XX": {
+            "description": "The launcher or the machine could not answer",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Registers an operation",
+        "operationId": "postTasks",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NewTask"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Task"
+                }
+              }
+            }
+          },
+          "4XX": {
+            "description": "The request was refused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "5XX": {
+            "description": "The launcher or the machine could not answer",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/tasks/finished": {
+      "post": {
+        "summary": "Clears every finished operation",
+        "operationId": "postTasksFinished",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Removed"
+                }
+              }
+            }
+          },
+          "4XX": {
+            "description": "The request was refused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "5XX": {
+            "description": "The launcher or the machine could not answer",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/tasks/{id}": {
+      "delete": {
+        "summary": "Removes an operation",
+        "operationId": "deleteTasksId",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Success"
+          },
+          "4XX": {
+            "description": "The request was refused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "5XX": {
+            "description": "The launcher or the machine could not answer",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "summary": "Updates operation state reported by its owner.",
+        "operationId": "patchTasksId",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TaskUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Task"
+                }
+              }
+            }
+          },
+          "4XX": {
+            "description": "The request was refused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "5XX": {
+            "description": "The launcher or the machine could not answer",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/tasks/{id}/{action}": {
+      "post": {
+        "summary": "Requests operation pause, resume, or cancellation from its owner.",
+        "operationId": "postTasksIdAction",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "action",
+            "in": "path",
+            "description": "pause resume or stop",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Task"
+                }
+              }
+            }
+          },
+          "4XX": {
+            "description": "The request was refused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "5XX": {
+            "description": "The launcher or the machine could not answer",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Accepted": {
+        "type": "object",
+        "required": ["accepted"],
+        "properties": {
+          "accepted": {
+            "type": "boolean"
+          }
+        }
+      },
+      "Access": {
+        "type": "object",
+        "required": ["notifyFailures"],
+        "properties": {
+          "notifyFailures": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
+      "Action": {
+        "type": "string",
+        "enum": ["terminate", "restart"]
+      },
+      "ActionAck": {
+        "type": "object",
+        "required": ["id", "action", "accepted"],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "action": {
+            "type": "string"
+          },
+          "accepted": {
+            "type": "boolean"
+          },
+          "task": {
+            "type": ["string", "null"]
+          }
+        }
+      },
+      "Adapter": {
+        "type": "object",
+        "description": "A network card of the NAS and whether it can be turned off or on from the page.",
+        "required": ["interface", "kind", "state", "enabled", "inUse", "canToggle"],
+        "properties": {
+          "interface": {
+            "type": "string"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/LinkKind"
+          },
+          "state": {
+            "$ref": "#/components/schemas/AdapterState"
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "inUse": {
+            "type": "boolean",
+            "description": "It carries the network the NAS is reached through"
+          },
+          "canToggle": {
+            "type": "boolean"
+          }
+        }
+      },
+      "AdapterRequest": {
+        "type": "object",
+        "required": ["interface", "enabled"],
+        "properties": {
+          "interface": {
+            "type": "string"
+          },
+          "enabled": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
+      "AdapterState": {
+        "type": "string",
+        "description": "Adapter activity reported by NetworkManager.",
+        "enum": ["connected", "disconnected", "unavailable", "unmanaged"]
+      },
+      "Answer": {
+        "type": "object",
+        "description": "Privileged storage-operation result.",
+        "properties": {
+          "recovery": {
+            "type": ["string", "null"],
+            "description": "The new recovery key, shown once."
+          },
+          "header": {
+            "type": ["string", "null"],
+            "description": "The backup of the header, in base64."
+          },
+          "taskId": {
+            "type": ["string", "null"],
+            "description": "The task of a format, which goes on in the background."
+          },
+          "error": {
+            "type": ["string", "null"],
+            "description": "Why the root unit refused or failed."
+          }
+        }
+      },
+      "ApiError": {
+        "type": "object",
+        "description": "Body shared by every failed response.",
+        "required": ["error"],
+        "properties": {
+          "error": {
+            "type": "string"
+          }
+        }
+      },
+      "App": {
+        "type": "object",
+        "required": ["id", "name", "info", "system", "version", "running", "icon"],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "info": {
+            "type": "string"
+          },
+          "system": {
+            "type": "boolean"
+          },
+          "version": {
+            "type": "string"
+          },
+          "running": {
+            "type": "boolean"
+          },
+          "icon": {
+            "type": "string"
+          },
+          "category": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/Category"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      },
+      "AppDetail": {
+        "type": "object",
+        "required": ["name", "version", "description", "logo", "url_repo", "website"],
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "version": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "logo": {
+            "type": "string"
+          },
+          "url_repo": {
+            "type": "string"
+          },
+          "website": {
+            "type": "string"
+          }
+        }
+      },
+      "AppManagerConfig": {
+        "type": "object",
+        "required": ["settings", "installed"],
+        "properties": {
+          "settings": {
+            "$ref": "#/components/schemas/ManagerSettings"
+          },
+          "catalogue": {
+            "type": ["array", "null"],
+            "items": {
+              "$ref": "#/components/schemas/CatalogueApp"
+            },
+            "description": "The catalogue saved from the App Manager; none when the one of the installation applies."
+          },
+          "installed": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/InstalledApp"
+            },
+            "description": "Imported application selection, preserving built-in and preinstalled applications."
+          }
+        },
+        "additionalProperties": false
+      },
+      "AppsConfig": {
+        "type": "object",
+        "description": "The settings of the applications chosen at the export, each under its identifier.",
+        "properties": {
+          "nas-app-manager": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/AppManagerConfig"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "nas-notification-manager": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/NotificationSettings"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "nas-system-terminal": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/TerminalSettings"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false
+      },
+      "BackendStatus": {
+        "type": "object",
+        "required": ["service", "version", "online", "system_apps"],
+        "properties": {
+          "service": {
+            "type": "string"
+          },
+          "version": {
+            "type": "string"
+          },
+          "online": {
+            "type": "boolean"
+          },
+          "system_apps": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      },
+      "Background": {
+        "type": "object",
+        "required": ["mode", "image", "blur", "intensity", "color", "direction", "pattern", "size"],
+        "properties": {
+          "mode": {
+            "$ref": "#/components/schemas/BackgroundMode"
+          },
+          "image": {
+            "type": "string"
+          },
+          "blur": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "intensity": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "color": {
+            "type": "string"
+          },
+          "direction": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "pattern": {
+            "$ref": "#/components/schemas/BackgroundPattern"
+          },
+          "size": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          }
+        },
+        "additionalProperties": false
+      },
+      "BackgroundMode": {
+        "type": "string",
+        "enum": ["image", "gradient"]
+      },
+      "BackgroundPattern": {
+        "type": "string",
+        "enum": ["halo", "dots", "multiple", "linear", "rings", "grid", "stripes"]
+      },
+      "Busy": {
+        "type": "object",
+        "description": "Application operations interrupted by shutdown and privileged jobs that block it.",
+        "required": ["tasks", "jobs"],
+        "properties": {
+          "tasks": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "jobs": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "Cache": {
+        "type": "object",
+        "description": "One cache, with the application it belongs to.",
+        "required": ["id", "label", "bytes", "items"],
+        "properties": {
+          "app": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "bytes": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          },
+          "items": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          },
+          "kind": {
+            "$ref": "#/components/schemas/Kind"
+          }
+        }
+      },
+      "CapabilityProvider": {
+        "type": "object",
+        "description": "An application that answers for a capability, on a path the browser reaches.",
+        "required": ["app", "endpoint", "version"],
+        "properties": {
+          "app": {
+            "type": "string"
+          },
+          "endpoint": {
+            "type": "string"
+          },
+          "version": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          }
+        }
+      },
+      "CatalogueApp": {
+        "type": "object",
+        "required": ["id", "name", "provider", "repository", "asset"],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "system": {
+            "type": "boolean"
+          },
+          "info": {
+            "type": "string"
+          },
+          "provider": {
+            "$ref": "#/components/schemas/ForgeProvider"
+          },
+          "repository": {
+            "type": "string"
+          },
+          "asset": {
+            "type": "string"
+          },
+          "preinstall": {
+            "type": "boolean"
+          },
+          "category": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/Category"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false
+      },
+      "Category": {
+        "type": "string",
+        "enum": ["media", "storage", "network", "system", "development"]
+      },
+      "Changed": {
+        "type": "object",
+        "required": ["changed"],
+        "properties": {
+          "changed": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          }
+        }
+      },
+      "Closed": {
+        "type": "object",
+        "required": ["stopped"],
+        "properties": {
+          "stopped": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "The applications stopped."
+          }
+        }
+      },
+      "Component": {
+        "type": "string",
+        "description": "Independently versioned NAS component, ordered by wizard, gateway, and launcher\ninstallation.",
+        "enum": ["wizard", "gateway", "launcher"]
+      },
+      "ComponentUpdate": {
+        "type": "object",
+        "description": "One component as the settings show it.",
+        "required": ["component", "repository"],
+        "properties": {
+          "component": {
+            "$ref": "#/components/schemas/Component"
+          },
+          "currentVersion": {
+            "type": ["string", "null"],
+            "description": "The version installed, when the component can say it."
+          },
+          "availableVersion": {
+            "type": ["string", "null"],
+            "description": "A newer release, found by the last check."
+          },
+          "repository": {
+            "type": "string"
+          }
+        }
+      },
+      "Config": {
+        "type": "object",
+        "description": "The configuration as the launcher exports and imports it.",
+        "required": [
+          "format",
+          "version",
+          "launcher",
+          "exportedAt",
+          "general",
+          "access",
+          "accessRules",
+          "power",
+          "widgets"
+        ],
+        "properties": {
+          "format": {
+            "type": "string"
+          },
+          "version": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "launcher": {
+            "type": "string",
+            "description": "The version of the launcher that exported it"
+          },
+          "exportedAt": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "general": {
+            "$ref": "#/components/schemas/GeneralConfig"
+          },
+          "access": {
+            "$ref": "#/components/schemas/Access"
+          },
+          "accessRules": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/NewRule"
+            }
+          },
+          "power": {
+            "$ref": "#/components/schemas/Power"
+          },
+          "widgets": {
+            "$ref": "#/components/schemas/WidgetSettings"
+          },
+          "desktop": {
+            "type": ["array", "null"],
+            "items": {
+              "$ref": "#/components/schemas/DesktopEntry"
+            },
+            "description": "Optional desktop settings omitted by version 1 exports, preserving the current desktop."
+          },
+          "apps": {
+            "$ref": "#/components/schemas/AppsConfig"
+          }
+        },
+        "additionalProperties": false
+      },
+      "Connection": {
+        "type": "object",
+        "required": ["kind", "connected", "interface", "ipv4", "netmask", "gateway", "dns", "mac"],
+        "properties": {
+          "kind": {
+            "$ref": "#/components/schemas/LinkKind"
+          },
+          "connected": {
+            "type": "boolean"
+          },
+          "interface": {
+            "type": "string"
+          },
+          "ssid": {
+            "type": ["string", "null"]
+          },
+          "signal": {
+            "type": ["integer", "null"],
+            "format": "int32",
+            "minimum": 0
+          },
+          "security": {
+            "type": ["string", "null"]
+          },
+          "ipv4": {
+            "type": "string"
+          },
+          "netmask": {
+            "type": "string"
+          },
+          "gateway": {
+            "type": "string"
+          },
+          "dns": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "mac": {
+            "type": "string"
+          },
+          "speed": {
+            "type": ["string", "null"]
+          }
+        }
+      },
+      "Credentials": {
+        "type": "object",
+        "required": ["configured", "packagesEnabled", "appsManaged"],
+        "properties": {
+          "configured": {
+            "type": "boolean"
+          },
+          "packagesEnabled": {
+            "type": "boolean"
+          },
+          "appsManaged": {
+            "type": "boolean"
+          }
+        }
+      },
+      "Definition": {
+        "type": "object",
+        "description": "Privileged share configuration excluding the password.",
+        "required": ["id", "name", "server", "share", "username", "automatic"],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "server": {
+            "type": "string"
+          },
+          "share": {
+            "type": "string"
+          },
+          "username": {
+            "type": "string"
+          },
+          "domain": {
+            "type": ["string", "null"]
+          },
+          "automatic": {
+            "type": "boolean"
+          }
+        }
+      },
+      "DesktopEntry": {
+        "type": "object",
+        "description": "One shortcut of the desktop, in the order of the file.",
+        "required": ["kind", "target"],
+        "properties": {
+          "kind": {
+            "$ref": "#/components/schemas/ShortcutKind"
+          },
+          "target": {
+            "type": "string"
+          },
+          "name": {
+            "type": ["string", "null"]
+          }
+        },
+        "additionalProperties": false
+      },
+      "DesktopIconSize": {
+        "type": "string",
+        "description": "Desktop icon size, with `large` retaining the original dimensions.",
+        "enum": ["small", "medium", "large", "xlarge"]
+      },
+      "Detection": {
+        "type": "object",
+        "required": ["id", "path", "threat", "device", "inode", "options"],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "path": {
+            "type": "string"
+          },
+          "threat": {
+            "type": "string"
+          },
+          "device": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          },
+          "inode": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          },
+          "options": {
+            "$ref": "#/components/schemas/ScanOptions"
+          }
+        }
+      },
+      "Discovery": {
+        "type": "object",
+        "required": ["enabled"],
+        "properties": {
+          "enabled": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
+      "Disk": {
+        "type": "object",
+        "description": "A volume or a disk as the disk manager lists it.",
+        "required": [
+          "id",
+          "name",
+          "kind",
+          "disk_type",
+          "size_bytes",
+          "removable",
+          "read_only",
+          "initializable",
+          "system_disk",
+          "identity"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "device": {
+            "type": ["string", "null"]
+          },
+          "kind": {
+            "type": "string"
+          },
+          "disk_type": {
+            "type": "string"
+          },
+          "size_bytes": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          },
+          "mount": {
+            "type": ["string", "null"]
+          },
+          "filesystem": {
+            "type": ["string", "null"]
+          },
+          "model": {
+            "type": ["string", "null"]
+          },
+          "transport": {
+            "type": ["string", "null"]
+          },
+          "removable": {
+            "type": "boolean"
+          },
+          "read_only": {
+            "type": "boolean"
+          },
+          "initializable": {
+            "type": "boolean"
+          },
+          "parent": {
+            "type": ["string", "null"]
+          },
+          "uuid": {
+            "type": ["string", "null"]
+          },
+          "system_disk": {
+            "type": "boolean",
+            "description": "The disk contains system data and is excluded from destructive operations."
+          },
+          "identity": {
+            "type": "string",
+            "description": "The identity of the whole disk, which an erasing request repeats."
+          },
+          "encryption": {
+            "type": ["string", "null"],
+            "description": "`locked` or `open` for a LUKS container."
+          },
+          "keys": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/Keys",
+                "description": "The keys of a LUKS container, as the root unit last saw them."
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      },
+      "EditedCatalogue": {
+        "type": "object",
+        "required": ["apps"],
+        "properties": {
+          "apps": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CatalogueApp"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "EjectRequest": {
+        "type": "object",
+        "required": ["device"],
+        "properties": {
+          "device": {
+            "type": "string",
+            "description": "Whole disk or partition identifying the disk to eject."
+          }
+        },
+        "additionalProperties": false
+      },
+      "EntryRequest": {
+        "type": "object",
+        "required": ["id"],
+        "properties": {
+          "id": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "ExternalDisk": {
+        "type": "object",
+        "required": ["device", "name", "locked", "canEject"],
+        "properties": {
+          "device": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "locked": {
+            "type": "boolean"
+          },
+          "canEject": {
+            "type": "boolean"
+          }
+        }
+      },
+      "Failure": {
+        "type": "object",
+        "required": ["field"],
+        "properties": {
+          "field": {
+            "$ref": "#/components/schemas/Field"
+          }
+        },
+        "additionalProperties": false
+      },
+      "Field": {
+        "type": "string",
+        "enum": ["username", "password"]
+      },
+      "FirstConfiguration": {
+        "type": "object",
+        "required": ["language", "theme"],
+        "properties": {
+          "language": {
+            "$ref": "#/components/schemas/Language"
+          },
+          "theme": {
+            "$ref": "#/components/schemas/Theme"
+          },
+          "nasName": {
+            "type": ["string", "null"],
+            "description": "The name chosen in the wizard, which becomes the hostname; without it the default stays"
+          }
+        },
+        "additionalProperties": false
+      },
+      "FolderPath": {
+        "type": "object",
+        "required": ["path"],
+        "properties": {
+          "path": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "FolderShortcut": {
+        "type": "object",
+        "required": ["path", "name"],
+        "properties": {
+          "path": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "ForgeProvider": {
+        "type": "string",
+        "enum": ["github", "gitlab"]
+      },
+      "Frequency": {
+        "type": "string",
+        "enum": ["hourly", "daily", "weekly"]
+      },
+      "General": {
+        "type": "object",
+        "required": ["theme", "language", "createShortcut", "background"],
+        "properties": {
+          "nasName": {
+            "type": "string"
+          },
+          "theme": {
+            "$ref": "#/components/schemas/Theme"
+          },
+          "themes": {
+            "$ref": "#/components/schemas/Themes",
+            "description": "The theme of each type, for the type `theme` resolves to."
+          },
+          "language": {
+            "$ref": "#/components/schemas/Language"
+          },
+          "createShortcut": {
+            "type": "boolean"
+          },
+          "desktopIconSize": {
+            "$ref": "#/components/schemas/DesktopIconSize"
+          },
+          "accent": {
+            "type": "string"
+          },
+          "background": {
+            "$ref": "#/components/schemas/Background"
+          }
+        },
+        "additionalProperties": false
+      },
+      "GeneralConfig": {
+        "type": "object",
+        "description": "The general settings without the name of the NAS, which stays the one of the machine.",
+        "required": ["theme", "language", "createShortcut", "background"],
+        "properties": {
+          "theme": {
+            "$ref": "#/components/schemas/Theme"
+          },
+          "themes": {
+            "$ref": "#/components/schemas/Themes"
+          },
+          "language": {
+            "$ref": "#/components/schemas/Language"
+          },
+          "createShortcut": {
+            "type": "boolean"
+          },
+          "desktopIconSize": {
+            "$ref": "#/components/schemas/DesktopIconSize"
+          },
+          "accent": {
+            "type": "string"
+          },
+          "background": {
+            "$ref": "#/components/schemas/Background"
+          }
+        },
+        "additionalProperties": false
+      },
+      "Health": {
+        "type": "object",
+        "description": "Service state returned by the health check.",
+        "required": ["status", "version"],
+        "properties": {
+          "status": {
+            "type": "string"
+          },
+          "version": {
+            "type": "string"
+          }
+        }
+      },
+      "InitializeAccepted": {
+        "type": "object",
+        "required": ["taskId"],
+        "properties": {
+          "taskId": {
+            "type": "string"
+          }
+        }
+      },
+      "InitializeRequest": {
+        "type": "object",
+        "required": ["device", "label", "identity"],
+        "properties": {
+          "device": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "identity": {
+            "type": "string",
+            "description": "Disk identity captured during inventory, used to reject stale requests."
+          }
+        },
+        "additionalProperties": false
+      },
+      "InstalledApp": {
+        "type": "object",
+        "description": "Installed application metadata. Imports select the latest available package version.",
+        "required": ["id"],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "version": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "Job": {
+        "type": "string",
+        "enum": ["refresh", "upgrade"]
+      },
+      "Keys": {
+        "type": "object",
+        "description": "The keys a container has and whether the person closed it, as the root unit last saw them.",
+        "required": ["password", "automatic", "recovery", "held"],
+        "properties": {
+          "password": {
+            "type": "boolean"
+          },
+          "automatic": {
+            "type": "boolean"
+          },
+          "recovery": {
+            "type": "boolean"
+          },
+          "held": {
+            "type": "boolean",
+            "description": "A manual closure that prevents automatic reopening."
+          }
+        }
+      },
+      "Kind": {
+        "type": "string",
+        "description": "A cache, made again when emptied, or a trash, whose content goes for good.",
+        "enum": ["cache", "trash"]
+      },
+      "Language": {
+        "type": "string",
+        "enum": ["it", "en"]
+      },
+      "Level": {
+        "type": "string",
+        "description": "Classifies Debian update severity from security, release, updates, and other repositories.",
+        "enum": ["other", "stable", "security"]
+      },
+      "LifecycleScan": {
+        "type": "object",
+        "required": ["enabled", "kind", "paths"],
+        "properties": {
+          "enabled": {
+            "type": "boolean"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/ScanKind"
+          },
+          "paths": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "LinkKind": {
+        "type": "string",
+        "description": "Current NAS network connectivity.",
+        "enum": ["lan", "wifi"]
+      },
+      "ListedApp": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/CatalogueApp"
+          },
+          {
+            "type": "object",
+            "required": ["logo"],
+            "properties": {
+              "logo": {
+                "type": "string"
+              }
+            }
+          }
+        ]
+      },
+      "LockRequest": {
+        "type": "object",
+        "required": ["uuid", "locked"],
+        "properties": {
+          "uuid": {
+            "type": "string",
+            "description": "The UUID of the filesystem of the volume."
+          },
+          "locked": {
+            "type": "boolean",
+            "description": "True marks the disk as not removable."
+          }
+        },
+        "additionalProperties": false
+      },
+      "MailStatus": {
+        "type": "object",
+        "description": "Mail capability status needed by account settings.",
+        "required": ["installed", "sender"],
+        "properties": {
+          "installed": {
+            "type": "boolean",
+            "description": "The application that sends the mails is installed."
+          },
+          "sender": {
+            "type": "boolean",
+            "description": "An SMTP server and sender are configured for verification-code delivery."
+          }
+        }
+      },
+      "ManagerSettings": {
+        "type": "object",
+        "required": ["autoCheck", "frequency"],
+        "properties": {
+          "autoCheck": {
+            "type": "boolean"
+          },
+          "frequency": {
+            "$ref": "#/components/schemas/Frequency"
+          },
+          "checkOnOpen": {
+            "type": "boolean",
+            "description": "Looks for newer releases each time the App Manager is opened."
+          },
+          "updateOnOpen": {
+            "type": "boolean",
+            "description": "Applies updates found by the associated check."
+          }
+        },
+        "additionalProperties": false
+      },
+      "NasUpdates": {
+        "type": "object",
+        "description": "The components installed on the NAS and their updates.",
+        "required": ["components", "tokenConfigured"],
+        "properties": {
+          "components": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ComponentUpdate"
+            }
+          },
+          "tokenConfigured": {
+            "type": "boolean"
+          }
+        }
+      },
+      "NetworkDisk": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Definition"
+          },
+          {
+            "type": "object",
+            "required": ["connected", "held"],
+            "properties": {
+              "connected": {
+                "type": "boolean",
+                "description": "Mounted now."
+              },
+              "held": {
+                "type": "boolean",
+                "description": "A manual disconnect that prevents automatic reconnection."
+              }
+            }
+          }
+        ],
+        "description": "A share as the disk manager shows it."
+      },
+      "NetworkDisks": {
+        "type": "object",
+        "description": "The shares, and whether this installation mounts them at all.",
+        "required": ["available", "disks"],
+        "properties": {
+          "available": {
+            "type": "boolean"
+          },
+          "disks": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/NetworkDisk"
+            }
+          }
+        }
+      },
+      "NetworkRequest": {
+        "oneOf": [
+          {
+            "type": "object",
+            "description": "Adds a share, or changes one; without a password a change keeps the one it had.",
+            "required": ["name", "server", "share", "username", "automatic", "op"],
+            "properties": {
+              "id": {
+                "type": ["string", "null"]
+              },
+              "name": {
+                "type": "string"
+              },
+              "server": {
+                "type": "string"
+              },
+              "share": {
+                "type": "string"
+              },
+              "username": {
+                "type": "string"
+              },
+              "domain": {
+                "type": ["string", "null"]
+              },
+              "password": {
+                "type": ["string", "null"]
+              },
+              "automatic": {
+                "type": "boolean"
+              },
+              "op": {
+                "type": "string",
+                "enum": ["networkSave"]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "description": "Tries a share without keeping it.",
+            "required": ["server", "share", "username", "password", "op"],
+            "properties": {
+              "server": {
+                "type": "string"
+              },
+              "share": {
+                "type": "string"
+              },
+              "username": {
+                "type": "string"
+              },
+              "domain": {
+                "type": ["string", "null"]
+              },
+              "password": {
+                "type": "string"
+              },
+              "op": {
+                "type": "string",
+                "enum": ["networkTest"]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "description": "Mounts a share now; it stays connected until the person disconnects it.",
+            "required": ["id", "op"],
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "op": {
+                "type": "string",
+                "enum": ["networkConnect"]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "description": "Unmounts a share, which stays disconnected until the person connects it again.",
+            "required": ["id", "op"],
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "op": {
+                "type": "string",
+                "enum": ["networkDisconnect"]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "description": "Unmounts a share and forgets it, password included.",
+            "required": ["id", "op"],
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "op": {
+                "type": "string",
+                "enum": ["networkForget"]
+              }
+            }
+          }
+        ],
+        "description": "Network-disk request submitted to the privileged storage helper."
+      },
+      "NetworkState": {
+        "type": "object",
+        "required": [
+          "connection",
+          "wifi",
+          "wiredAvailable",
+          "wiredConnected",
+          "adapters",
+          "canConnect",
+          "canDisconnect"
+        ],
+        "properties": {
+          "connection": {
+            "$ref": "#/components/schemas/Connection"
+          },
+          "wifi": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WifiNetwork"
+            }
+          },
+          "wiredAvailable": {
+            "type": "boolean"
+          },
+          "wiredConnected": {
+            "type": "boolean",
+            "description": "An addressed wired connection takes precedence over Wi-Fi."
+          },
+          "adapters": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Adapter"
+            }
+          },
+          "canConnect": {
+            "type": "boolean"
+          },
+          "canDisconnect": {
+            "type": "boolean"
+          },
+          "wifiProblem": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/WifiProblem"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      },
+      "NewNotification": {
+        "type": "object",
+        "required": ["title", "message", "source", "tone"],
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "source": {
+            "type": "string"
+          },
+          "tone": {
+            "$ref": "#/components/schemas/Tone"
+          },
+          "key": {
+            "type": ["string", "null"]
+          },
+          "params": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "propertyNames": {
+              "type": "string"
+            }
+          },
+          "log": {
+            "type": ["string", "null"]
+          }
+        },
+        "additionalProperties": false
+      },
+      "NewRule": {
+        "type": "object",
+        "required": ["kind", "value"],
+        "properties": {
+          "kind": {
+            "$ref": "#/components/schemas/RuleKind"
+          },
+          "value": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "NewTask": {
+        "type": "object",
+        "description": "Application request to register an operation.",
+        "required": ["id", "source", "name"],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "source": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "detail": {
+            "type": "string"
+          },
+          "progress": {
+            "type": ["integer", "null"],
+            "format": "int32",
+            "minimum": 0
+          },
+          "pausable": {
+            "type": "boolean"
+          },
+          "cancellable": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
+      "NewToken": {
+        "type": "object",
+        "required": ["token"],
+        "properties": {
+          "token": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "Notification": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/NewNotification"
+          },
+          {
+            "type": "object",
+            "required": ["id", "at", "read"],
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "at": {
+                "type": "integer",
+                "format": "int64"
+              },
+              "read": {
+                "type": "boolean"
+              }
+            }
+          }
+        ]
+      },
+      "NotificationLog": {
+        "type": "object",
+        "required": ["kind", "origin", "lines"],
+        "properties": {
+          "kind": {
+            "type": "string"
+          },
+          "origin": {
+            "type": "string"
+          },
+          "lines": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "NotificationSettings": {
+        "type": "object",
+        "required": ["emailEnabled", "email", "webhookEnabled", "webhook"],
+        "properties": {
+          "emailEnabled": {
+            "type": "boolean"
+          },
+          "email": {
+            "type": "string"
+          },
+          "webhookEnabled": {
+            "type": "boolean"
+          },
+          "webhook": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "Offer": {
+        "type": "object",
+        "required": ["id", "name", "system", "info", "repository", "logo", "updateAvailable"],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "system": {
+            "type": "boolean"
+          },
+          "info": {
+            "type": "string"
+          },
+          "repository": {
+            "type": "string"
+          },
+          "logo": {
+            "type": "string"
+          },
+          "installedVersion": {
+            "type": ["string", "null"]
+          },
+          "latestVersion": {
+            "type": ["string", "null"]
+          },
+          "updateAvailable": {
+            "type": "boolean"
+          }
+        }
+      },
+      "Operation": {
+        "type": "object",
+        "required": ["phase"],
+        "properties": {
+          "phase": {
+            "type": "string"
+          },
+          "progress": {
+            "type": ["number", "null"],
+            "format": "double"
+          },
+          "error": {
+            "type": ["string", "null"]
+          }
+        }
+      },
+      "Order": {
+        "type": "object",
+        "description": "The applications on the desktop in the order they are shown, first to last.",
+        "required": ["order"],
+        "properties": {
+          "order": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ShortcutOrder"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "Package": {
+        "type": "object",
+        "required": ["id", "current", "version", "level"],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "current": {
+            "type": "string"
+          },
+          "version": {
+            "type": "string"
+          },
+          "level": {
+            "$ref": "#/components/schemas/Level"
+          }
+        }
+      },
+      "Power": {
+        "type": "object",
+        "required": ["enabled", "rules"],
+        "properties": {
+          "enabled": {
+            "type": "boolean"
+          },
+          "rules": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PowerRule"
+            }
+          },
+          "screenOffMinutes": {
+            "type": "integer",
+            "format": "int32",
+            "description": "The minutes without a key or the mouse after which the monitor connected to the NAS goes\ndark and into standby, from 1 to 240.",
+            "minimum": 0
+          }
+        },
+        "additionalProperties": false
+      },
+      "PowerAction": {
+        "type": "string",
+        "enum": ["start", "shutdown", "restart"]
+      },
+      "PowerDay": {
+        "type": "string",
+        "enum": [
+          "everyday",
+          "weekdays",
+          "weekends",
+          "monday",
+          "tuesday",
+          "wednesday",
+          "thursday",
+          "friday",
+          "saturday",
+          "sunday"
+        ]
+      },
+      "PowerMode": {
+        "type": "object",
+        "required": ["simulated"],
+        "properties": {
+          "simulated": {
+            "type": "boolean"
+          }
+        }
+      },
+      "PowerOutcome": {
+        "type": "object",
+        "required": ["accepted", "simulated"],
+        "properties": {
+          "accepted": {
+            "type": "boolean"
+          },
+          "simulated": {
+            "type": "boolean"
+          }
+        }
+      },
+      "PowerRule": {
+        "type": "object",
+        "required": ["day", "time", "action", "active"],
+        "properties": {
+          "day": {
+            "$ref": "#/components/schemas/PowerDay"
+          },
+          "time": {
+            "type": "string"
+          },
+          "action": {
+            "$ref": "#/components/schemas/PowerAction"
+          },
+          "active": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
+      "ProcessRequest": {
+        "type": "object",
+        "required": ["action", "started"],
+        "properties": {
+          "action": {
+            "$ref": "#/components/schemas/Action"
+          },
+          "started": {
+            "type": "integer",
+            "format": "int64",
+            "description": "The start time accompanying the process identifier.",
+            "minimum": 0
+          }
+        },
+        "additionalProperties": false
+      },
+      "ProcessResult": {
+        "type": "object",
+        "properties": {
+          "appId": {
+            "type": ["string", "null"]
+          }
+        }
+      },
+      "QuarantineEntry": {
+        "type": "object",
+        "required": ["detection", "at", "mode", "uid", "gid"],
+        "properties": {
+          "detection": {
+            "$ref": "#/components/schemas/Detection"
+          },
+          "at": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "mode": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "uid": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "gid": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          }
+        }
+      },
+      "Read": {
+        "type": "object",
+        "required": ["read"],
+        "properties": {
+          "read": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
+      "Recorded": {
+        "type": "object",
+        "required": ["recorded"],
+        "properties": {
+          "recorded": {
+            "type": "boolean"
+          }
+        }
+      },
+      "Removed": {
+        "type": "object",
+        "description": "Number of rows removed by a clearing operation.",
+        "required": ["removed"],
+        "properties": {
+          "removed": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          }
+        }
+      },
+      "RenameRequest": {
+        "type": "object",
+        "required": ["device", "label"],
+        "properties": {
+          "device": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "Report": {
+        "type": "object",
+        "required": ["at", "updatedAt", "scanned", "found", "detections", "quarantine"],
+        "properties": {
+          "at": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "updatedAt": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "kind": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/ScanKind"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "scanned": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          },
+          "found": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          },
+          "skipped": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Files left out because they were found clean and did not change since.",
+            "minimum": 0
+          },
+          "planned": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Files sent to ClamAV, when the scan knows it beforehand; 0 when it does not.",
+            "minimum": 0
+          },
+          "cacheFiles": {
+            "type": "integer",
+            "format": "int64",
+            "description": "The files the archive of the scans holds as clean, and the room it takes on the disk.",
+            "minimum": 0
+          },
+          "cacheBytes": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          },
+          "detections": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Detection"
+            }
+          },
+          "quarantine": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/QuarantineEntry"
+            }
+          },
+          "error": {
+            "type": ["string", "null"]
+          },
+          "operationError": {
+            "type": ["string", "null"]
+          }
+        }
+      },
+      "Request": {
+        "oneOf": [
+          {
+            "type": "object",
+            "description": "Erases a data disk and makes one volume on it, encrypted or not. An encrypted one opens\nwith the password, the automatic key, or both.",
+            "required": ["device", "identity", "label", "encrypt", "op"],
+            "properties": {
+              "device": {
+                "type": "string"
+              },
+              "identity": {
+                "type": "string"
+              },
+              "label": {
+                "type": "string"
+              },
+              "encrypt": {
+                "type": "boolean"
+              },
+              "automatic": {
+                "type": "boolean"
+              },
+              "password": {
+                "type": ["string", "null"]
+              },
+              "op": {
+                "type": "string",
+                "enum": ["format"]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "description": "Opens a closed container with the password or the recovery key, and publishes it.",
+            "required": ["uuid", "password", "op"],
+            "properties": {
+              "uuid": {
+                "type": "string"
+              },
+              "password": {
+                "type": "string"
+              },
+              "op": {
+                "type": "string",
+                "enum": ["unlock"]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "description": "Takes the volume off Explorer, unmounts it and closes the container, which stays closed.",
+            "required": ["uuid", "op"],
+            "properties": {
+              "uuid": {
+                "type": "string"
+              },
+              "op": {
+                "type": "string",
+                "enum": ["lock"]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "description": "Adds or removes the automatic key. Adding it needs a key that opens the container.",
+            "required": ["uuid", "enabled", "op"],
+            "properties": {
+              "uuid": {
+                "type": "string"
+              },
+              "enabled": {
+                "type": "boolean"
+              },
+              "password": {
+                "type": ["string", "null"]
+              },
+              "op": {
+                "type": "string",
+                "enum": ["automatic"]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "description": "Sets or replaces the password, with a key that opens the container, or with the automatic\nkey when `current` is missing.",
+            "required": ["uuid", "password", "op"],
+            "properties": {
+              "uuid": {
+                "type": "string"
+              },
+              "current": {
+                "type": ["string", "null"]
+              },
+              "password": {
+                "type": "string"
+              },
+              "op": {
+                "type": "string",
+                "enum": ["password"]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "description": "Makes a new recovery key, which replaces the one before.",
+            "required": ["uuid", "op"],
+            "properties": {
+              "uuid": {
+                "type": "string"
+              },
+              "current": {
+                "type": ["string", "null"]
+              },
+              "op": {
+                "type": "string",
+                "enum": ["recovery"]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "description": "The backup of the header of the container.",
+            "required": ["uuid", "op"],
+            "properties": {
+              "uuid": {
+                "type": "string"
+              },
+              "op": {
+                "type": "string",
+                "enum": ["header"]
+              }
+            }
+          }
+        ],
+        "description": "Storage request submitted by the launcher to the privileged helper."
+      },
+      "ResetBlock": {
+        "type": "string",
+        "description": "Why the NAS cannot be reset here.",
+        "enum": ["disabled", "noWizard", "noOriginalState"]
+      },
+      "ResetState": {
+        "type": "object",
+        "description": "Whether the NAS can be reset here, and why not when it cannot.",
+        "required": ["available"],
+        "properties": {
+          "available": {
+            "type": "boolean"
+          },
+          "reason": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/ResetBlock"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      },
+      "Rule": {
+        "type": "object",
+        "required": ["id", "kind", "value", "label", "createdAt"],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/RuleKind"
+          },
+          "value": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "RuleKind": {
+        "type": "string",
+        "enum": ["ip", "range"]
+      },
+      "ScanKind": {
+        "type": "string",
+        "enum": ["full", "quick", "file", "custom"]
+      },
+      "ScanOptions": {
+        "type": "object",
+        "required": ["archives", "detectPua", "maxFileMb", "paths", "exclusions"],
+        "properties": {
+          "archives": {
+            "type": "boolean"
+          },
+          "detectPua": {
+            "type": "boolean"
+          },
+          "maxFileMb": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "paths": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "exclusions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "ScanRequest": {
+        "type": "object",
+        "required": ["kind", "paths"],
+        "properties": {
+          "kind": {
+            "$ref": "#/components/schemas/ScanKind"
+          },
+          "paths": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "skipUnchanged": {
+            "type": "boolean",
+            "description": "Enables incremental clean-file filtering for custom scans, as always used by quick\nscans."
+          }
+        },
+        "additionalProperties": false
+      },
+      "Schedule": {
+        "type": "object",
+        "required": ["id", "enabled", "kind", "day", "time", "paths"],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/ScanKind"
+          },
+          "day": {
+            "type": "string",
+            "description": "systemd day name, or * for every day. Time uses the NAS timezone."
+          },
+          "time": {
+            "type": "string"
+          },
+          "paths": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "Settings": {
+        "type": "object",
+        "required": [
+          "enabled",
+          "schedulerEnabled",
+          "autoQuarantine",
+          "full",
+          "quick",
+          "file",
+          "custom",
+          "schedules"
+        ],
+        "properties": {
+          "enabled": {
+            "type": "boolean"
+          },
+          "schedulerEnabled": {
+            "type": "boolean"
+          },
+          "bootScan": {
+            "$ref": "#/components/schemas/LifecycleScan"
+          },
+          "shutdownScan": {
+            "$ref": "#/components/schemas/LifecycleScan"
+          },
+          "autoQuarantine": {
+            "type": "boolean"
+          },
+          "full": {
+            "$ref": "#/components/schemas/ScanOptions"
+          },
+          "quick": {
+            "$ref": "#/components/schemas/ScanOptions"
+          },
+          "file": {
+            "$ref": "#/components/schemas/ScanOptions"
+          },
+          "custom": {
+            "$ref": "#/components/schemas/ScanOptions"
+          },
+          "schedules": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Schedule"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "SetupState": {
+        "type": "object",
+        "required": ["completed", "ready", "steps"],
+        "properties": {
+          "completed": {
+            "type": "boolean"
+          },
+          "ready": {
+            "type": "boolean"
+          },
+          "steps": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Step"
+            }
+          }
+        }
+      },
+      "Shortcut": {
+        "type": "object",
+        "required": ["kind", "target", "position"],
+        "properties": {
+          "kind": {
+            "$ref": "#/components/schemas/ShortcutKind"
+          },
+          "target": {
+            "type": "string"
+          },
+          "name": {
+            "type": ["string", "null"]
+          },
+          "position": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "ShortcutKey": {
+        "type": "object",
+        "required": ["kind", "target"],
+        "properties": {
+          "kind": {
+            "$ref": "#/components/schemas/ShortcutKind"
+          },
+          "target": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "ShortcutKind": {
+        "type": "string",
+        "enum": ["app", "folder"]
+      },
+      "ShortcutOrder": {
+        "oneOf": [
+          {
+            "type": "string"
+          },
+          {
+            "$ref": "#/components/schemas/ShortcutKey"
+          }
+        ]
+      },
+      "SmartRequest": {
+        "type": "object",
+        "required": ["device"],
+        "properties": {
+          "device": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "Status": {
+        "type": "object",
+        "required": ["settings", "operation", "report", "installed"],
+        "properties": {
+          "settings": {
+            "$ref": "#/components/schemas/Settings"
+          },
+          "operation": {
+            "$ref": "#/components/schemas/Operation"
+          },
+          "report": {
+            "$ref": "#/components/schemas/Report"
+          },
+          "installed": {
+            "type": "boolean"
+          }
+        }
+      },
+      "Step": {
+        "type": "object",
+        "description": "One step, as the page that waits for them lists it.",
+        "required": ["id", "kind", "name", "state", "detail"],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "state": {
+            "type": "string"
+          },
+          "detail": {
+            "type": "string"
+          }
+        }
+      },
+      "SystemSecurity": {
+        "type": "object",
+        "description": "Whether the system is on LUKS and there is a TPM 2.0, as the wizard found them; `None` when it\ndid not say (a development copy, or a NAS installed before it wrote the state).",
+        "properties": {
+          "systemEncrypted": {
+            "type": ["boolean", "null"]
+          },
+          "tpm": {
+            "type": ["boolean", "null"]
+          }
+        }
+      },
+      "SystemUpdates": {
+        "type": "object",
+        "required": ["packages", "manageable"],
+        "properties": {
+          "packages": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Package"
+            }
+          },
+          "running": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/Job"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "manageable": {
+            "type": "boolean"
+          }
+        }
+      },
+      "Task": {
+        "type": "object",
+        "description": "One operation, as the widget lists it.",
+        "required": [
+          "id",
+          "source",
+          "name",
+          "detail",
+          "state",
+          "pausable",
+          "cancellable",
+          "createdAt",
+          "updatedAt"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "source": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "detail": {
+            "type": "string"
+          },
+          "progress": {
+            "type": ["integer", "null"],
+            "format": "int32",
+            "minimum": 0
+          },
+          "state": {
+            "$ref": "#/components/schemas/TaskState"
+          },
+          "pausable": {
+            "type": "boolean"
+          },
+          "cancellable": {
+            "type": "boolean"
+          },
+          "createdAt": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "updatedAt": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "TaskState": {
+        "type": "string",
+        "enum": ["running", "paused", "done", "failed", "cancelled"]
+      },
+      "TaskUpdate": {
+        "type": "object",
+        "description": "Partial operation update from its owner. Omitted fields retain their current values.",
+        "properties": {
+          "name": {
+            "type": ["string", "null"]
+          },
+          "detail": {
+            "type": ["string", "null"]
+          },
+          "progress": {
+            "type": ["integer", "null"],
+            "format": "int32",
+            "minimum": 0
+          },
+          "state": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/TaskState"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false
+      },
+      "TerminalSettings": {
+        "type": "object",
+        "required": [
+          "transparency",
+          "textColor",
+          "backgroundColor",
+          "highlightColor",
+          "fontSize",
+          "lineHeight"
+        ],
+        "properties": {
+          "transparency": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "textColor": {
+            "type": "string"
+          },
+          "backgroundColor": {
+            "type": "string"
+          },
+          "highlightColor": {
+            "type": "string"
+          },
+          "fontSize": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "lineHeight": {
+            "type": "number",
+            "format": "float"
+          }
+        },
+        "additionalProperties": false
+      },
+      "Theme": {
+        "type": "string",
+        "enum": ["light", "dark", "system"]
+      },
+      "Themes": {
+        "type": "object",
+        "description": "Theme IDs for each appearance mode. Unknown IDs use the default theme.",
+        "properties": {
+          "light": {
+            "type": "string"
+          },
+          "dark": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "Toggle": {
+        "type": "object",
+        "required": ["enabled"],
+        "properties": {
+          "enabled": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
+      "Tone": {
+        "type": "string",
+        "enum": ["info", "success", "warning", "error"]
+      },
+      "UpdateSelection": {
+        "type": "object",
+        "required": ["ids"],
+        "properties": {
+          "ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "UpdateStarted": {
+        "type": "object",
+        "required": ["accepted", "task"],
+        "properties": {
+          "accepted": {
+            "type": "boolean"
+          },
+          "task": {
+            "type": "string"
+          }
+        }
+      },
+      "WidgetSettings": {
+        "type": "object",
+        "required": ["pollingSeconds"],
+        "properties": {
+          "pollingSeconds": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          }
+        },
+        "additionalProperties": false
+      },
+      "WifiNetwork": {
+        "type": "object",
+        "required": ["ssid", "signal", "security", "known"],
+        "properties": {
+          "ssid": {
+            "type": "string"
+          },
+          "signal": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "security": {
+            "type": "string"
+          },
+          "known": {
+            "type": "boolean"
+          }
+        }
+      },
+      "WifiProblem": {
+        "type": "string",
+        "description": "Why no wireless network could be listed, for the page to say so instead of \"none found\".",
+        "enum": ["noNetworkManager", "noDevice", "listFailed", "disabled"]
+      },
+      "WifiRequest": {
+        "type": "object",
+        "required": ["ssid"],
+        "properties": {
+          "ssid": {
+            "type": "string"
+          },
+          "password": {
+            "type": ["string", "null"]
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  }
+}

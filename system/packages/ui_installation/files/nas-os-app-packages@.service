@@ -1,0 +1,18 @@
+# Installs allowed Debian dependencies for application %i and removes unused ones.
+# The launcher starts app-packages.sh during application installation and removal.
+# Package installation requires root access to system paths, network downloads,
+# and execution of Debian maintainer scripts. The helper enforces a fixed package list.
+
+[Unit]
+Description=System packages of the NAS application %i
+Documentation=https://github.com/ValerioGc/nas-launcher
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/lib/nas-os/app-packages.sh %i
+StateDirectory=nas-os-app-packages
+TimeoutStartSec=15min
+ProtectHome=yes
+PrivateTmp=yes

@@ -1,0 +1,25 @@
+# Sets the hardware clock alarm from /var/lib/nas-os/wakealarm before shutdown.
+# The launcher starts this unit through the matching polkit rule.
+# The unit is not enabled at boot.
+
+
+[Unit]
+Description=nas-os: set the hardware clock alarm
+Documentation=https://github.com/ValerioGc/nas-launcher
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/lib/nas-os/wake-alarm.sh
+
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+PrivateNetwork=yes
+RestrictNamespaces=yes
+RestrictRealtime=yes
+RestrictSUIDSGID=yes
+LockPersonality=yes
+MemoryDenyWriteExecute=yes
+SystemCallArchitectures=native
+SystemCallFilter=@system-service

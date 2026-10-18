@@ -1,0 +1,34 @@
+# Applies the Security Center discovery setting through apply-discovery.sh.
+# The helper opens or closes UDP 39877 in the nas_discovery firewall set.
+# The launcher starts it after setting changes and during startup.
+
+[Unit]
+Description=Discovery of the NAS on the local network
+After=nas-os-base-firewall.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/lib/nas-os/apply-discovery.sh
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=yes
+ReadOnlyPaths=/var/lib/nas-os
+NoNewPrivileges=yes
+# Uses netlink to update the fixed discovery port in the base firewall.
+CapabilityBoundingSet=CAP_NET_ADMIN
+RestrictAddressFamilies=AF_UNIX AF_NETLINK
+PrivateDevices=yes
+ProtectProc=invisible
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectKernelLogs=yes
+ProtectControlGroups=yes
+ProtectClock=yes
+ProtectHostname=yes
+RestrictNamespaces=yes
+RestrictRealtime=yes
+RestrictSUIDSGID=yes
+LockPersonality=yes
+MemoryDenyWriteExecute=yes
+SystemCallArchitectures=native
+SystemCallFilter=@system-service

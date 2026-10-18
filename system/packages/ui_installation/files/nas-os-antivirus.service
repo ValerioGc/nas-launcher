@@ -1,0 +1,19 @@
+[Unit]
+Description=Optional ClamAV operation requested by the NAS Security Center
+After=local-fs.target nas-os-base-firewall.service
+
+[Service]
+# Adds the service cgroup to nas_apps_out so FreshClam can download signatures
+# as the clamav user through the base firewall.
+NFTSet=cgroup:inet:nas_base:nas_apps_out
+Type=oneshot
+ExecStart=/usr/bin/flock /run/nas-os-antivirus.lock /usr/local/bin/nas-os-axum --antivirus-job
+TimeoutStartSec=24h
+UMask=0077
+PrivateTmp=no
+NoNewPrivileges=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+# The launcher starts each operation explicitly. The unit is not enabled at boot.
