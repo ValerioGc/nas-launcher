@@ -1,5 +1,8 @@
-import { NodeTypes, type NodeTransform } from '@vue/compiler-core';
+import { NodeTypes } from '@vue/compiler-core';
+import type { CompilerOptions } from 'vue/compiler-sfc';
 import type { Plugin } from 'vite';
+
+type NodeTransform = NonNullable<CompilerOptions['nodeTransforms']>[number];
 
 export const TEST_ID_ATTRIBUTE = 'data-testid';
 
