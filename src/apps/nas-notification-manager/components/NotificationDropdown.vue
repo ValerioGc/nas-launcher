@@ -122,7 +122,6 @@ function showAll() {
   }
 }
 
-// Above the row rather than beside it: the hover of the row runs under it, and it keeps its own.
 .notification_remove {
   @extend %icon_button;
   position: absolute;

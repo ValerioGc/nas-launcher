@@ -1,5 +1,5 @@
 // Standalone counterpart of _apps.scss for apps rendered in their own iframe.
-// Keep this file in each external app package: the shell's stylesheet cannot cross the frame.
+// Keep this file in each external app package
 :root {
   --nas-background: #f5f7f6;
   --nas-foreground: #172027;

@@ -2,12 +2,15 @@
 
 import { t } from '@/i18n';
 import { useNotificationsStore } from '../store';
+
 import CommonIcon from '@/components/commons/CommonIcon.vue';
 import CommonSwitch from '@/components/commons/CommonSwitch.vue';
+
 import deleteIcon from '@/assets/icons/navigation/delete.svg';
 import checkIcon from '@/assets/icons/navigation/check.svg';
 import filterOffIcon from '@/assets/icons/navigation/filter_off.svg';
 import refreshIcon from '@/assets/icons/system/refresh.svg';
+
 const notifications = useNotificationsStore();
 
 </script>
@@ -16,9 +19,9 @@ const notifications = useNotificationsStore();
   <header class="notifications_header">
     <div class="app_toolbar notifications_heading">
       <h1>{{ t('notifications') }}</h1>
-      <span v-if="notifications.managerUnread" class="notifications_count">{{
-        notifications.managerUnread
-      }}</span>
+      <span v-if="notifications.managerUnread" class="notifications_count">
+        {{ notifications.managerUnread }}
+      </span>
       <button
         type="button"
         :disabled="notifications.busy || !notifications.managerUnread"

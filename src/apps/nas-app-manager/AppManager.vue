@@ -22,12 +22,16 @@ import settingsIcon from '@/assets/icons/system/settings.svg';
 
 const manager = useAppManagerStore();
 const shell = useShellStore();
+
 const showSystem = computed({
   get: () => manager.showSystem,
   set: manager.setShowSystem,
 });
+
 const settingsOpen = ref(false);
+
 const empty = computed(() => !manager.listed.length);
+
 watch(
   () => shell.activeId,
   (id) => {

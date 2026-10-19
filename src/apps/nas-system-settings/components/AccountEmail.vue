@@ -20,13 +20,12 @@ const emit = defineEmits<{ changed: [account: AccountInfo] }>();
 const MAIL_APP = 'nas-mail-client';
 const shell = useShellStore();
 
-// The switch as the user set it, saved only with the password.
 const enabled = ref(props.account.recovery);
 const switchPassword = ref('');
 const email = ref('');
 const password = ref('');
 const code = ref('');
-// The address a code went to, waiting for that code to come back.
+
 const pending = ref('');
 const busy = ref(false);
 const failure = ref('');
@@ -131,6 +130,7 @@ function remove() {
           data-testid="account_recovery_password"
         />
       </label>
+
       <div class="app_toolbar settings_full">
         <button type="button" :disabled="busy" @click="enabled = account.recovery">
           {{ t('cancel') }}
@@ -147,6 +147,7 @@ function remove() {
       }}
     </p>
 
+    <!-- Mail configuration alert and actions -->
     <template v-if="!mail.sender">
       <AlertBanner tone="info" compact data-testid="account_email_unavailable">
         {{ mail.installed ? t('accountEmailUnavailable') : t('accountEmailNotInstalled') }}

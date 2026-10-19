@@ -4,7 +4,7 @@ import { useAppsStore } from '@/stores/appsStore';
 import type { AppNotification } from './types';
 
 /**
- * A value to fill in: a time when its name ends in `At`, a word the catalogue translates, such as
+ * A value to fill in, a time when its name ends in `At`, a word the catalogue translates, such as
  * an action or a step, or else the value as it came.
  */
 function localized(name: string, value: string) {
@@ -17,7 +17,7 @@ function localized(name: string, value: string) {
 }
 
 /**
- * The place a notification names in its message, which its words `{link}` open: an application
+ * The place a notification names in its message, which its words `{link}` open, an application
  * and the query string of the page it opens on. Known by key only, so that what an application
  * writes in a notification never decides what the shell opens.
  */
@@ -53,10 +53,12 @@ function translated(item: AppNotification, part: 'title' | 'message', link?: str
   if (!item.key) {
     return item[part];
   }
+  
   const key = `notice_${item.key}_${part}`;
   const params = Object.fromEntries(
     Object.entries(item.params ?? {}).map(([name, value]) => [name, localized(name, value)]),
   );
+
   const text = t(key, link === undefined ? params : { ...params, link });
   return text === key ? item[part] : text.trim();
 }
@@ -71,7 +73,7 @@ export function noticeMessage(item: AppNotification) {
   return translated(item, 'message', linkLabel(item));
 }
 
-/** The message around its link, for a page that makes the words clickable; null without one. */
+/** The message around its link, for a page that makes the words clickable */
 export function noticeParts(item: AppNotification): NoticeParts | null {
   const link = linkLabel(item);
   const target = item.key ? NOTICE_LINKS[item.key] : undefined;
@@ -89,7 +91,7 @@ export function hasLog(item: AppNotification) {
 
 /**
  * The notifications shown on screen at the first sign-in after they were written, since nobody
- * was there to see them arrive: the end of the first configuration, for one.
+ * was there to see them arrive.
  */
 export const SIGN_IN_NOTICES: readonly string[] = ['discoveryOff'];
 
@@ -100,6 +102,7 @@ export function sourceLabel(source: string) {
   if (known !== key) {
     return known;
   }
+  
   const installed = useAppsStore().installed.find((app) => app.id === source);
   return appLabel(source, installed?.name ?? source);
 }

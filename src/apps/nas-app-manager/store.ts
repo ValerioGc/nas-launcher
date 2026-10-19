@@ -31,7 +31,6 @@ async function saveToken(token: string) {
   }
 }
 
-/** The application in use: listing it among those it manages would only offer to leave it. */
 const SELF = 'nas-app-manager';
 
 /** The operation the launcher registers for the installation of `<id>`. */
@@ -82,10 +81,11 @@ export const useAppManagerStore = defineStore('nas-app-manager', () => {
         };
       }),
   );
-  /** The rows the list shows: the system applications only while they are asked for. */
+
   const listed = computed(() =>
     rows.value.filter((app) => endpoint.value === 'available' || showSystem.value || !app.system),
   );
+
   const selected = computed(
     () =>
       rows.value.find(
@@ -293,7 +293,6 @@ export const useAppManagerStore = defineStore('nas-app-manager', () => {
     }
   }
 
-  /** What the settings ask for each time the manager opens: a check, then the updates it found. */
   async function checkOnOpen() {
     let wanted: ManagerSettings;
     try {

@@ -81,7 +81,6 @@ export interface CatalogueEntry {
   category: AppCategory | null;
 }
 
-// What a logo may be: the launcher refuses anything else.
 export const LOGO_TYPES = ['image/svg+xml', 'image/png', 'image/jpeg', 'image/webp'];
 export const LOGO_MAX_BYTES = 256 * 1024;
 

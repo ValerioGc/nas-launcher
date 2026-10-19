@@ -38,7 +38,6 @@ const confirming = ref(false);
         data-testid="factory_reset_button"
         @click="confirming = true"
       >
-        <!-- In the colour of the text, which a danger button sets. -->
         <CommonIcon :src="resetIcon" size="small" tinted />
         {{ t('factoryResetAction') }}
       </button>

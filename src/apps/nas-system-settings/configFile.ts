@@ -1,14 +1,6 @@
 import type { ConfigContent } from './types/config';
 
-/**
- * The file of the exported configuration: in clear, or encrypted in the browser with a password
- * chosen at the export. PBKDF2 (SHA-256) derives an AES-GCM key, so an encrypted file opens only
- * with that password, and a changed byte makes it unreadable instead of wrong. WebCrypto needs a
- * secure context, which the NAS always is (HTTPS). The launcher never sees the password.
- */
-
 const FORMAT = 'nas-os-config-encrypted';
-/** The format the launcher writes in the configuration: what a file in clear is recognised by. */
 const CLEAR_FORMAT = 'nas-os-config';
 const VERSION = 1;
 const ITERATIONS = 600_000;
@@ -21,10 +13,8 @@ interface EncryptedFile {
   data: string;
 }
 
-/** The file is not an exported configuration, or it was changed. */
 export class NotAConfigFile extends Error {}
 
-/** The file opens only with the password it was exported with. */
 export class WrongFilePassword extends Error {}
 
 function toBase64(bytes: Uint8Array) {
@@ -39,7 +29,6 @@ function fromBase64(text: string): Uint8Array<ArrayBuffer> {
   return Uint8Array.from(atob(text), (character) => character.codePointAt(0) ?? 0);
 }
 
-/** The header of the file is bound to the encrypted data: changing it makes the file unreadable. */
 function header(version: number) {
   return new TextEncoder().encode(`${FORMAT}:${version}`);
 }
@@ -137,7 +126,7 @@ async function decryptConfig(file: EncryptedFile, password: string): Promise<Con
 }
 
 /**
- * The text of the file for `content`: encrypted with `password`, or in clear without one.
+ * The text of the file for `content` encrypted with `password`, or in clear without one.
  */
 export function writeConfig(value: ConfigContent, password = ''): Promise<string> {
   return password
@@ -169,16 +158,10 @@ export async function readConfig(text: string, password = ''): Promise<ConfigCon
     : content(file);
 }
 
-/**
- * The name of the file: the day of the export, never the name of the NAS.
- */
 export function configFileName(now = new Date()) {
   return `nas-os-config-${now.toISOString().slice(0, 10)}.json`;
 }
 
-/**
- * Hands the text to the browser as a file to save.
- */
 export function saveConfigFile(text: string, name = configFileName()) {
   const url = URL.createObjectURL(new Blob([text], { type: 'application/json' }));
   const link = document.createElement('a');
@@ -186,5 +169,6 @@ export function saveConfigFile(text: string, name = configFileName()) {
   link.download = name;
   link.click();
   URL.revokeObjectURL(url);
+  
   return name;
 }

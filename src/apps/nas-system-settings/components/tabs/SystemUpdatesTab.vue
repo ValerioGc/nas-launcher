@@ -16,7 +16,6 @@ import LauncherUpdates from '../LauncherUpdates.vue';
 import SettingsTabLayout from '../SettingsTabLayout.vue';
 import SettingsStatus from '../SettingsStatus.vue';
 
-// While apt works the list is read again at this pace, until the job is over.
 const POLL_MS = 3000;
 
 const { data, loading, error, busy, load, act } = useResource<SystemUpdates | null>(
@@ -143,14 +142,12 @@ usePolling(
 
 <style scoped lang="scss">
 
-// The whole list in the page, without a scrollbar of its own.
 .common_table.system_updates_list {
   overflow: visible;
   max-height: none;
   transition: opacity $duration_fast;
 }
 
-// The list stays in view while apt works on it, faded so it does not look like the final word.
 .system_updates_busy {
   opacity: 0.55;
 }

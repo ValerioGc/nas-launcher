@@ -1,7 +1,3 @@
-/**
- * Why the NAS cannot be reset here: the switch is off, or the wizard that would configure it again
- * is not on the machine.
- */
 export type ResetBlock = 'disabled' | 'noWizard' | 'noOriginalState';
 
 /**

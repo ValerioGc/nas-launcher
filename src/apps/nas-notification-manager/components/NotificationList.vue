@@ -7,8 +7,10 @@ import { useShellStore } from '@/stores/shellStore';
 import { useNotificationsStore } from '../store';
 import { hasLog, noticeTitle, sourceLabel } from '../text';
 import type { AppNotification } from '../types';
+
 import CommonIcon from '@/components/commons/CommonIcon.vue';
 import NoticeMessage from './NoticeMessage.vue';
+
 import deleteIcon from '@/assets/icons/navigation/delete.svg';
 import checkIcon from '@/assets/icons/navigation/check.svg';
 import searchIcon from '@/assets/icons/navigation/search.svg';
@@ -16,6 +18,7 @@ import infoIcon from '@/assets/icons/status/info.svg';
 import successIcon from '@/assets/icons/status/success.svg';
 import warningIcon from '@/assets/icons/status/warning.svg';
 import errorIcon from '@/assets/icons/status/error.svg';
+
 const notifications = useNotificationsStore();
 const apps = useAppsStore();
 const shell = useShellStore();
@@ -67,8 +70,6 @@ const toneIcons: Record<AppNotification['tone'], string> = {
           <NoticeMessage :item="item" />
 
           <div class="app_toolbar notification_actions">
-            <!-- The log is nas-log-manager's to show, for a warning or an error with a log file:
-                 without one there is nothing to open. -->
             <button
               v-if="hasLog(item)"
               type="button"

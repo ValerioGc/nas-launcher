@@ -14,7 +14,6 @@ import notificationIcon from '@/assets/icons/system/bell.svg';
 
 const notifications = useNotificationsStore();
 
-// The filters belong to one opening: the window starts again from the whole log.
 onMounted(() => {
   notifications.reset();
   notifications.load();
@@ -69,7 +68,6 @@ onMounted(() => {
   }
 }
 
-// The list scrolls by itself, under a heading that stays.
 .notifications_main {
   flex: 1;
   min-width: 0;

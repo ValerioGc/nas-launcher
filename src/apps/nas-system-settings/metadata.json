@@ -1,5 +1,5 @@
 {
-  "version": "0.1.0",
+  "version": "0.9.0",
   "description": "General settings, network, access, power and updates of the NAS.",
   "name": "Settings",
   "logo": "logo.svg"

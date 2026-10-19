@@ -12,7 +12,6 @@ interface Props {
   testid: string;
   busy?: boolean;
   ready?: boolean;
-  /** No rule can be added: the rules of the section are off. */
   disabled?: boolean;
 }
 

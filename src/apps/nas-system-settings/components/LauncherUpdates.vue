@@ -20,11 +20,10 @@ const checking = ref(false);
 const checkError = ref('');
 const updating = ref(false);
 
-/** The launcher names where every release comes from: without its repository nothing is checked. */
 const repository = computed(
   () => data.value?.components.find((item) => item.component === 'launcher')?.repository ?? '',
 );
-/** What one press of the button installs, together. */
+
 const pending = computed(
   () => data.value?.components.filter((item) => item.availableVersion) ?? [],
 );
@@ -53,7 +52,6 @@ async function check() {
     :aria-label="t('launcherUpdates')"
     data-testid="launcher_updates"
   >
-    <!-- The title with its action: the update when one is ready, the check otherwise. -->
     <header class="settings_heading">
       <h2>{{ t('launcherUpdates') }}</h2>
       <button
@@ -80,7 +78,6 @@ async function check() {
 
     <p class="muted">{{ t('launcherUpdatesDescription') }}</p>
 
-    <!-- A row for each component: its version and, when there is one, the version to install. -->
     <ul v-if="data?.components.length" class="component_list" data-testid="nas_components">
       <li
         v-for="item in data.components"
@@ -156,7 +153,6 @@ async function check() {
   font-variant-numeric: tabular-nums;
 }
 
-// A new version: a green dot, then its number.
 .update_dot {
   width: $space_2;
   height: $space_2;

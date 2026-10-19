@@ -1,6 +1,6 @@
 @use '@/styles/global' as *;
 
-// Namespaced once: native apps and modal content share controls without styling the shell.
+// Namespaced once. Native apps and modal content share controls without styling the shell.
 .app_surface {
   color: var(--theme-foreground);
   font: #{$text_base}/ 1.5 $font_ui;
@@ -104,7 +104,6 @@
     }
   }
 
-  // What cannot be undone: outlined, so it reads in both themes.
   .danger {
     border-color: var(--status-error);
     color: var(--status-error);
@@ -138,7 +137,6 @@
     padding: $space_4;
   }
 
-  // A panel that opens with an icon, a title and a line on what it holds, and an action at the end.
   .app_card {
     @extend %stack;
   }

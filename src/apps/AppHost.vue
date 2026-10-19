@@ -13,13 +13,12 @@ import CommonSpinner from '@/components/commons/CommonSpinner.vue';
 const apps = useAppsStore();
 const shell = useShellStore();
 
-// The main page shares its bridge with the widgets; alone, the host makes its own.
+// The main page shares its bridge with the widgets
 const bridge = inject(APP_BRIDGE, null) ?? useAppBridge();
 const picker = bridge.picker;
 const modal = computed(() => apps.apps.find((app) => app.id === shell.modalId));
 
 const PROBE_MS = 8000;
-/** How long after its page loads an application that never says `ready` is shown anyway. */
 const READY_FALLBACK_MS = 4000;
 
 const loaded = reactive(new Set<string>());
@@ -70,13 +69,13 @@ function attach(id: string, frame: HTMLIFrameElement | null) {
 
 /**
  * The cover stays until the application says it is ready, so its own first paint and loading
- * text stay behind it; an application that never says so is shown a few seconds after its page
- * loaded.
+ * text stay behind it
  */
 function covered(id: string) {
   if (shell.startErrors[id] || unreachable.has(id)) {
     return false;
   }
+
   return shell.starting.includes(id) || (!bridge.ready.has(id) && !loaded.has(id));
 }
 
@@ -86,6 +85,7 @@ async function announce(id: string, url: string) {
     id,
     window.setTimeout(() => loaded.add(id), READY_FALLBACK_MS),
   );
+
   bridge.announce(id);
   try {
     const answer = await fetch(url, { cache: 'no-store', signal: AbortSignal.timeout(PROBE_MS) });
@@ -135,13 +135,8 @@ function retry(id: string) {
         :key="app.id"
       />
 
-      <!-- External application in its own process, on the origin of the launcher. No sandbox: one
-           that runs scripts and keeps the origin is no wall there and only makes the browser warn.
-           The application keeps its rules itself (frameGuard.ts of every application): no window
-           of its own, no dialog, no navigation of this page. -->
       <template v-else>
         <div v-if="covered(app.id)" class="app_host_loading" :data-testid="`app_loading_${app.id}`">
-          <!-- Only the spinner shows: the name is for screen readers. -->
           <CommonSpinner
             size="huge"
             centered
@@ -193,8 +188,6 @@ function retry(id: string) {
     @update:model-value="shell.close(modal?.id)"
   />
 
-  <!-- The picker draws its own title and cross. Escape, or a click beside its window, cancels it
-       here too, should the page of the picker not answer. -->
   <dialog
     v-if="picker"
     open
@@ -247,7 +240,6 @@ function retry(id: string) {
   position: fixed;
   z-index: 100;
   inset: 0;
-  // A plain overlay, not the box the browser draws for a dialog.
   width: auto;
   max-width: none;
   height: auto;

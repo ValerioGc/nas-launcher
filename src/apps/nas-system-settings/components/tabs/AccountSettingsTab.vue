@@ -20,7 +20,6 @@ async function load() {
   loading.value = true;
   error.value = '';
   try {
-    // Whether mail can go only decides if the recovery address can be set: it never stops the page.
     const [read, status] = await Promise.all([readAccount(), mailStatus().catch(() => mail.value)]);
     account.value = read;
     mail.value = status;

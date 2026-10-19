@@ -50,7 +50,6 @@ function patternLayer(
         image: `repeating-linear-gradient(${angle}deg, ${tint} 0 ${Math.round(size / 4)}px, transparent ${Math.round(size / 4)}px ${size}px)`,
       };
     default: {
-      // The default and 'multiple', which adds the same ellipse on the opposite side.
       const x = 50 + Math.cos((angle * Math.PI) / 180) * 30;
       const y = 50 + Math.sin((angle * Math.PI) / 180) * 30;
       const ellipse = `radial-gradient(ellipse ${size}% ${size}% at ${x}% ${y}%, ${tint}, transparent)`;

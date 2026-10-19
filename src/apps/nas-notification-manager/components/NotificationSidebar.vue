@@ -12,7 +12,6 @@ import errorIcon from '@/assets/icons/status/error.svg';
 
 const notifications = useNotificationsStore();
 
-// The levels, the whole log first: '' is no level chosen.
 const LEVELS = [
   { tone: '', label: 'all', icon: bellIcon },
   { tone: 'info', label: 'info', icon: infoIcon },
@@ -35,7 +34,8 @@ const LEVELS = [
         :data-testid="`notifications_tone_${level.label}`"
         @click="notifications.tone = level.tone"
       >
-        <CommonIcon :src="level.icon" size="small" />{{ t(level.label) }}
+        <CommonIcon :src="level.icon" size="small" />
+        {{ t(level.label) }}
       </button>
     </nav>
 

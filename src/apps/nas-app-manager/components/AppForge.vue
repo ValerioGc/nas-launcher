@@ -17,6 +17,7 @@ const offline = computed(() => Boolean(forge.value && !forge.value.packagesEnabl
 const tokenMissing = computed(() =>
   Boolean(forge.value?.packagesEnabled && !forge.value.configured),
 );
+
 const selectedUpdate = computed(() => Boolean(selected.value?.updateAvailable));
 const updateLabel = computed(() => t(selectedUpdate.value ? 'updateSelected' : 'updateAll'));
 

@@ -34,9 +34,7 @@ const password = ref('');
 const scanning = ref(false);
 
 const joining = ref('');
-/** The network a connection was asked for while the cable is plugged in, to say why it cannot. */
 const blocked = ref('');
-/** Grows when a change of a card fails: its switch is drawn again in the state it really has. */
 const switches = ref(0);
 const connection = computed(() => data.value?.connection ?? null);
 
@@ -48,7 +46,7 @@ const current = computed(() => (connection.value?.kind === 'wifi' ? connection.v
 
 /**
  * The details of the current connection as label-value pairs. Until the first reading the labels
- * are already there and the values are placeholders; the optional rows come with the reading.
+ * are already there and the values are placeholders
  */
 const details = computed(() => {
   const item = connection.value;
@@ -71,10 +69,6 @@ const details = computed(() => {
  * @param network The Wi-Fi network to check.
  * @returns True if the network requires a password, false otherwise.
  */
-/**
- * What to do about a problem with the Wi-Fi: no adapter and no network found say only that, a
- * failure says how to look into it.
- */
 function hint(problem: NetworkState['wifiProblem']) {
   return problem && problem !== 'noDevice' && problem !== 'disabled'
     ? t(`wifiProblemHint_${problem}`)
@@ -91,7 +85,6 @@ function needsPassword(network: WifiNetwork) {
  * @param network The Wi-Fi network to connect to.
  */
 async function start(network: WifiNetwork) {
-  // One way in at a time: on the cable the list is there to see, not to join.
   if (data.value?.wiredConnected) {
     blocked.value = network.ssid;
     asking.value = null;
@@ -129,9 +122,6 @@ async function connect(network: WifiNetwork) {
 
 /**
  * Leaves the wireless network.
- *
- * Offered only where it would not cut the launcher off: the backend refuses to disconnect the
- * interface the request arrived on, and does not set `canDisconnect` in the first place.
  */
 async function leaveWifi() {
   joining.value = 'leave';
@@ -151,7 +141,6 @@ async function useWired() {
   }
 }
 
-/** Turns a card off or back on; the backend never turns off the one in use. */
 async function toggle(adapter: NetworkAdapter, enabled: boolean) {
   joining.value = `adapter_${adapter.interface}`;
   try {
@@ -176,8 +165,6 @@ async function scan() {
   }
 }
 
-// What NetworkManager remembers can be nothing at all: the page looks for itself on opening, and
-// says it found nothing only once it has looked.
 onMounted(scan);
 
 </script>
@@ -226,7 +213,6 @@ onMounted(scan);
           {{ t('useWired') }}
         </button>
 
-        <!-- Leaving the wireless network, when it is not the one this page arrived through -->
         <button
           v-if="data?.canDisconnect"
           type="button"
@@ -312,7 +298,6 @@ onMounted(scan);
 
       <SettingsStatus :error="data ? error : ''" />
 
-      <!-- The same height whatever it holds: the panel does not shrink while it looks. -->
       <div class="network_results">
         <CommonSpinner
           v-if="!data || scanning"
@@ -378,7 +363,6 @@ onMounted(scan);
               <label class="settings_field">
                 {{ t('networkPassword') }}
 
-                <!-- The network the password is for, the field the browser wants beside one. -->
                 <input
                   class="visually_hidden"
                   type="text"

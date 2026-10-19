@@ -178,10 +178,7 @@ export const useNotificationsStore = defineStore('notifications', () => {
   }
 
   /**
-   * Turns the unread notifications that arrived since the previous refresh into toasts. The first
-   * refresh only takes note of what is there: the log of a whole day is not news. Only what was
-   * written for the first sign-in after it is shown then, until closed, and marked as read so that
-   * it is not shown again.
+   * Announces the notifications that have just been read, showing them as toasts if appropriate.
    * @param result - The notifications just read, newest first.
    * @param news - False when the refresh follows an action of this page: what it just caused is
    * already in front of whoever clicked.

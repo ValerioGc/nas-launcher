@@ -5,7 +5,6 @@ import { t } from '@/i18n';
 import { useAppsStore } from '@/stores/appsStore';
 
 interface Props {
-  /** The applications whose settings can go in the file. */
   exportable: readonly string[];
   disabled?: boolean;
 }
@@ -16,7 +15,6 @@ const selected = defineModel<string[]>({ required: true });
 
 const apps = useAppsStore();
 
-/** Every application of the NAS: the ones with settings to export first, then by name. */
 const rows = computed(() =>
   apps.apps
     .map((app) => ({ id: app.id, name: app.name, exportable: props.exportable.includes(app.id) }))

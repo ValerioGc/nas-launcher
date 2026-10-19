@@ -50,7 +50,6 @@ $catalog_height: 28rem;
 // Desktop ***************************
 $desktop_cell_min: 7.5rem;
 $desktop_icon_size: 4.5rem;
-// The sizes the general settings offer, as name, icon and cell: `large` is the two above.
 $desktop_icon_sizes: (
   small 3rem 5.5rem,
   medium 3.75rem 6.5rem,
@@ -60,11 +59,9 @@ $desktop_icon_sizes: (
 
 // Spinner ***************************
 $spinner_large: 2.5rem;
-// The chevron of a select: drawn, so it keeps its distance from the edge in every browser.
 $select_chevron: 0.3125rem;
 $select_chevron_inset: 1rem;
 $spinner_stroke: 0.15em;
-// The one an application is opening behind.
 $spinner_huge: 4.5rem;
 $spinner_stroke_huge: 0.3rem;
 
@@ -81,7 +78,6 @@ $icon_large: 1.5rem;
 // App menu overlay ***************************
 $menu_aside_width: 13rem;
 $menu_panel_width: 34rem;
-// The logos of the applications in the menu, a little bigger than an icon of the interface.
 $menu_app_icon: 1.875rem;
 $duration_menu_in: 260ms;
 $duration_menu_out: 180ms;

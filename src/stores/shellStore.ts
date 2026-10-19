@@ -17,13 +17,17 @@ function readSavedShell(): SavedShell {
     if (!saved || typeof saved !== 'object') {
       return { openedIds: [], activeId: null };
     }
+
     const record = saved as Record<string, unknown>;
     const openedIds = Array.isArray(record.openedIds)
       ? [...new Set(record.openedIds.filter((id): id is string => typeof id === 'string'))]
       : [];
+
     const activeId = typeof record.activeId === 'string' ? record.activeId : null;
+
     return { openedIds, activeId: openedIds.includes(activeId ?? '') ? activeId : null };
-  } catch {
+  } 
+  catch {
     sessionStorage.removeItem(SESSION_KEY);
     return { openedIds: [], activeId: null };
   }
@@ -86,9 +90,8 @@ export const useShellStore = defineStore('shell', () => {
   );
 
   /**
-   * Starts an external application, or finds it running: the launcher answers at once for one
-   * whose process already answers, so the page of a stopped one is never asked (and never fails
-   * in the console) to find out.
+   * Starts an external application, or finds it running. The launcher answers at once for one
+   * whose process already answers, so the page of a stopped one is never asked to find out.
    */
   function start(id: string) {
     const pending = starts.get(id);

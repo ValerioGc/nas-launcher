@@ -22,9 +22,8 @@ export interface ConfigShortcut {
 }
 
 /**
- * The configuration the launcher exports and imports: never the name of the NAS, the network, the
- * account or the token. `apps` holds the settings of the applications chosen at the export, under
- * their identifiers; the page carries them as they are.
+ * The configuration the launcher exports and imports. `apps` holds the settings of the applications chosen at the export, under
+ * their identifiers
  */
 export interface LauncherConfig {
   format: string;
@@ -41,8 +40,7 @@ export interface LauncherConfig {
 }
 
 /**
- * What the file holds once decrypted: the part of the launcher and the sign-in policy of the
- * gateway.
+ * What the file holds once decrypted
  */
 export interface ConfigContent {
   config: LauncherConfig;

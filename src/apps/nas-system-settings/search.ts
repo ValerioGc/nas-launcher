@@ -19,7 +19,7 @@ export const sectionLabels: Record<SettingsSection, string> = {
 };
 
 /**
- * The icon of each section: beside its name in the settings and on its results in the search.
+ * The icon of each section
  */
 export const sectionIcons: Record<SettingsSection, string> = {
   general: generalIcon,

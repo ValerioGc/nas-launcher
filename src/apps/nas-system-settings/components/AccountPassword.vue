@@ -63,6 +63,8 @@ async function submit() {
           data-testid="account_current_password"
         />
       </label>
+
+      <!-- New password field -->
       <label class="settings_field" for="account_new_password">
         {{ t('accountNewPassword') }}
         <CommonPasswordInput
@@ -76,6 +78,8 @@ async function submit() {
         />
         <span class="muted">{{ t('fieldLength', { min: 8, max: 128 }) }}</span>
       </label>
+
+      <!-- Repeat new password field -->
       <label class="settings_field" for="account_repeat_password">
         {{ t('accountRepeatPassword') }}
         <CommonPasswordInput

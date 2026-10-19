@@ -13,7 +13,6 @@ import ProgressBar from '@/components/alerts/ProgressBar.vue';
 import { failureMessage } from '@/utils/failureMessage';
 
 interface Props {
-  /** The components with a release to install, each with the version it goes to. */
   components: ComponentUpdate[];
 }
 
@@ -34,7 +33,7 @@ const working = computed(() => phase.value === 'progress' || phase.value === 're
 const progress = computed(() =>
   phase.value === 'restarting' ? null : (task.value?.progress ?? null),
 );
-/** What the update does now: the download of a component, the check or the installation. */
+
 const step = computed(() => {
   if (phase.value === 'restarting') {
     return t('updateRestarting');
@@ -46,6 +45,7 @@ const step = computed(() => {
       component: t(`nasComponent_${downloading[1]}`),
     });
   }
+
   return t(`updateStep_${detail}`);
 });
 
@@ -94,7 +94,10 @@ async function followTask() {
   }
 }
 
-/** Back up: every component runs the version it went to, or the whole update was undone. */
+/**
+ * Follows the restart process after the update has been applied.
+ * Checks if the system has come back online and verifies if the update was successful.
+ */
 async function followRestart() {
   try {
     const running = await request<NasUpdates>('/launcher/updates');

@@ -4,9 +4,7 @@ import { t } from '@/i18n';
 import { failureMessage } from '@/utils/failureMessage';
 
 /**
- * Why an action that asks for the password again did not go on, in the words of the page: the
- * gateway refuses a wrong password or code, and makes the address wait after too many; the Email
- * app may fail to send a code.
+ * Returns a user-friendly message for a password-related failure.
  */
 export function passwordFailure(error: unknown) {
   if (error instanceof PasswordRefused) {

@@ -27,9 +27,8 @@ function open() {
 
 <template>
   <p v-if="parts">
-    <!-- A link rather than a button: its words wrap with the sentence they are part of. -->
-    {{ parts.before
-    }}<a
+    {{ parts.before }}
+    <a
       class="notice_link"
       :href="`#${parts.target.app}`"
       :data-testid="`notice_link_${props.item.id}`"
@@ -37,6 +36,7 @@ function open() {
       >{{ parts.link }}</a
     >{{ parts.after }}
   </p>
+
   <p v-else>{{ noticeMessage(props.item) }}</p>
 </template>
 

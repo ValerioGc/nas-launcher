@@ -39,8 +39,6 @@ const IMPORT_EFFECTS = ['configImportAddresses', 'configImportApps', 'configImpo
 const open = defineModel<boolean>({ required: true });
 
 const password = ref('');
-/** Optional at the export, where an empty one leaves the file in clear; asked at the import only
- * for an encrypted file. */
 const filePassword = ref('');
 const fileText = ref<string | null>(null);
 const fileName = ref('');
@@ -48,7 +46,6 @@ const encrypted = ref(false);
 const busy = ref(false);
 const failure = ref('');
 const saved = ref('');
-/** The applications whose settings can go in the file, and the ones chosen. */
 const exportable = ref<string[]>([]);
 const chosenApps = ref<string[]>([]);
 
@@ -65,6 +62,7 @@ const ready = computed(() => {
   if (props.mode === 'export') {
     return true;
   }
+
   return fileText.value !== null && (!encrypted.value || filePassword.value !== '');
 });
 
@@ -89,10 +87,6 @@ function failed(error: unknown) {
   return passwordFailure(error);
 }
 
-/**
- * The file read at once: a file that is not a configuration is said so before any password, and an
- * encrypted one asks for its password.
- */
 async function chosen(event: Event) {
   failure.value = '';
   fileText.value = null;
@@ -120,21 +114,20 @@ async function exportConfig() {
   const apps = chosenApps.value.length
     ? `?apps=${encodeURIComponent(chosenApps.value.join(','))}`
     : '';
-  const config = await request<LauncherConfig>(`/system/config${apps}`, {
+  
+    const config = await request<LauncherConfig>(`/system/config${apps}`, {
     headers: { [CONFIRMATION_HEADER]: code },
   });
+
   const signIn = await signInPolicy().catch(() => null);
   saved.value = saveConfigFile(await writeConfig({ config, signIn }, filePassword.value));
 }
 
-/**
- * The file opened here first, so a wrong file changes nothing; then the password checked by the
- * gateway and the configuration handed to the launcher, which checks it all before writing. The
- * page reloads with the theme and the language of the file.
- */
+// Handles the import of a configuration file, verifying the password if necessary and applying the settings.
 async function importConfig(text: string) {
   const content = await readConfig(text, filePassword.value);
   const code = await confirmPassword(password.value);
+
   await request<LauncherConfig>('/system/config', {
     method: 'POST',
     body: JSON.stringify(content.config),
@@ -143,6 +136,7 @@ async function importConfig(text: string) {
   if (content.signIn) {
     await saveSignInPolicy(content.signIn);
   }
+  
   globalThis.location.reload();
 }
 

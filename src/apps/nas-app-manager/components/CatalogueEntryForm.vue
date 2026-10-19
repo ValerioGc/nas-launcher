@@ -28,6 +28,7 @@ const preview = computed(() => {
   }
   return chosen.value || appIcon(entry.value.id, entry.value.logo);
 });
+
 const hasLogo = computed(() => logo.value !== null && Boolean(logo.value || entry.value.logo));
 
 function dataUrl(file: File) {
@@ -170,9 +171,9 @@ onMounted(() => {
                 data-testid="catalogue_logo"
                 @change="choose"
               />
-              <label for="catalogue_logo" class="catalogue_logo_pick">{{
-                t('appLogoChoose')
-              }}</label>
+              <label for="catalogue_logo" class="catalogue_logo_pick">
+                {{ t('appLogoChoose') }}
+              </label>
               <button
                 v-if="hasLogo"
                 type="button"

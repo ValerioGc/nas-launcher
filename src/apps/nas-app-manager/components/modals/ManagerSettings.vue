@@ -26,7 +26,6 @@ const CATALOGUE_PATH = '/apps/catalogue';
 const open = defineModel<boolean>({ required: true });
 
 const manager = useAppManagerStore();
-// The choice is kept with the general settings of the NAS, where the launcher reads it.
 const general = useSettingsStore();
 const createShortcut = ref(true);
 const settings = ref<ManagerSettings | null>(null);
@@ -37,9 +36,11 @@ const entry = ref<CatalogueEntry | null>(null);
 const position = ref<number | null>(null);
 const logos = reactive(new Map<string, File | null>());
 const logo = ref<File | null | undefined>();
+
 const loading = ref(true);
 const busy = ref(false);
 const error = ref('');
+
 const removal = ref<CatalogueEntry | null>(null);
 const confirmRemoval = computed({
   get: () => removal.value !== null,
@@ -159,11 +160,6 @@ async function saveShortcut() {
   }
 }
 
-/**
- * Saves what changed: the automatic check always, the catalogue when it differs from the one the
- * launcher gave, then its logos, and the token when one was written. The token goes last, because
- * storing it restarts the launcher. Saved, the window closes; a failure keeps it open with why.
- */
 async function save() {
   busy.value = true;
   error.value = '';
@@ -182,19 +178,23 @@ async function save() {
         }),
       );
     }
+
     const images = logos.size > 0;
     if (images) {
       await sendLogos();
     }
+    
     if (catalogue || images) {
       await manager.load();
     }
+    
     const written = token.value.trim();
     if (written) {
       const refused = await manager.saveToken(written);
       if (refused) {
         throw new Error(refused);
       }
+
       token.value = '';
     }
     open.value = false;
@@ -227,7 +227,6 @@ onMounted(load);
       @apply="apply"
     />
 
-    <!-- A form, so that the token field is a password of a form and Enter saves too. -->
     <form
       v-else
       id="app_manager_settings"

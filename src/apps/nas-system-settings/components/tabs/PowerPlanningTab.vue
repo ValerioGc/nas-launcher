@@ -6,6 +6,7 @@ import { useResource } from '@/composables/useResource';
 import { request } from '@/api/client';
 import type { PowerSettings, PowerRule } from '@/apps/nas-system-settings/types/power';
 import type { TableColumn } from '@/types/types';
+
 import deleteIcon from '@/assets/icons/navigation/delete.svg';
 import startIcon from '@/assets/icons/system/power.svg';
 import shutdownIcon from '@/assets/icons/system/shutdown.svg';
@@ -30,7 +31,7 @@ const { data, loading, error, busy, act, load } = useResource<PowerSettings | nu
 const simulated = ref<boolean | null>(null);
 const saved = ref(false);
 const adding = ref(false);
-// With the rules off no rule is being added.
+
 watch(
   () => data.value?.enabled,
   (enabled) => {
@@ -73,7 +74,6 @@ const columns: TableColumn<PowerRule & { index: number }>[] = [
   { key: 'active', label: 'enabled' },
 ];
 
-// Rules have no identifier of their own: their position is what the section saves.
 const rows = computed(() => data.value?.rules.map((item, index) => ({ ...item, index })) ?? []);
 
 async function saveRules(rules: PowerRule[]) {
@@ -87,7 +87,6 @@ async function save() {
   saved.value = await act('/settings/power', 'PUT', data.value);
 }
 
-// Saved once it is a whole number of minutes the screen accepts.
 function saveScreen() {
   const minutes = data.value?.screenOffMinutes ?? 0;
   if (Number.isInteger(minutes) && minutes >= SCREEN_MINUTES.min && minutes <= SCREEN_MINUTES.max) {
@@ -204,7 +203,6 @@ onMounted(async () => {
           </div>
         </template>
 
-        <!-- With the rules off the table stays in view, faded and out of reach. -->
         <CommonTable
           v-if="rows.length"
           :class="{ rules_off: !data.enabled }"

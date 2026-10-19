@@ -13,18 +13,15 @@ const settings = useSettingsStore();
 const draft = ref<GeneralSettings | null>(null);
 const ICON_SIZES: DesktopIconSize[] = ['small', 'medium', 'large', 'xlarge'];
 const patterns = ['halo', 'multiple', 'rings', 'dots', 'grid', 'stripes', 'linear'] as const;
-// The directions of the background, every eighth of a turn: 0 points up.
+
 const DIRECTIONS = [0, 45, 90, 135, 180, 225, 270, 315] as const;
 const NAS_NAME = /^[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?$/;
 const HEX_COLOR = /^#[0-9a-fA-F]{6}$/;
-// A change is saved a moment after the last one: a slider or a name being typed is saved once.
 const SAVE_DELAY_MS = 600;
 
-/** What the colour picker shows when the accent is the theme's own, which has no hex of its own. */
 const DEFAULT_ACCENT = '#3fd39b';
 
 let timer: ReturnType<typeof setTimeout> | undefined;
-// The settings last sent: what the launcher answers with replaces the draft only for those.
 let sent = '';
 
 watch(
@@ -71,13 +68,10 @@ watch(
   { deep: true },
 );
 
-// Leaving the tab saves what is still waiting.
 onBeforeUnmount(() => void save());
 
 const preview = computed(() => (draft.value ? backgroundStyle(draft.value.background) : {}));
 
-// The themes offered are those of the type chosen; with the system's type, of the one the page
-// shows now, which `useAppearance` resolved.
 const darkSystem = document.documentElement.dataset.theme === 'dark';
 const kind = computed<ThemeKind>(() => {
   const chosen = draft.value?.theme ?? 'system';
@@ -171,7 +165,6 @@ onMounted(() => {
           </label>
         </div>
 
-        <!-- The size of the icons of the desktop: a card each, the icon drawn in a window. -->
         <fieldset class="settings_field settings_full choice_group">
           <legend>{{ t('desktopIconSize') }}</legend>
           <div class="choice_cards" data-testid="settings_desktop_icon_size">
@@ -196,7 +189,6 @@ onMounted(() => {
           </div>
         </fieldset>
 
-        <!-- Accent colour, used by the launcher and by the apps -->
         <div class="settings_full">
           <div class="color_row">
             <span id="accent_color_label">{{ t('accentColor') }}</span>
@@ -289,7 +281,6 @@ onMounted(() => {
               />
             </div>
 
-            <!-- The direction of the background: a card each, an arrow and its name. -->
             <fieldset class="settings_field settings_full choice_group">
               <legend>{{ t('direction') }}</legend>
               <div class="choice_cards choice_cards_directions">
@@ -377,7 +368,6 @@ onMounted(() => {
   }
 }
 
-// The colour on the line of its label, as wide as a swatch and a short code.
 .color_row {
   display: flex;
   flex-wrap: wrap;
@@ -460,7 +450,6 @@ onMounted(() => {
   }
 }
 
-// A window with an icon in it, the icon as large as the size it stands for.
 .icon_window {
   display: grid;
   place-items: center;

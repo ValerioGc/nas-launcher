@@ -10,7 +10,6 @@ export const THEMES = {
 
 export type ThemeKind = keyof typeof THEMES;
 
-/** The theme to draw for `kind`: the chosen one when it exists, the default otherwise. */
 export function themeOf(kind: ThemeKind, chosen: string | undefined): string {
   return (THEMES[kind] as readonly string[]).includes(chosen ?? '')
     ? (chosen as string)

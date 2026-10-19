@@ -13,7 +13,6 @@ import { passwordFailure } from '../passwordFailure';
 const props = defineProps<{ account: AccountInfo }>();
 const emit = defineEmits<{ changed: [account: AccountInfo] }>();
 
-// The rules of the wizard: a letter or `_` first, then letters, digits, `.`, `_` and `-`.
 const USERNAME = /^[A-Za-z_][A-Za-z0-9._-]{2,24}$/;
 
 const username = ref('');
@@ -25,7 +24,7 @@ const done = ref(false);
 const valid = computed(
   () => USERNAME.test(username.value.trim()) && username.value.trim() !== props.account.username,
 );
-// A name being written that the account cannot take: said under the field, and not sent.
+
 const invalid = computed(
   () => username.value.trim() !== '' && !USERNAME.test(username.value.trim()),
 );
@@ -74,12 +73,13 @@ async function submit() {
           aria-describedby="account_username_rules"
           data-testid="account_new_username"
         />
-        <span v-if="invalid" id="account_username_rules" class="app_error" role="alert">{{
-          t('accountUsernameInvalid')
-        }}</span>
-        <span v-else id="account_username_rules" class="muted">{{
-          t('accountUsernameRules')
-        }}</span>
+
+        <span v-if="invalid" id="account_username_rules" class="app_error" role="alert">
+          {{ t('accountUsernameInvalid') }}
+        </span>
+        <span v-else id="account_username_rules" class="muted">
+          {{ t('accountUsernameRules') }}
+        </span>
       </label>
       <label class="settings_field" for="account_username_password">
         {{ t('accountCurrentPassword') }}
@@ -92,10 +92,14 @@ async function submit() {
         />
       </label>
     </div>
+
+    <!-- Alert banners -->
     <AlertBanner v-if="failure" tone="error" compact>{{ failure }}</AlertBanner>
-    <AlertBanner v-else-if="done" tone="success" compact>{{
-      t('accountUsernameChanged')
-    }}</AlertBanner>
+    <AlertBanner v-else-if="done" tone="success" compact>
+      {{ t('accountUsernameChanged') }}
+    </AlertBanner>
+
+    <!-- Submit button -->
     <div class="app_toolbar settings_actions">
       <button
         type="submit"

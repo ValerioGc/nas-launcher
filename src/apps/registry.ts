@@ -9,10 +9,7 @@ import globalSettingsLogo from './nas-system-settings/logo.svg';
 import notificationManagerLogo from './nas-notification-manager/logo.svg';
 import defaultLogo from './default_logo.svg';
 
-/**
- * A fullscreen internal application is split into its own chunk: while it arrives, its panel shows a spinner
- * instead of an empty window.
- */
+// Lazy-load internal components with a spinner while they are being fetched.
 function lazy(loader: AsyncComponentLoader): Component {
   return defineAsyncComponent({
     loader,
@@ -26,10 +23,8 @@ function lazy(loader: AsyncComponentLoader): Component {
  */
 export const SETTINGS_APP_ID = 'nas-system-settings';
 
-/**
- * Internal applications. The `id` is the one returned by `/api/apps`: it is the key with which the shell
- * opens the application, and it must match the backend's identifier.
- */
+
+// Internal applications registry
 export const internalApps: Record<string, AppEntry> = {
   'nas-app-manager': {
     label: 'appManager',
@@ -120,6 +115,7 @@ export function appInfo(id: string, fallback: string): string {
   if (!entry) {
     return fallback;
   }
+  
   const key = `${entry.label}Info`;
   const translated = t(key);
   return translated === key ? fallback : translated;

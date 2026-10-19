@@ -21,10 +21,6 @@ export interface SystemUpdates {
 /** A part of the NAS released on its own. */
 export type NasComponent = 'launcher' | 'gateway' | 'wizard';
 
-/**
- * One component: the version installed (null when it cannot say it), the newer release the last
- * check found, and the repository it comes from.
- */
 export interface ComponentUpdate {
   component: NasComponent;
   currentVersion: string | null;

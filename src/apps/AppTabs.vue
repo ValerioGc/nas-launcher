@@ -141,8 +141,6 @@ watch(() => shell.openApps, updateOverflow, { flush: 'post' });
     transition: opacity $duration_fast ease;
   }
 
-  // Hovering only lightens a tab in the background: no edge grows or moves, and the active one,
-  // joined to its window, stays as it is.
   &:not(.active):hover {
     background: var(--surface-hover);
     color: var(--theme-foreground);
@@ -155,7 +153,6 @@ watch(() => shell.openApps, updateOverflow, { flush: 'post' });
 
 .app_tab_open {
   @extend %button;
-  // Room for the close button laid over the end of the tab, and a gap before it.
   padding-right: $space_10 + $space_4;
   min-width: $app_tab_min_width;
   border: 0;

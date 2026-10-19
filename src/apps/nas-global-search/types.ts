@@ -47,10 +47,6 @@ export interface FileSearch {
   failed: string[];
 }
 
-/**
- * One line of the results, whatever it is: an application, a settings entry or a file.
- * `app` is the application it opens, with `query` or `location` when it has any.
- */
 export interface SearchEntry {
   key: string;
   kind: 'app' | 'setting' | 'file';

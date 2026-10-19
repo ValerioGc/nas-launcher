@@ -58,8 +58,7 @@ async function reset() {
 }
 
 /**
- * The launcher and the gateway stop along the way, then the wizard takes the same address: the
- * page goes to it as soon as it answers. A plain fetch, since nothing here is signed in any more.
+ * The launcher and the gateway stop along the way, then the wizard takes the same address. A plain fetch, since nothing here is signed in any more.
  */
 async function waitForWizard() {
   try {

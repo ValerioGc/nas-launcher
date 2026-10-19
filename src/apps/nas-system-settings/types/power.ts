@@ -14,6 +14,5 @@ export interface PowerRule {
 export interface PowerSettings {
   enabled: boolean;
   rules: PowerRule[];
-  /** Minutes without a key or the mouse before the monitor connected to the NAS goes dark. */
   screenOffMinutes: number;
 }
