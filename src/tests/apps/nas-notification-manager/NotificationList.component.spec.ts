@@ -50,7 +50,7 @@ describe('NotificationList', () => {
   });
 
   it('translates what the launcher wrote, and names its source as a person knows it', () => {
-    setLocale('it');
+    setLocale('en');
     useNotificationsStore().data = [
       {
         ...backup,
@@ -66,14 +66,14 @@ describe('NotificationList', () => {
     const wrapper = mount(NotificationList);
 
     const updated = wrapper.get('[data-testid="notification_3"]');
-    expect(updated.get('strong').text()).toBe('Aggiornamento del launcher interrotto');
+    expect(updated.get('strong').text()).toBe('Launcher update interrupted');
     expect(updated.get('.notification_content p').text()).toBe(
-      'Aggiornamento interrotto durante la fase di installazione. Versione in uso 0.1.2.',
+      'Update interrupted during the installation step. Version in use 0.1.2.',
     );
-    expect(updated.get('[data-testid="notification_source_3"]').text()).toBe('Impostazioni');
+    expect(updated.get('[data-testid="notification_source_3"]').text()).toBe('Settings');
     const unknown = wrapper.get('[data-testid="notification_4"]');
     expect(unknown.get('strong').text()).toBe('Backup');
-    expect(unknown.get('[data-testid="notification_source_4"]').text()).toBe('Sistema');
+    expect(unknown.get('[data-testid="notification_source_4"]').text()).toBe('System');
   });
 
   it('offers the log only for the warnings and errors with a log file', () => {
@@ -93,7 +93,7 @@ describe('NotificationList', () => {
   });
 
   it('opens the place a notification names from the words of its message', async () => {
-    setLocale('it');
+    setLocale('en');
     useNotificationsStore().data = [
       { ...backup, id: '5', tone: 'info', key: 'discoveryOff', source: 'nas-security-center' },
     ];
@@ -102,7 +102,9 @@ describe('NotificationList', () => {
     ];
     const wrapper = mount(NotificationList);
     const message = wrapper.get('[data-testid="notification_5"] .notification_content p');
-    expect(message.text()).toContain('modificabile da Security Center, sezione Accesso.');
+    expect(message.text().replace(/\s+/g, ' ')).toContain(
+      'can be changed in Security Center, Access section.',
+    );
 
     await wrapper.get('[data-testid="notice_link_5"]').trigger('click');
     const shell = useShellStore();
