@@ -49,7 +49,7 @@ export async function searchProvider(
   if (!response.ok) {
     throw new Error(t('searchFailed'));
   }
-  
+
   const results = (await response.json()) as SearchResult[];
   return results.map((result) => ({
     ...result,

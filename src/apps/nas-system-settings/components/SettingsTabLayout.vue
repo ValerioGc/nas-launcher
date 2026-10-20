@@ -29,7 +29,6 @@ const emit = defineEmits<{
 </script>
 
 <template>
-
   <!-- main content container, rendered as the specified HTML element -->
   <component :is="as" v-if="ready" v-bind="$attrs" class="app_stack settings_form">
     <h1>{{ title }}</h1>

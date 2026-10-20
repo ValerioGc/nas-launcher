@@ -23,7 +23,6 @@ function lazy(loader: AsyncComponentLoader): Component {
  */
 export const SETTINGS_APP_ID = 'nas-system-settings';
 
-
 // Internal applications registry
 export const internalApps: Record<string, AppEntry> = {
   'nas-app-manager': {
@@ -115,7 +114,7 @@ export function appInfo(id: string, fallback: string): string {
   if (!entry) {
     return fallback;
   }
-  
+
   const key = `${entry.label}Info`;
   const translated = t(key);
   return translated === key ? fallback : translated;

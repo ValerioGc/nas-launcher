@@ -53,7 +53,7 @@ function translated(item: AppNotification, part: 'title' | 'message', link?: str
   if (!item.key) {
     return item[part];
   }
-  
+
   const key = `notice_${item.key}_${part}`;
   const params = Object.fromEntries(
     Object.entries(item.params ?? {}).map(([name, value]) => [name, localized(name, value)]),
@@ -102,7 +102,7 @@ export function sourceLabel(source: string) {
   if (known !== key) {
     return known;
   }
-  
+
   const installed = useAppsStore().installed.find((app) => app.id === source);
   return appLabel(source, installed?.name ?? source);
 }

@@ -169,6 +169,6 @@ export function saveConfigFile(text: string, name = configFileName()) {
   link.download = name;
   link.click();
   URL.revokeObjectURL(url);
-  
+
   return name;
 }

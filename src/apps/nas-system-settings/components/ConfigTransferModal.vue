@@ -114,8 +114,8 @@ async function exportConfig() {
   const apps = chosenApps.value.length
     ? `?apps=${encodeURIComponent(chosenApps.value.join(','))}`
     : '';
-  
-    const config = await request<LauncherConfig>(`/system/config${apps}`, {
+
+  const config = await request<LauncherConfig>(`/system/config${apps}`, {
     headers: { [CONFIRMATION_HEADER]: code },
   });
 
@@ -136,7 +136,7 @@ async function importConfig(text: string) {
   if (content.signIn) {
     await saveSignInPolicy(content.signIn);
   }
-  
+
   globalThis.location.reload();
 }
 

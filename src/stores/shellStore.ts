@@ -26,8 +26,7 @@ function readSavedShell(): SavedShell {
     const activeId = typeof record.activeId === 'string' ? record.activeId : null;
 
     return { openedIds, activeId: openedIds.includes(activeId ?? '') ? activeId : null };
-  } 
-  catch {
+  } catch {
     sessionStorage.removeItem(SESSION_KEY);
     return { openedIds: [], activeId: null };
   }

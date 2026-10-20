@@ -18,6 +18,7 @@ use utoipa_axum::{router::OpenApiRouter, routes};
 #[serde(deny_unknown_fields)]
 #[into_params(parameter_in = Query)]
 struct ExportQuery {
+    /// The applications whose settings go in the file, separated by commas
     #[serde(default)]
     apps: String,
 }

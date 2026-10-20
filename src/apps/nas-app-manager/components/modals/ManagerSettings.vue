@@ -183,11 +183,11 @@ async function save() {
     if (images) {
       await sendLogos();
     }
-    
+
     if (catalogue || images) {
       await manager.load();
     }
-    
+
     const written = token.value.trim();
     if (written) {
       const refused = await manager.saveToken(written);
