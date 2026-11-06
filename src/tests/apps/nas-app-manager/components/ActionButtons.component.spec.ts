@@ -49,14 +49,14 @@ it('cancels a pending confirmation when the catalogue changes', async () => {
   wrapper.unmount();
 });
 
-it('offers no installation until the token is configured', async () => {
+it('offers the installation without a token, except during one or where packages are off', async () => {
   const manager = useAppManagerStore();
   const wrapper = mount(ActionButtons, { global: { stubs: { teleport: true } } });
   const button = (label: string) =>
     wrapper.findAll('button').find((item) => item.text().startsWith(label))!;
   expect(button('Disinstalla').attributes('disabled')).toBeUndefined();
 
-  vi.mocked(request).mockResolvedValueOnce({ ...credentials, configured: true });
+  vi.mocked(request).mockResolvedValueOnce({ ...credentials, configured: false });
   await manager.loadCredentials();
 
   await manager.setEndpoint('available');
@@ -64,6 +64,12 @@ it('offers no installation until the token is configured', async () => {
   await flushPromises();
   expect(button('Installa').attributes('disabled')).toBeUndefined();
   manager.installing = [installed.id];
+  await flushPromises();
+  expect(button('Installa').attributes('disabled')).toBeDefined();
+
+  manager.installing = [];
+  vi.mocked(request).mockResolvedValueOnce({ ...credentials, packagesEnabled: false });
+  await manager.loadCredentials();
   await flushPromises();
   expect(button('Installa').attributes('disabled')).toBeDefined();
   wrapper.unmount();

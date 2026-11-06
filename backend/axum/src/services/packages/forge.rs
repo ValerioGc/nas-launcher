@@ -161,8 +161,8 @@ pub async fn latest_logged(
         }
     };
     let status = answer.status();
-    let content_type = answer
-        .headers()
+    let headers = answer.headers().clone();
+    let content_type = headers
         .get(reqwest::header::CONTENT_TYPE)
         .and_then(|value| value.to_str().ok())
         .unwrap_or("unknown")
@@ -185,7 +185,13 @@ pub async fn latest_logged(
     )
     .await;
     if !status.is_success() {
-        return Err(describe(status, repository));
+        return Err(describe(
+            status,
+            &headers,
+            repository,
+            "has no release",
+            token.is_some(),
+        ));
     }
 
     let (tag, assets) = match provider {
@@ -222,11 +228,44 @@ async fn trace(path: Option<&Path>, text: &str) {
     let _ = writer.flush().await;
 }
 
-fn describe(status: reqwest::StatusCode, repository: &str) -> String {
-    match status.as_u16() {
-        401 | 403 => format!("{repository} refused the token"),
-        404 => format!("{repository} has no release, or the token cannot see it"),
-        other => format!("{repository} answered {other}"),
+/// A forge answers 429, or 403 with one of these headers, when it is the request limit that was
+/// reached and not the permissions that are missing.
+fn is_limited(status: reqwest::StatusCode, headers: &reqwest::header::HeaderMap) -> bool {
+    let exhausted = headers
+        .get("x-ratelimit-remaining")
+        .is_some_and(|remaining| remaining.as_bytes() == b"0");
+    status.as_u16() == 429
+        || (status.as_u16() == 403
+            && (exhausted || headers.contains_key(reqwest::header::RETRY_AFTER)))
+}
+
+/// Says why a forge refused a request. Whether a token went with it changes what the refusal
+/// means, so the two cases never share a message.
+fn describe(
+    status: reqwest::StatusCode,
+    headers: &reqwest::header::HeaderMap,
+    subject: &str,
+    absent: &str,
+    authorised: bool,
+) -> String {
+    if is_limited(status, headers) {
+        return if authorised {
+            format!("the forge limit on requests stopped {subject}, try again later")
+        } else {
+            format!(
+                "the forge limit on anonymous requests stopped {subject}, try again later or set a token"
+            )
+        };
+    }
+    let code = status.as_u16();
+    match (code, authorised) {
+        (401, true) => format!("{subject} refused the token, which is invalid or expired"),
+        (403, true) => format!("the token has no permission to read {subject}"),
+        (401 | 403, false) => format!("{subject} cannot be read without a token"),
+        (404, true) => format!("{subject} {absent}, or the token cannot see it"),
+        (404, false) => format!("{subject} {absent}, or it is private and needs a token"),
+        (500..=599, _) => format!("the forge failed on {subject} ({code}), try again later"),
+        _ => format!("{subject} answered {code}"),
     }
 }
 
@@ -266,12 +305,13 @@ pub async fn download_logged(
     use futures_util::StreamExt;
 
     let client = client()?;
+    let token = for_forge(url, token);
     let request = authorise(
         client
             .get(url)
             .timeout(DOWNLOAD_TIMEOUT)
             .header(reqwest::header::ACCEPT, "application/octet-stream"),
-        for_forge(url, token),
+        token,
     );
 
     trace(log, &format!("GET {url}\nAccept: application/octet-stream")).await;
@@ -285,10 +325,17 @@ pub async fn download_logged(
     };
     if !answer.status().is_success() {
         let status = answer.status();
+        let headers = answer.headers().clone();
         let body = answer.bytes().await.unwrap_or_default();
         let shown = String::from_utf8_lossy(&body[..body.len().min(32 * 1024)]);
         trace(log, &format!("HTTP {}\n\n{shown}", status.as_u16())).await;
-        return Err(format!("the package answered {}", status.as_u16()));
+        return Err(describe(
+            status,
+            &headers,
+            "the package",
+            "is not published",
+            token.is_some(),
+        ));
     }
 
     trace(log, &format!("HTTP {}", answer.status().as_u16())).await;

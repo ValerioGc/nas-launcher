@@ -7,7 +7,7 @@ import CommonField from '@/components/commons/CommonField.vue';
 import CommonIcon from '@/components/commons/CommonIcon.vue';
 import CommonPasswordInput from '@/components/commons/CommonPasswordInput.vue';
 import successIcon from '@/assets/icons/status/success.svg';
-import errorIcon from '@/assets/icons/status/error.svg';
+import infoIcon from '@/assets/icons/status/info.svg';
 
 interface Props {
   configured: boolean;
@@ -23,7 +23,7 @@ const editing = ref(false);
   <section class="app_panel app_card" :aria-label="t('tokenLabel')">
     <header class="app_card_header">
       <CommonIcon
-        :src="props.configured ? successIcon : errorIcon"
+        :src="props.configured ? successIcon : infoIcon"
         :label="t(props.configured ? 'tokenConfigured' : 'tokenNotConfigured')"
         data-testid="app_manager_token_status"
       />
@@ -53,8 +53,8 @@ const editing = ref(false);
         />
       </CommonField>
 
-      <p class="muted token_note" data-testid="app_manager_token_note">
-        {{ t(props.configured ? 'tokenReplace' : 'tokenWriteOnly') }}
+      <p v-if="props.configured" class="muted token_note" data-testid="app_manager_token_note">
+        {{ t('tokenReplace') }}
       </p>
     </template>
   </section>

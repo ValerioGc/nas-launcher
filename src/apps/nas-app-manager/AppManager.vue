@@ -55,8 +55,6 @@ onMounted(() => {
 <template>
   <AppView :name="t('appManager')">
     <div class="app_stack manager_content">
-      <h1>{{ t('appManager') }}</h1>
-
       <div class="app_toolbar manager_navigation">
         <div class="app_toolbar">
           <button

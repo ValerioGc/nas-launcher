@@ -14,10 +14,6 @@ const { forge, checking, busy, updates, checkError, endpoint, selected } = store
 const onInstalled = computed(() => endpoint.value === 'installed');
 const offline = computed(() => Boolean(forge.value && !forge.value.packagesEnabled));
 
-const tokenMissing = computed(() =>
-  Boolean(forge.value?.packagesEnabled && !forge.value.configured),
-);
-
 const selectedUpdate = computed(() => Boolean(selected.value?.updateAvailable));
 const updateLabel = computed(() => t(selectedUpdate.value ? 'updateSelected' : 'updateAll'));
 
@@ -28,12 +24,8 @@ function update() {
 </script>
 
 <template>
-  <div
-    v-if="onInstalled || offline || tokenMissing"
-    class="manager_forge"
-    :aria-label="t('packageSource')"
-  >
-    <div v-if="onInstalled || offline" class="app_toolbar manager_update_toolbar">
+  <div v-if="onInstalled || offline" class="manager_forge" :aria-label="t('packageSource')">
+    <div class="app_toolbar manager_update_toolbar">
       <button
         v-if="onInstalled && !updates"
         type="button"
@@ -50,7 +42,7 @@ function update() {
         v-else-if="onInstalled"
         type="button"
         class="primary"
-        :disabled="checking || busy || !forge?.packagesEnabled || !forge.configured"
+        :disabled="checking || busy || !forge?.packagesEnabled"
         data-testid="app_manager_update_available"
         @click="update"
       >
@@ -63,10 +55,6 @@ function update() {
         {{ t('packagesDisabled') }}
       </p>
     </div>
-
-    <AlertBanner v-if="tokenMissing" tone="warning" compact data-testid="app_manager_token_status">
-      {{ t('tokenMissing') }}
-    </AlertBanner>
 
     <AlertBanner
       v-if="onInstalled && checkError"

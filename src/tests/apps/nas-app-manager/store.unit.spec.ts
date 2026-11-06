@@ -29,7 +29,7 @@ describe('app manager store', () => {
     store.setShowSystem(true);
     store.select(installed.id);
     expect(store.selected?.id).toBe(installed.id);
-    store.forge = { ...credentials, configured: true };
+    store.forge = { ...credentials, configured: false };
     store.checked = { [offer.id]: { ...offer, system: true } };
     expect(await store.updateApps()).toBe(true);
     expect(request).toHaveBeenCalledWith(

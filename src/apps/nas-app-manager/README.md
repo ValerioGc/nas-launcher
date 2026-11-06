@@ -13,11 +13,11 @@ read shared state and call actions directly, without passing catalogue or view p
 - `components/AppList.vue` owns filtering, sorting, empty states and the shortcut context menu
   for both views, together with their styles. Switching views preserves selection and sorting
   without another HTTP request.
-- `components/AppForge.vue` shows the package mode, a warning while no token is configured and,
-  on the installed tab only, the update check and its errors.
+- `components/AppForge.vue` shows the package mode and, on the installed tab only, the update
+  check and its errors.
 - `components/ActionButtons.vue` owns the action choices and modal state. Installation and
   removal require confirmation; failed operations keep the confirmation open for retry. Installing
-  and updating stay disabled without a token, and while that application is being installed.
+  stays disabled while that application is being installed.
 - `components/modals/DetailModal.vue` reads metadata only when opened;
   `ConfirmationModal.vue` presents the pending action. Shared contracts live in `types.ts`.
 - `components/modals/ManagerSettings.vue`, opened from the gear in the toolbar, loads and saves
@@ -62,11 +62,12 @@ published checksum, unpacked and put in place in the background, and the operati
 the operations widget and by the manager. The files are opened to the group of the launcher
 (`chmod -R g=u-w`), since the unit of the application runs as another user in that group.
 
-The **token** is the one encrypted systemd credential of the launcher updates, sent on every
-request to the forge, for every application: nothing in the catalogue decides about it. The
-manager only learns whether it is configured, and sets a new one from its settings. Without it,
-installing and updating are disabled. Where this installation fetches nothing at all (no
-`NAS_PACKAGES_MODE=real`) the button is disabled and says why.
+The **token** is optional and only private repositories need it. It is the one encrypted systemd
+credential of the launcher updates. When it is set it goes on every request to the forge, for every
+application, and nothing in the catalogue decides about it. Without it the requests are anonymous,
+so public repositories install and update as usual within the forge's limits for anonymous requests.
+The manager only learns whether it is configured, and sets a new one from its settings. Where this
+installation fetches nothing at all (no `NAS_PACKAGES_MODE=real`) the button is disabled and says why.
 
 ## API
 

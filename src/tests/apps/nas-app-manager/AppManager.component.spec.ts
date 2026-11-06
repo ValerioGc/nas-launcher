@@ -311,15 +311,23 @@ describe('application management', () => {
     wrapper.unmount();
   });
 
-  it('says the token is missing and where it is set, with no field on the page', async () => {
+  it('says nothing about a missing token, which public repositories do not need', async () => {
     setActivePinia(createPinia());
     answer([optionalApp], false);
     const wrapper = mount(AppManager);
     await flushPromises();
-    const status = wrapper.get('[data-testid="app_manager_token_status"]');
-    expect(status.attributes('role')).toBe('status');
-    expect(status.text()).toContain('impostazioni del gestore');
+    expect(wrapper.find('[data-testid="app_manager_token_status"]').exists()).toBe(false);
     expect(wrapper.find('input[type="password"]').exists()).toBe(false);
+    wrapper.unmount();
+  });
+
+  it('leaves the name of the application to the tab', async () => {
+    setActivePinia(createPinia());
+    answer([optionalApp]);
+    const wrapper = mount(AppManager);
+    await flushPromises();
+    expect(wrapper.find('h1').exists()).toBe(false);
+    expect(wrapper.get('section').attributes('aria-label')).toBe('Gestore applicazioni');
     wrapper.unmount();
   });
 

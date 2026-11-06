@@ -72,7 +72,7 @@ When('I use the launcher with its mock backend', async ({ page, request }) => {
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
     await expect(page.locator('html')).toHaveAttribute('lang', 'en');
     await page.getByTestId('app_tab_nas-app-manager').click();
-    await expect(page.getByRole('heading', { name: 'Application manager' })).toBeVisible();
+    await expect(page.getByRole('region', { name: 'Application manager' })).toBeVisible();
     await page.getByTestId('app_tab_nas-system-settings').click();
     await expect(page.getByTestId('settings_language')).toHaveValue('en');
 

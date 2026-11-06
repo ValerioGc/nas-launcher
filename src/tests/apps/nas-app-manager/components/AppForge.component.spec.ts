@@ -15,17 +15,17 @@ beforeEach(async () => {
   await useAppManagerStore().initialize();
 });
 
-it('asks for the token only while it is missing, and leaves setting it to the settings', async () => {
+it('shows nothing about a missing token and leaves the updates available', async () => {
+  const manager = useAppManagerStore();
   const wrapper = mount(AppForge);
-  expect(wrapper.get('[data-testid="app_manager_token_status"]').text()).toContain(
-    'si imposta nelle impostazioni del gestore',
-  );
+  expect(wrapper.find('[data-testid="app_manager_token_status"]').exists()).toBe(false);
   expect(wrapper.find('input').exists()).toBe(false);
 
-  vi.mocked(request).mockResolvedValueOnce({ ...credentials, configured: true });
-  await useAppManagerStore().loadCredentials();
-  await wrapper.vm.$nextTick();
-  expect(wrapper.find('[data-testid="app_manager_token_status"]').exists()).toBe(false);
+  await manager.check();
+  await flushPromises();
+  expect(
+    wrapper.get('[data-testid="app_manager_update_available"]').attributes('disabled'),
+  ).toBeUndefined();
   wrapper.unmount();
 });
 
@@ -60,7 +60,7 @@ it('offers the update check on the installed tab only', async () => {
   await manager.loadCredentials();
   await wrapper.vm.$nextTick();
   expect(wrapper.find('[data-testid="app_manager_check"]').exists()).toBe(false);
-  expect(wrapper.find('[data-testid="app_manager_token_status"]').exists()).toBe(true);
+  expect(wrapper.find('[data-testid="app_manager_token_status"]').exists()).toBe(false);
   wrapper.unmount();
 });
 

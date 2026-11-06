@@ -11,7 +11,7 @@ import SettingsStatus from './SettingsStatus.vue';
 import CommonSpinner from '@/components/commons/CommonSpinner.vue';
 import CommonIcon from '@/components/commons/CommonIcon.vue';
 import successIcon from '@/assets/icons/status/success.svg';
-import errorIcon from '@/assets/icons/status/error.svg';
+import infoIcon from '@/assets/icons/status/info.svg';
 import { failureMessage } from '@/utils/failureMessage';
 
 const { data, loading, error, load } = useResource<NasUpdates | null>('/launcher/updates', null);
@@ -100,7 +100,7 @@ async function check() {
     <p v-if="data" class="token_state" data-testid="launcher_token">
       <span class="muted">{{ t('launcherToken') }}</span>
       <CommonIcon
-        :src="data.tokenConfigured ? successIcon : errorIcon"
+        :src="data.tokenConfigured ? successIcon : infoIcon"
         :label="t(data.tokenConfigured ? 'launcherTokenSet' : 'launcherTokenMissing')"
         size="small"
       />

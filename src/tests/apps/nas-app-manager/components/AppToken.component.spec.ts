@@ -2,7 +2,7 @@ import { mount } from '@vue/test-utils';
 import { beforeEach, expect, it } from 'vitest';
 import AppToken from '@/apps/nas-app-manager/components/AppToken.vue';
 import successIcon from '@/assets/icons/status/success.svg';
-import errorIcon from '@/assets/icons/status/error.svg';
+import infoIcon from '@/assets/icons/status/info.svg';
 import { setLocale } from '@/i18n';
 
 beforeEach(() => setLocale('it'));
@@ -31,12 +31,10 @@ it('shows the missing status and the input by default when no token is configure
 
   const status = wrapper.get('[data-testid="app_manager_token_status"]');
   expect(status.attributes('aria-label')).toBe('Token non configurato');
-  expect(status.attributes('style')).toContain(errorIcon);
+  expect(status.attributes('style')).toContain(infoIcon);
   expect(
     wrapper.get<HTMLInputElement>('[data-testid="app_manager_token_input"]').element.type,
   ).toBe('password');
   expect(wrapper.find('[data-testid="app_manager_token_edit"]').exists()).toBe(false);
-  expect(wrapper.get('[data-testid="app_manager_token_note"]').text()).toContain(
-    'non è visualizzabile',
-  );
+  expect(wrapper.find('[data-testid="app_manager_token_note"]').exists()).toBe(false);
 });

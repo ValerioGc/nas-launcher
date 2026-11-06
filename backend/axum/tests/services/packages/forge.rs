@@ -40,6 +40,77 @@ fn the_token_travels_only_to_the_forges() {
     assert_eq!(for_forge("not a url", token), None);
 }
 
+fn refusal(code: u16, headers: &[(&'static str, &'static str)], authorised: bool) -> String {
+    let mut map = reqwest::header::HeaderMap::new();
+    for (name, value) in headers {
+        map.insert(*name, reqwest::header::HeaderValue::from_static(value));
+    }
+    describe(
+        reqwest::StatusCode::from_u16(code).expect("a status"),
+        &map,
+        "a/b",
+        "has no release",
+        authorised,
+    )
+}
+
+#[test]
+fn a_refusal_never_blames_a_token_that_was_not_sent() {
+    for code in [401, 403] {
+        assert_eq!(
+            refusal(code, &[], false),
+            "a/b cannot be read without a token"
+        );
+    }
+    assert_eq!(
+        refusal(404, &[], false),
+        "a/b has no release, or it is private and needs a token"
+    );
+}
+
+#[test]
+fn a_refusal_tells_a_bad_token_from_one_without_permission_or_sight() {
+    assert_eq!(
+        refusal(401, &[], true),
+        "a/b refused the token, which is invalid or expired"
+    );
+    assert_eq!(
+        refusal(403, &[], true),
+        "the token has no permission to read a/b"
+    );
+    assert_eq!(
+        refusal(404, &[], true),
+        "a/b has no release, or the token cannot see it"
+    );
+}
+
+#[test]
+fn the_request_limit_is_not_taken_for_missing_permissions() {
+    let anonymous =
+        "the forge limit on anonymous requests stopped a/b, try again later or set a token";
+    let exhausted = [("x-ratelimit-remaining", "0")];
+    assert_eq!(refusal(403, &exhausted, false), anonymous);
+    assert_eq!(refusal(403, &[("retry-after", "60")], false), anonymous);
+    assert_eq!(refusal(429, &[], false), anonymous);
+    assert_eq!(
+        refusal(403, &exhausted, true),
+        "the forge limit on requests stopped a/b, try again later"
+    );
+    assert_eq!(
+        refusal(403, &[("x-ratelimit-remaining", "12")], false),
+        "a/b cannot be read without a token"
+    );
+}
+
+#[test]
+fn a_failure_of_the_forge_is_not_a_refusal() {
+    assert_eq!(
+        refusal(503, &[], true),
+        "the forge failed on a/b (503), try again later"
+    );
+    assert_eq!(refusal(418, &[], false), "a/b answered 418");
+}
+
 fn published(names: &[&str]) -> Release {
     Release {
         version: "0.1.3".to_owned(),

@@ -50,8 +50,7 @@ const actions = computed<ActionButton[]>(() => {
 
   const disabled = busy.value || loading.value;
   const fetchable =
-    Boolean(forge.value?.packagesEnabled && forge.value.configured) &&
-    !installing.value.includes(selected.value.id);
+    Boolean(forge.value?.packagesEnabled) && !installing.value.includes(selected.value.id);
   return [
     {
       id: 'default',

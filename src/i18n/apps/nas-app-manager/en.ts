@@ -21,12 +21,9 @@ export default {
   updateSelected: 'Update selected',
   updateTo: 'Update to {version}',
   updateFailed: 'Update of {name} failed.',
-  tokenMissing:
-    'No token configured. The token, needed to install and update applications, is set in the manager settings.',
   tokenLabel: 'Token for private releases',
   tokenConfigured: 'Token configured',
   tokenNotConfigured: 'Token not configured',
-  tokenWriteOnly: 'The saved token cannot be displayed.',
   notInstalled: 'Not installed',
   installFailed: 'Installation of {name} failed ({reason}).',
   installing: 'Installing',
@@ -52,7 +49,7 @@ export default {
   checkOnOpen: 'Look for updates every time it opens',
   updateOnOpen: 'Install the updates found right away',
   onManagerOpenNote:
-    'Applications are updated one at a time. Installing requires the release token.',
+    'Applications are updated one at a time. The token is needed only for the releases of private repositories.',
   tokenUse: 'Required to download the releases of private repositories.',
   catalogue: 'Application catalogue',
   catalogueNote:

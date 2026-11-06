@@ -256,7 +256,7 @@ export const useAppManagerStore = defineStore('nas-app-manager', () => {
   }
 
   async function updateApps(ids?: string[]) {
-    if (busy.value || loading.value || !forge.value?.packagesEnabled || !forge.value.configured) {
+    if (busy.value || loading.value || !forge.value?.packagesEnabled) {
       return false;
     }
     const wanted = ids ?? rows.value.filter((app) => app.updateAvailable).map((app) => app.id);

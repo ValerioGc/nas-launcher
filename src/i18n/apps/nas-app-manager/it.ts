@@ -21,12 +21,9 @@ export default {
   updateSelected: 'Aggiorna selezionata',
   updateTo: 'Aggiorna a {version}',
   updateFailed: 'Aggiornamento di {name} non riuscito.',
-  tokenMissing:
-    'Nessun token configurato. Il token, necessario per installare e aggiornare le applicazioni, si imposta nelle impostazioni del gestore.',
   tokenLabel: 'Token per le release private',
   tokenConfigured: 'Token configurato',
   tokenNotConfigured: 'Token non configurato',
-  tokenWriteOnly: 'Il token salvato non è visualizzabile.',
   notInstalled: 'Non installata',
   installFailed: 'Installazione di {name} non riuscita ({reason}).',
   installing: 'Installazione in corso',
@@ -52,7 +49,7 @@ export default {
   checkOnOpen: 'Cerca aggiornamenti a ogni apertura',
   updateOnOpen: 'Installa subito gli aggiornamenti trovati',
   onManagerOpenNote:
-    'Le applicazioni vengono aggiornate una alla volta. L’installazione richiede il token delle release.',
+    'Le applicazioni vengono aggiornate una alla volta. Il token serve solo per le release dei repository privati.',
   tokenUse: 'Necessario per scaricare le release dei repository privati.',
   catalogue: 'Catalogo delle applicazioni',
   catalogueNote:
