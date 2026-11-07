@@ -165,6 +165,7 @@ function formatSize(bytes: number) {
             v-for="item in columns"
             :key="item.key"
             scope="col"
+            :class="{ search_column_fluid: item.key === 'name' || item.key === 'path' }"
             :aria-sort="column === item.key ? (ascending ? 'ascending' : 'descending') : 'none'"
           >
             <button type="button" :data-testid="`search_sort_${item.key}`" @click="sort(item.key)">
@@ -179,7 +180,7 @@ function formatSize(bytes: number) {
 
       <tbody>
         <tr v-for="result in rows" :key="result.id">
-          <td>
+          <td class="search_column_fluid">
             <button
               type="button"
               class="search_result_name"
@@ -192,7 +193,7 @@ function formatSize(bytes: number) {
             </button>
           </td>
 
-          <td>
+          <td class="search_column_fluid">
             <span class="search_result_path" :title="result.path">{{ result.path }}</span>
           </td>
           <td>{{ t(typeLabels[result.type]) }}</td>
@@ -211,29 +212,46 @@ function formatSize(bytes: number) {
   overflow: auto;
   overscroll-behavior: contain;
 
-  &_name {
-    @extend %text_button;
-    display: flex;
-    align-items: center;
-    gap: $space_2;
-    max-width: $app_tab_max_width;
-    text-align: left;
-
-    span {
-      @extend %truncated_text;
-    }
+  table {
+    width: 100%;
   }
 
-  &_path {
+  th,
+  td {
+    white-space: nowrap;
+  }
+}
+
+// Name and path share what the short columns leave, and shorten their text to fit it. Their content
+// starts from no width and fills the cell, so the longest name can no longer widen the table.
+.search_column_fluid {
+  width: 50%;
+}
+
+.search_result_name {
+  @extend %text_button;
+  display: flex;
+  align-items: center;
+  gap: $space_2;
+  width: 0;
+  min-width: 100%;
+  text-align: left;
+
+  span {
     @extend %truncated_text;
-    display: block;
-    max-width: $app_tab_max_width;
   }
+}
 
-  &_size {
-    text-align: right;
-    font-variant-numeric: tabular-nums;
-  }
+.search_result_path {
+  @extend %truncated_text;
+  display: block;
+  width: 0;
+  min-width: 100%;
+}
+
+.search_result_size {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
 }
 
 .search_state {

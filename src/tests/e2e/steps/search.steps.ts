@@ -12,6 +12,40 @@ Given('I open the search application', async ({ page }) => {
   await page.getByTestId('app_menu_app_nas-global-search').click();
 });
 
+Given('an application provides the search with long file names', async ({ page }) => {
+  await page.route('**/api/capabilities/search', (route) =>
+    route.fulfill({ json: [{ app: 'nas-file-manager', endpoint: '/api/search', version: 1 }] }),
+  );
+  const long = 'relazione trimestrale del reparto amministrazione e contabilita '.repeat(3);
+  await page.route('**/apps/nas-file-manager/api/search?**', (route) =>
+    route.fulfill({
+      json: [1, 2, 3].map((index) => ({
+        id: `report-${index}`,
+        name: `${long}${index}.pdf`,
+        path: `/srv/dati/archivio/${long.replaceAll(' ', '/')}${index}.pdf`,
+        type: 'document',
+        extension: 'pdf',
+        size: 1048576 * index,
+        modified: '2026-11-07T10:30:00Z',
+        app_id: 'nas-file-manager',
+        target: `?path=/srv/dati/${index}`,
+      })),
+    }),
+  );
+});
+
+Then('the table of files fits its width', async ({ page }) => {
+  const results = page.getByTestId('search_results');
+  await expect(page.getByTestId('search_result_nas-file-manager:report-1')).toBeVisible();
+  await expect(page.getByRole('columnheader')).toHaveCount(5);
+  expect(await results.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(
+    true,
+  );
+  const table = await page.getByRole('table').boundingBox();
+  const area = await results.boundingBox();
+  expect(Math.round(table?.width ?? 0)).toBe(Math.round(area?.width ?? -1));
+});
+
 When('I reset the file search filters', async ({ page }) => {
   await expect(page.getByTestId('search_reset_filters')).toBeDisabled();
   await page.getByTestId('search_query').fill('report');

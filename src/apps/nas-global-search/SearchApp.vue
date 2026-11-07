@@ -186,7 +186,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <CommonModal v-model="open" :title="t('globalSearch')" :icon="searchIcon" fixed-size>
+  <CommonModal v-model="open" :title="t('globalSearch')" :icon="searchIcon" fixed-size large>
     <div class="search_app app_surface app_stack">
       <input
         v-model="query"

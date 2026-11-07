@@ -12,6 +12,7 @@ interface Props {
   hideCloseButton?: boolean;
   fixedSize?: boolean;
   wide?: boolean;
+  large?: boolean;
 }
 
 const props = defineProps<Props>();
@@ -93,7 +94,11 @@ watch(
           ref="dialog"
           open
           class="common_modal app_surface"
-          :class="{ common_modal_fixed: props.fixedSize, common_modal_wide: props.wide }"
+          :class="{
+            common_modal_fixed: props.fixedSize,
+            common_modal_wide: props.wide,
+            common_modal_large: props.large,
+          }"
           aria-modal="true"
           :aria-label="props.title"
           tabindex="-1"
@@ -191,6 +196,10 @@ watch(
 
 .common_modal_wide {
   max-width: $modal_fixed_width;
+}
+
+.common_modal_large {
+  max-width: $modal_large_width;
 }
 
 .common_modal_close {
