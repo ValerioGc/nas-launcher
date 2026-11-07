@@ -232,7 +232,9 @@ Samba does not re-share network disks. Network disks are enabled by default;
 nas-disk-manager may rename writable ext2/ext3/ext4 volumes through fixed
 `nas-os-storage-rename.service`. Root code revalidates device, filesystem, and data-area ownership
 before `e2label`, rejecting labels used by fstab mounts to avoid breaking the next boot.
-`nas-os-storage-smart.service` similarly validates data disks and runs read-only `smartctl`.
+`nas-os-storage-smart.service` similarly validates that the device is a whole disk, the system disk
+included, and runs read-only `smartctl -n standby`, so a spun down disk is reported as such and not
+woken. nas-disk-manager and nas-system-monitor may ask for it, the latter for disk temperatures.
 Browsers never access devices directly.
 
 External removable/USB/card-reader/FireWire disks are ejected through

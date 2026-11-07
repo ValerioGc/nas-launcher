@@ -242,3 +242,34 @@ fn a_folder_with_nothing_mounted_is_closed_to_everyone() {
     std::fs::remove_dir_all(&root).expect("removed");
     seal_unmounted(&root);
 }
+
+#[test]
+fn a_disk_in_standby_is_told_from_one_that_cannot_be_read() {
+    let answer = |status: i64, message: &str| {
+        serde_json::json!({
+            "smartctl": {
+                "exit_status": status,
+                "messages": [{ "string": message, "severity": "information" }]
+            }
+        })
+    };
+    assert!(skipped_in_standby(&answer(
+        2,
+        "Device is in STANDBY mode, exit(2)"
+    )));
+    assert!(skipped_in_standby(&answer(
+        2,
+        "Device is in SLEEP mode, exit(2)"
+    )));
+    assert!(!skipped_in_standby(&answer(
+        2,
+        "Smartctl open device: /dev/sdz failed: No such device"
+    )));
+    assert!(!skipped_in_standby(&answer(
+        0,
+        "Device is in STANDBY mode, exit(2)"
+    )));
+    assert!(!skipped_in_standby(
+        &serde_json::json!({ "smart_status": { "passed": true } })
+    ));
+}

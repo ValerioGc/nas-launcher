@@ -29,13 +29,18 @@ async fn lists_the_disks_of_one_kind_without_the_system() {
 }
 
 #[tokio::test]
-async fn reads_smart_only_of_a_data_disk() {
+async fn reads_smart_of_a_whole_disk_without_waking_it() {
     let machine = Machine::get();
     let request = machine.root.join("smart-request.json");
 
     std::fs::write(&request, r#"{"device":"sdz"}"#).expect("request");
     storage::smart_reported(&request).expect("read");
+    assert!(!machine
+        .calls("smartctl --all --json -n standby /dev/sdz")
+        .is_empty());
     std::fs::write(&request, r#"{"device":"sda"}"#).expect("request");
+    storage::smart_reported(&request).expect("the system disk is read too");
+    std::fs::write(&request, r#"{"device":"sda1"}"#).expect("request");
     assert!(storage::smart_reported(&request).is_err());
     std::fs::write(&request, r#"{"device":"../sda"}"#).expect("request");
     assert!(storage::smart_reported(&request).is_err());

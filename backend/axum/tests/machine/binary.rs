@@ -42,6 +42,8 @@ fn reads_smart_for_its_root_unit() {
     std::fs::write(&request, r#"{"device":"sdz"}"#).expect("request");
     assert!(launcher(&["--read-storage-smart", request.to_str().expect("path")]).success());
     std::fs::write(&request, r#"{"device":"sda"}"#).expect("request");
+    assert!(launcher(&["--read-storage-smart", request.to_str().expect("path")]).success());
+    std::fs::write(&request, r#"{"device":"sda1"}"#).expect("request");
     assert!(!launcher(&["--read-storage-smart", request.to_str().expect("path")]).success());
 }
 

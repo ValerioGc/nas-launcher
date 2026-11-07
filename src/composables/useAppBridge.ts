@@ -662,7 +662,12 @@ export function useAppBridge() {
   }
 
   async function smartDisk(id: string, message: MessageOf<'smart-disk'>) {
-    if (fromDisks(id, message)) {
+    if (
+      fromDisks(id, message) ||
+      (appOf(id) === SYSTEM_MONITOR &&
+        validRequest(message.requestId) &&
+        typeof message.device === 'string')
+    ) {
       await answer(
         id,
         'smart-disk-result',

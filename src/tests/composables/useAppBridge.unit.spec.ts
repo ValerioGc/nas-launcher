@@ -198,6 +198,44 @@ describe('the bridge between the shell and an application', () => {
     wrapper.unmount();
   });
 
+  it('returns S.M.A.R.T. data to the system monitor as well, and to no other application', async () => {
+    vi.mocked(request).mockResolvedValue({ temperature: { current: 34 } });
+    const { api, wrapper } = bridge();
+    const monitor = frame();
+    const other = frame();
+    api.attach('nas-system-monitor', monitor.element);
+    api.attach('nas-file-manager', other.element);
+
+    arrive(
+      { nas: APP_PROTOCOL, type: 'smart-disk', requestId: 'smart-2', device: 'sda' },
+      ORIGIN,
+      other.element.contentWindow,
+    );
+    await flushPromises();
+    expect(request).not.toHaveBeenCalled();
+
+    arrive(
+      { nas: APP_PROTOCOL, type: 'smart-disk', requestId: 'smart-3', device: 'sda' },
+      ORIGIN,
+      monitor.element.contentWindow,
+    );
+    await flushPromises();
+    expect(request).toHaveBeenCalledWith('/storage/disks/smart', {
+      method: 'POST',
+      body: JSON.stringify({ device: 'sda' }),
+    });
+    expect(monitor.sent.postMessage).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: 'smart-disk-result',
+        requestId: 'smart-3',
+        success: true,
+        data: { temperature: { current: 34 } },
+      }),
+      ORIGIN,
+    );
+    wrapper.unmount();
+  });
+
   it('returns S.M.A.R.T. data only to nas-disk-manager', async () => {
     vi.mocked(request).mockResolvedValueOnce({ smart_status: { passed: true } });
     const { api, wrapper } = bridge();

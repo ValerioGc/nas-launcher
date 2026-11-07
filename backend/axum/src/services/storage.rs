@@ -495,14 +495,40 @@ fn inspect_smart_target(device_name: &str) -> Result<(), String> {
         .iter()
         .find(|device| device.name.as_deref() == Some(device_name))
         .ok_or("device not found")?;
+
     if device.kind != "disk"
         || device.path.as_deref() != Some(format!("/dev/{device_name}").as_str())
         || device.ro.unwrap_or(false)
-        || contains_system(device, &inventory::system_uuids())
     {
-        return Err("S.M.A.R.T. is available only for a data disk".to_owned());
+        return Err("S.M.A.R.T. is available only for a whole disk".to_owned());
     }
     Ok(())
+}
+
+/// Whether smartctl left the disk alone because it was spun down (`-n standby`). It then reports
+/// the power mode in its messages and sets the bit of a device it could not read.
+pub fn skipped_in_standby(answer: &serde_json::Value) -> bool {
+    let status = answer
+        .get("smartctl")
+        .and_then(|smartctl| smartctl.get("exit_status"))
+        .and_then(serde_json::Value::as_i64)
+        .unwrap_or(0);
+    status & 0b10 != 0
+        && answer
+            .get("smartctl")
+            .and_then(|smartctl| smartctl.get("messages"))
+            .and_then(serde_json::Value::as_array)
+            .is_some_and(|messages| {
+                messages.iter().any(|message| {
+                    message
+                        .get("string")
+                        .and_then(serde_json::Value::as_str)
+                        .is_some_and(|text| {
+                            text.starts_with("Device is in STANDBY")
+                                || text.starts_with("Device is in SLEEP")
+                        })
+                })
+            })
 }
 
 pub async fn smart_data(input: SmartRequest) -> Result<serde_json::Value, ApiFailure> {
@@ -545,7 +571,7 @@ fn read_smart(path: &Path) -> Result<(), String> {
     inspect_smart_target(&input.device)?;
     let device = format!("/dev/{}", input.device);
     let result = Command::new("smartctl")
-        .args(["--all", "--json", &device])
+        .args(["--all", "--json", "-n", "standby", &device])
         .output()
         .map_err(|error| format!("smartctl: {error}"))?;
     if result.stdout.is_empty() {
@@ -554,9 +580,13 @@ fn read_smart(path: &Path) -> Result<(), String> {
             String::from_utf8_lossy(&result.stderr).trim()
         ));
     }
-    let value: serde_json::Value = serde_json::from_slice(&result.stdout)
+    let mut value: serde_json::Value = serde_json::from_slice(&result.stdout)
         .map_err(|error| format!("smartctl returned invalid JSON: {error}"))?;
-    if value
+    if skipped_in_standby(&value) {
+        if let Some(fields) = value.as_object_mut() {
+            fields.insert("standby".to_owned(), serde_json::Value::Bool(true));
+        }
+    } else if value
         .get("smartctl")
         .and_then(|smartctl| smartctl.get("exit_status"))
         .and_then(serde_json::Value::as_i64)
