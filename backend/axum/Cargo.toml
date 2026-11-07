@@ -1,6 +1,6 @@
 [package]
 name = "nas-os-axum"
-version = "0.9.3"
+version = "0.9.4"
 edition = "2021"
 autotests = false
 default-run = "nas-os-axum"
