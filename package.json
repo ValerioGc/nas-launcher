@@ -58,7 +58,7 @@
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@fullhuman/postcss-purgecss": "^8.0.0",
-    "@playwright/test": "^1.64.0",
+    "@playwright/test": "^1.65.0",
     "@tsconfig/node24": "^24.0.4",
     "@types/jsdom": "^30.0.0",
     "@types/node": "^26.6.6",
@@ -73,7 +73,7 @@
     "eslint-plugin-vue": "~10.12.0",
     "globals": "^17.14.0",
     "jiti": "^2.7.0",
-    "jsdom": "^30.1.2",
+    "jsdom": "^31.0.0",
     "md-to-pdf": "^5.2.5",
     "npm-run-all2": "^9.0.4",
     "openapi-typescript": "^7.13.0",
