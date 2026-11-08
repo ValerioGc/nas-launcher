@@ -365,9 +365,23 @@ async fn root_helper() -> &'static Machine {
     machine
 }
 
+static TURN: tokio::sync::Mutex<()> = tokio::sync::Mutex::const_new(());
+
+async fn finished(db: &sqlx::SqlitePool, task: &str) -> (tasks::TaskState, String) {
+    for _ in 0..500 {
+        let current = tasks::get(db, task).await.expect("task");
+        if !matches!(current.state, tasks::TaskState::Running) {
+            return (current.state, current.detail);
+        }
+        tokio::time::sleep(Duration::from_millis(20)).await;
+    }
+    panic!("the format did not end");
+}
+
 #[tokio::test]
 async fn formats_a_data_disk_encrypted_and_follows_the_task() {
     use nas_os_axum::services::storage::crypt::{self, Request};
+    let _turn = TURN.lock().await;
     let machine = root_helper().await;
     let db = database::open_in_memory().await.expect("database");
     std::fs::write(machine.root.join("answers/cryptsetup@luksUUID"), "NEW-V").expect("uuid");
@@ -379,6 +393,7 @@ async fn formats_a_data_disk_encrypted_and_follows_the_task() {
         encrypt: true,
         automatic: true,
         password: Some("a long password".to_owned()),
+        current: None,
     };
 
     for refused in ["sda", "sdu", "sdq"] {
@@ -424,8 +439,64 @@ async fn formats_a_data_disk_encrypted_and_follows_the_task() {
 }
 
 #[tokio::test]
+async fn erases_a_locked_volume_only_with_a_key_that_opens_it() {
+    use nas_os_axum::services::storage::crypt::{self, Request};
+    let _turn = TURN.lock().await;
+    let machine = root_helper().await;
+    let db = database::open_in_memory().await.expect("database");
+    let format = |current: Option<&str>| Request::Format {
+        device: "sdt".to_owned(),
+        identity: "//0".to_owned(),
+        label: "Again".to_owned(),
+        encrypt: false,
+        automatic: false,
+        password: None,
+        current: current.map(str::to_owned),
+    };
+
+    let refused = crypt::request(&db, format(None))
+        .await
+        .expect_err("a key is asked");
+    assert!(
+        refused.1.contains("password or recovery key"),
+        "{}",
+        refused.1
+    );
+
+    let wrong_key = machine.root.join("fail/cryptsetup@/dev/sdt1");
+    std::fs::create_dir_all(machine.root.join("fail/cryptsetup@/dev")).expect("fail folder");
+    std::fs::write(&wrong_key, "No key available with this passphrase.").expect("wrong key");
+    let task = crypt::request(&db, format(Some("not the password")))
+        .await
+        .expect("accepted")
+        .task_id
+        .expect("task");
+    let (state, detail) = finished(&db, &task).await;
+    std::fs::remove_file(&wrong_key).expect("cleared");
+    assert!(matches!(state, tasks::TaskState::Failed), "{detail}");
+    assert!(detail.contains("nothing was erased"), "{detail}");
+    assert!(machine.calls("wipefs --all /dev/sdt").is_empty());
+
+    let task = crypt::request(&db, format(Some("the password of t")))
+        .await
+        .expect("accepted")
+        .task_id
+        .expect("task");
+    let (state, detail) = finished(&db, &task).await;
+    assert!(matches!(state, tasks::TaskState::Done), "{detail}");
+    assert!(machine
+        .calls("cryptsetup open --test-passphrase --key-file")
+        .iter()
+        .any(|call| call.ends_with("/dev/sdt1")));
+    assert!(!machine.calls("wipefs --all /dev/sdt1").is_empty());
+    let calls = std::fs::read_to_string(machine.root.join("calls")).expect("calls");
+    assert!(!calls.contains("the password of t"));
+}
+
+#[tokio::test]
 async fn unlocks_and_locks_a_volume_which_then_stays_closed() {
     use nas_os_axum::services::storage::crypt::{self, Request};
+    let _turn = TURN.lock().await;
     let machine = root_helper().await;
     let db = database::open_in_memory().await.expect("database");
     let held =
@@ -446,7 +517,7 @@ async fn unlocks_and_locks_a_volume_which_then_stays_closed() {
         &db,
         Request::Unlock {
             uuid: "LUKS-T".to_owned(),
-            password: "the password of t".to_owned(),
+            password: Some("the password of t".to_owned()),
         },
     )
     .await
@@ -464,12 +535,42 @@ async fn unlocks_and_locks_a_volume_which_then_stays_closed() {
         &db,
         Request::Unlock {
             uuid: "LUKS-S".to_owned(),
-            password: "the password of s".to_owned(),
+            password: Some("the password of s".to_owned()),
         },
     )
     .await
     .expect("opened by the person again");
     assert!(!held().contains("luks-s"));
+}
+
+#[tokio::test]
+async fn unlocks_a_volume_with_its_automatic_key_when_no_password_is_given() {
+    use nas_os_axum::services::storage::crypt::{self, Request};
+    let _turn = TURN.lock().await;
+    let machine = root_helper().await;
+    let db = database::open_in_memory().await.expect("database");
+    let unlock = || Request::Unlock {
+        uuid: "LUKS-T".to_owned(),
+        password: None,
+    };
+
+    let refused = crypt::request(&db, unlock())
+        .await
+        .expect_err("no automatic key");
+    assert!(refused.1.contains("no automatic key"), "{}", refused.1);
+
+    let credential = machine.root.join("credstore/nas-os.luks-luks-t");
+    std::fs::write(&credential, "sealed").expect("credential");
+    let opened = crypt::request(&db, unlock()).await;
+    std::fs::remove_file(&credential).expect("cleared");
+    opened.expect("opened with the automatic key");
+    assert!(!machine
+        .calls("systemd-creds decrypt --name=nas-os.luks-luks-t")
+        .is_empty());
+    assert!(machine
+        .calls("cryptsetup open --key-file")
+        .iter()
+        .any(|call| call.ends_with("/dev/sdt1 nas-luks-luks-t")));
 }
 
 #[tokio::test]

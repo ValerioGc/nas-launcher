@@ -1,14 +1,17 @@
-import { execFileSync, spawn } from 'node:child_process';
+import { execFileSync, spawn, type ChildProcess } from 'node:child_process';
 import {
+  chmodSync,
   existsSync,
+  lstatSync,
   mkdirSync,
   readdirSync,
   readFileSync,
   rmSync,
   statSync,
+  symlinkSync,
   writeFileSync,
 } from 'node:fs';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { fakeCommand, HELPERS, run, workspace } from './helpers';
 
@@ -222,228 +225,584 @@ describe('wake-alarm.sh', () => {
 
 describe('install-launcher-update.sh', () => {
   const script = HELPERS.update;
-  let healthPorts = 0;
+  const healthServers: ChildProcess[] = [];
 
-  function release(state: string, component: string, installerPath: string, body: string) {
-    const folder = join(temp.path, `release-${component}`);
-    execFileSync('mkdir', ['-p', join(folder, installerPath, '..')]);
-    writeFileSync(join(folder, installerPath), body);
-    execFileSync('tar', [
-      '--create',
-      '--file',
-      join(state, `${component}-update.tar`),
-      '--directory',
-      folder,
-      '.',
-    ]);
+  interface UpdateOptions {
+    launcher?: string | null | false;
+    gateway?: string;
+    wizard?: string;
+    reboot?: boolean;
+    firewall?: boolean;
   }
 
-  function update(
-    options: {
-      installer?: string | null;
-      healthy?: boolean;
-      launcher?: boolean;
-      gateway?: string;
-      wizard?: string;
-    } = {},
-  ) {
-    const state = join(temp.path, 'state');
-    const installed = join(temp.path, 'installed');
-    const gateway = join(temp.path, 'gateway');
-    const wizard = join(temp.path, 'wizard');
+  function nas() {
+    const root = join(temp.path, 'root');
+    const state = join(root, 'var/lib/nas-os');
     const calls = join(temp.path, 'calls');
+    const at = (path: string) => join(root, path);
+    const put = (path: string, body: string, mode = 0o644) => {
+      mkdirSync(dirname(at(path)), { recursive: true });
+      writeFileSync(at(path), body, { mode });
+    };
+    const flag = (name: string) => join(temp.path, name);
     const log = (name: string) => `printf '${name} %s\\n' "$*" >> ${JSON.stringify(calls)}\n`;
-    execFileSync('mkdir', ['-p', state]);
-    writeFileSync(installed, 'old launcher\n');
-    writeFileSync(gateway, 'old gateway\n');
-    writeFileSync(wizard, 'old wizard\n');
-    writeFileSync(join(state, 'launcher.db'), 'old data\n');
 
-    if (options.launcher ?? true) {
-      const installer =
-        options.installer === undefined
-          ? `printf 'new launcher\\n' > ${JSON.stringify(installed)}`
-          : options.installer;
-      if (installer === null) {
-        release(state, 'launcher', 'README', '');
-      } else {
-        release(state, 'launcher', 'packages/ui_installation/install.sh', installer);
+    put('usr/local/bin/nas-os-axum', 'old launcher\n');
+    put('usr/local/bin/nas-os-gateway', 'old gateway\n');
+    put('usr/local/lib/nas-wizard/wizard', 'old wizard\n');
+    put(
+      'usr/local/lib/nas-os-configuration/base-firewall.sh',
+      `#!/usr/bin/env bash\n${log('old-firewall')}`,
+      0o755,
+    );
+    put('etc/systemd/system/nas-os.service', 'old unit\n');
+    mkdirSync(at('etc/systemd/system/multi-user.target.wants'), { recursive: true });
+    symlinkSync(
+      '../nas-os.service',
+      at('etc/systemd/system/multi-user.target.wants/nas-os.service'),
+    );
+    put('etc/systemd/system/nas-os-kept.service', 'kept unit\n');
+    symlinkSync(
+      '../nas-os-kept.service',
+      at('etc/systemd/system/multi-user.target.wants/nas-os-kept.service'),
+    );
+    put('etc/systemd/system/ssh.service', 'debian\n');
+    put('etc/polkit-1/rules.d/10-nas-os-power.rules', 'old rule\n');
+    put('etc/nas-os/network', 'eth0\n');
+    put('var/lib/nas-os/launcher.db', 'old data\n');
+    put('var/lib/private/nas-os-gateway/gateway.db', 'old sessions\n');
+    mkdirSync(join(temp.path, 'net/eth0/device'), { recursive: true });
+    writeFileSync(flag('launcher-up'), '');
+    writeFileSync(flag('gateway-up'), '');
+
+    const ports = [healthServer(flag('launcher-up')), healthServer(flag('gateway-up'))];
+
+    fakeCommand(
+      temp.path,
+      'systemctl',
+      `${log('systemctl')}case "$*" in
+         'start nas-os') [[ -e ${JSON.stringify(flag('old-broken'))} ]] || touch ${JSON.stringify(flag('launcher-up'))} ;;
+         'stop nas-os') rm -f ${JSON.stringify(flag('launcher-up'))} ;;
+         'start nas-os-gateway' | 'try-restart nas-os-gateway') touch ${JSON.stringify(flag('gateway-up'))} ;;
+         'stop nas-os-gateway') rm -f ${JSON.stringify(flag('gateway-up'))} ;;
+         'is-active --quiet nas-os-kept.service') [[ -e ${JSON.stringify(at('etc/systemd/system/nas-os-kept.service'))} && -e ${JSON.stringify(flag('kept-up'))} ]] || exit 1 ;;
+         'start nas-os nas-os-gateway') touch ${JSON.stringify(flag('launcher-up'))} ${JSON.stringify(flag('gateway-up'))} ;;
+         'is-system-running') if [[ -e ${JSON.stringify(flag('stopping'))} ]]; then echo stopping; else echo running; fi ;;
+       esac
+       exit 0`,
+    );
+    fakeCommand(
+      temp.path,
+      'ip',
+      `network=${JSON.stringify(at('etc/nas-os/network'))}
+       [[ -f $network ]] || exit 0
+       case "$*" in
+         *address*) while read -r card; do
+             [[ -n $card ]] && echo "2: $card    inet 192.168.1.14/24 scope global $card"
+           done <"$network" ;;
+         *route*) [[ -s $network ]] && echo 'default via 192.168.1.1 dev eth0' ;;
+       esac
+       exit 0`,
+    );
+    fakeCommand(
+      temp.path,
+      'nft',
+      `[[ -f ${JSON.stringify(at('etc/nas-os/firewall'))} ]] || exit 1
+       echo 'elements = { ${ports[1]} }'`,
+    );
+    fakeCommand(temp.path, 'udevadm', log('udevadm'));
+
+    const env = {
+      NAS_UPDATE_ROOT: root,
+      NAS_HEALTH_PORT: String(ports[0]),
+      NAS_GATEWAY_HEALTH_PORT: String(ports[1]),
+      NAS_GATEWAY_TLS_PORT: String(ports[1]),
+      NAS_HEALTH_TRIES: '2',
+      NAS_BOOT_TRIES: '2',
+      NAS_HEALTH_PAUSE: '0',
+      NAS_UPDATE_PROBE: '',
+      NAS_NET_DIR: join(temp.path, 'net'),
+      PATH: `${temp.path}:${process.env.PATH}`,
+    };
+    const read = (path: string) => (existsSync(at(path)) ? readFileSync(at(path), 'utf8') : '');
+    const there = (path: string) => existsSync(at(path)) || isLink(at(path));
+
+    function release(component: string, installerPath: string, body: string) {
+      const folder = join(temp.path, `release-${component}`);
+      rmSync(folder, { recursive: true, force: true });
+      mkdirSync(dirname(join(folder, installerPath)), { recursive: true });
+      writeFileSync(join(folder, installerPath), body);
+      execFileSync('tar', [
+        '--create',
+        '--file',
+        join(state, `${component}-update.tar`),
+        '--directory',
+        folder,
+        '.',
+      ]);
+    }
+
+    const newLauncher = [
+      `printf 'new launcher\\n' > ${JSON.stringify(at('usr/local/bin/nas-os-axum'))}`,
+      `printf 'new unit\\n' > ${JSON.stringify(at('etc/systemd/system/nas-os-added.service'))}`,
+      `ln -sf ../nas-os-added.service ${JSON.stringify(at('etc/systemd/system/multi-user.target.wants/nas-os-added.service'))}`,
+      `printf 'new rule\\n' > ${JSON.stringify(at('etc/polkit-1/rules.d/99-nas-os-added.rules'))}`,
+      `printf 'new journal\\n' > ${JSON.stringify(at('var/lib/nas-os/launcher.db-wal'))}`,
+      `touch ${JSON.stringify(flag('launcher-up'))}`,
+    ].join('\n');
+
+    function update(options: UpdateOptions = {}) {
+      if (options.firewall) {
+        put('etc/nas-os/firewall', 'loaded\n');
       }
-    }
-    if (options.gateway !== undefined) {
-      release(
-        state,
-        'gateway',
-        'packages/gateway_installation/install.sh',
-        log('gateway-installer') + options.gateway,
-      );
-    }
-    if (options.wizard !== undefined) {
-      release(state, 'wizard', 'install.sh', log('wizard-installer') + options.wizard);
-    }
-    fakeCommand(temp.path, 'systemctl', `printf 'systemctl %s\n' "$*" >> ${JSON.stringify(calls)}`);
-
-    const port = 40_000 + (process.pid % 10_000) + (healthPorts += 1);
-    const server = options.healthy === false ? undefined : healthServer(port);
-    try {
-      const result = run(script, {
-        env: {
-          NAS_STATE_DIR: state,
-          NAS_UPDATE_PATHS: `${join(state, 'launcher.db')} ${installed}`,
-          NAS_UPDATE_GATEWAY_PATHS: gateway,
-          NAS_UPDATE_WIZARD_PATHS: wizard,
-          NAS_HEALTH_PORT: String(port),
-          NAS_GATEWAY_HEALTH_PORT: String(port),
-          NAS_HEALTH_TRIES: '1',
-          PATH: `${temp.path}:${process.env.PATH}`,
-        },
+      if (options.launcher !== false) {
+        if (options.launcher === null) {
+          release('launcher', 'README', '');
+        } else {
+          release(
+            'launcher',
+            'packages/ui_installation/install.sh',
+            `${newLauncher}\n${options.launcher ?? ''}`,
+          );
+        }
+      }
+      if (options.gateway !== undefined) {
+        release(
+          'gateway',
+          'packages/gateway_installation/install.sh',
+          `${log('gateway-installer')}touch ${JSON.stringify(flag('gateway-up'))}\n${options.gateway}`,
+        );
+      }
+      if (options.wizard !== undefined) {
+        release('wizard', 'install.sh', log('wizard-installer') + options.wizard);
+      }
+      return run(script, {
+        env: { ...env, NAS_UPDATE_REBOOT: options.reboot === false ? 'no' : 'yes' },
       });
-      const read = (path: string) => (existsSync(path) ? readFileSync(path, 'utf8') : '');
-      const backups = existsSync(join(state, 'backups')) ? readdirSync(join(state, 'backups')) : [];
-      return {
-        result,
-        state,
-        installed: read(installed),
-        gateway: read(gateway),
-        wizard: read(wizard),
-        status: read(join(state, 'launcher-update.status')).trim(),
-        calls: read(calls),
-        archive: readdirSync(state).some((name) => name.endsWith('-update.tar')),
-        backups,
-      };
-    } finally {
-      server?.kill();
+    }
+
+    function verify() {
+      return run(join(state, 'update-verify/verify.sh'), { args: ['--verify'], env });
+    }
+
+    const backups = () =>
+      existsSync(join(state, 'backups')) ? readdirSync(join(state, 'backups')) : [];
+
+    return {
+      root,
+      state,
+      at,
+      put,
+      flag,
+      read,
+      there,
+      update,
+      verify,
+      backups,
+      status: () => read('var/lib/nas-os/launcher-update.status').trim(),
+      calls: () => (existsSync(calls) ? readFileSync(calls, 'utf8') : ''),
+      listing: () =>
+        execFileSync('tar', ['--list', '--gzip', '--file', join(state, 'backups', backups()[0]!)], {
+          encoding: 'utf8',
+        }),
+    };
+  }
+
+  function isLink(path: string) {
+    try {
+      return lstatSync(path).isSymbolicLink();
+    } catch {
+      return false;
     }
   }
 
-  function healthServer(port: number) {
+  function healthServer(up: string) {
+    const portFile = `${up}.port`;
     const server = spawn(process.execPath, [
       '-e',
-      `require('node:http').createServer((_, answer) => answer.end('ok')).listen(${port})`,
+      `const { existsSync, writeFileSync } = require('node:fs');
+       const server = require('node:http').createServer((_, answer) => {
+         answer.statusCode = existsSync(${JSON.stringify(up)}) ? 200 : 503;
+         answer.end('ok');
+       }).listen(0, () => writeFileSync(${JSON.stringify(portFile)}, String(server.address().port)));`,
     ]);
+    healthServers.push(server);
     execFileSync('bash', [
       '-c',
-      `for i in {1..50}; do (exec 3<>/dev/tcp/127.0.0.1/${port}) 2>/dev/null && exit 0; sleep 0.1; done; exit 1`,
+      'for i in {1..150}; do [[ -s "$1" ]] && exit 0; sleep 0.1; done; exit 1',
+      'wait-for-port',
+      portFile,
     ]);
-    return server;
+    return Number(readFileSync(portFile, 'utf8'));
   }
 
-  it('backs up, installs the release, checks the new launcher and reboots', () => {
-    const { result, installed, status, calls, archive, backups } = update();
+  let machine: ReturnType<typeof nas>;
+  beforeEach(() => {
+    machine = nas();
+  });
+  afterEach(() => {
+    healthServers.splice(0).forEach((server) => server.kill());
+  });
+
+  function expectPrevious() {
+    expect(machine.read('usr/local/bin/nas-os-axum')).toBe('old launcher\n');
+    expect(machine.read('var/lib/nas-os/launcher.db')).toBe('old data\n');
+    expect(machine.there('var/lib/nas-os/launcher.db-wal')).toBe(false);
+    expect(machine.there('etc/systemd/system/nas-os-added.service')).toBe(false);
+    expect(machine.there('etc/systemd/system/multi-user.target.wants/nas-os-added.service')).toBe(
+      false,
+    );
+    expect(machine.there('etc/polkit-1/rules.d/99-nas-os-added.rules')).toBe(false);
+    expect(machine.read('etc/polkit-1/rules.d/10-nas-os-power.rules')).toBe('old rule\n');
+    expect(isLink(machine.at('etc/systemd/system/multi-user.target.wants/nas-os.service'))).toBe(
+      true,
+    );
+    expect(machine.read('etc/systemd/system/ssh.service')).toBe('debian\n');
+    expect(machine.there('var/lib/nas-os/update-verify')).toBe(false);
+    expect(machine.there('etc/systemd/system/nas-os-update-verify.service')).toBe(false);
+  }
+
+  it('backs up, installs, checks the NAS and leaves a check for after the restart', () => {
+    const result = machine.update();
 
     expect(result.code).toBe(0);
-    expect(installed).toBe('new launcher\n');
-    expect(status).toBe('done launcher');
-    expect(calls.split('\n').filter(Boolean)).toEqual([
-      'systemctl stop nas-os',
-      'systemctl reboot',
-    ]);
-    expect(archive).toBe(false);
-    expect(backups).toHaveLength(1);
+    expect(machine.status()).toBe('restarting launcher');
+    expect(machine.read('usr/local/bin/nas-os-axum')).toBe('new launcher\n');
+    const calls = machine.calls();
+    expect(calls).toContain('systemctl stop nas-os\n');
+    expect(calls).toContain('systemctl enable nas-os-update-verify.service\n');
+    expect(calls.trim().split('\n').at(-1)).toBe('systemctl reboot');
+    const unit = machine.read('etc/systemd/system/nas-os-update-verify.service');
+    expect(unit).toContain(`ExecStart=/bin/bash ${machine.state}/update-verify/verify.sh --verify`);
+    expect(unit).toContain('After=network-online.target nas-os.service nas-os-gateway.service');
+    expect(unit).toContain('Type=exec');
+    expect(unit).not.toContain('Type=oneshot');
+    expect(machine.read('var/lib/nas-os/update-verify/pending')).toContain('phase=installed');
+    expect(readdirSync(machine.state).some((name) => name.endsWith('-update.tar'))).toBe(false);
+    expect(machine.backups()).toHaveLength(1);
+  });
+
+  it('backs up every file of the NAS it may write, and no file of Debian', () => {
+    machine.update();
+    const listing = machine.listing();
+
+    expect(listing).toContain('usr/local/bin/nas-os-axum');
+    expect(listing).toContain('etc/polkit-1/rules.d/10-nas-os-power.rules');
+    expect(listing).toContain('etc/systemd/system/multi-user.target.wants/nas-os.service');
+    expect(listing).toContain('usr/local/lib/nas-os-configuration/base-firewall.sh');
+    expect(listing).toContain('var/lib/nas-os/launcher.db');
+    expect(listing).not.toContain('ssh.service');
+    expect(listing).not.toContain('nas-os-gateway/gateway.db');
+    const backup = join(machine.state, 'backups', machine.backups()[0]!);
+    expect(statSync(backup).mode & 0o777).toBe(0o600);
+  });
+
+  it('ends the update after the restart once the NAS works, and removes its check', () => {
+    machine.update();
+    const result = machine.verify();
+
+    expect(result.code).toBe(0);
+    expect(machine.status()).toBe('done launcher');
+    expect(machine.read('usr/local/bin/nas-os-axum')).toBe('new launcher\n');
+    expect(machine.calls()).toContain('systemctl disable nas-os-update-verify.service');
+    expect(machine.there('var/lib/nas-os/update-verify')).toBe(false);
+    expect(machine.there('etc/systemd/system/nas-os-update-verify.service')).toBe(false);
+  });
+
+  it('puts the previous version back when the NAS breaks only after the restart', () => {
+    machine.update({ firewall: true });
+    rmSync(machine.flag('launcher-up'));
+    const result = machine.verify();
+
+    expect(result.code).not.toBe(0);
+    expect(machine.status()).toBe('rolled-back after the restart the launcher does not answer');
+    expectPrevious();
+    const calls = machine.calls();
+    expect(calls).toContain('systemctl stop nas-os-added.service');
+    expect(calls).toContain('old-firewall');
+    expect(calls).toContain('udevadm control --reload');
+    expect(calls).not.toContain('systemctl stop nas-os.service');
+  });
+
+  it('puts the previous version back at boot when the update was cut short', () => {
+    const cut = machine.update({ launcher: 'kill -KILL $PPID' });
+    expect(cut.code).not.toBe(0);
+    expect(machine.read('var/lib/nas-os/update-verify/pending')).toContain('phase=installing');
+
+    const result = machine.verify();
+
+    expect(result.code).not.toBe(0);
+    expect(machine.status()).toBe('rolled-back the update was cut short before it ended');
+    expectPrevious();
+  });
+
+  it('puts the previous version back when the update is stopped while it installs', () => {
+    const result = machine.update({ launcher: 'kill -TERM $PPID; sleep 0.3' });
+
+    expect(result.code).not.toBe(0);
+    expect(machine.status()).toBe('rolled-back the update was stopped before it ended');
+    expectPrevious();
+    expect(machine.calls()).not.toContain('reboot');
   });
 
   it('installs the wizard, the gateway and the launcher in this order, from one backup', () => {
-    const { result, status, calls, state, backups } = update({ gateway: '', wizard: '' });
+    const result = machine.update({ gateway: '', wizard: '' });
 
     expect(result.code).toBe(0);
-    expect(status).toBe('done wizard gateway launcher');
-    expect(calls.split('\n').filter(Boolean)).toEqual([
+    expect(machine.status()).toBe('restarting wizard gateway launcher');
+    const calls = machine
+      .calls()
+      .split('\n')
+      .filter((line) => /^(systemctl (stop|reboot)|wizard-installer|gateway-installer)/.test(line));
+    expect(calls).toEqual([
       'systemctl stop nas-os',
       'systemctl stop nas-os-gateway',
       'wizard-installer --update',
       'gateway-installer ',
       'systemctl reboot',
     ]);
-    const listing = execFileSync(
-      'tar',
-      ['--list', '--gzip', '--file', join(state, 'backups', backups[0]!)],
-      { encoding: 'utf8' },
-    );
-    expect(listing).toContain('gateway');
-    expect(listing).toContain('wizard');
+    expect(machine.listing()).toContain('var/lib/private/nas-os-gateway/gateway.db');
+    expect(machine.listing()).toContain('usr/local/lib/nas-wizard/wizard');
   });
 
-  it('without a launcher release, starts the launcher again instead of rebooting', () => {
-    const { result, status, calls } = update({ launcher: false, gateway: '' });
+  it('without a launcher release, starts the launcher again and ends at once', () => {
+    const result = machine.update({ launcher: false, gateway: '' });
 
     expect(result.code).toBe(0);
-    expect(status).toBe('done gateway');
+    expect(machine.status()).toBe('done gateway');
+    expect(machine.calls()).toContain('systemctl start nas-os\n');
+    expect(machine.calls()).not.toContain('reboot');
+    expect(machine.there('var/lib/nas-os/update-verify')).toBe(false);
+  });
+
+  it('puts everything back when one component fails, the wizard included', () => {
+    const result = machine.update({
+      wizard: `printf 'new wizard\\n' > ${JSON.stringify(machine.at('usr/local/lib/nas-wizard/wizard'))}`,
+      gateway: `printf 'half gateway\\n' > ${JSON.stringify(machine.at('usr/local/bin/nas-os-gateway'))}; exit 1`,
+    });
+
+    expect(result.code).not.toBe(0);
+    expect(machine.status()).toBe('rolled-back the installer of the gateway failed');
+    expect(machine.read('usr/local/lib/nas-wizard/wizard')).toBe('old wizard\n');
+    expect(machine.read('usr/local/bin/nas-os-gateway')).toBe('old gateway\n');
+    expect(machine.read('var/lib/private/nas-os-gateway/gateway.db')).toBe('old sessions\n');
+    expect(machine.calls()).toContain('systemctl start nas-os-gateway');
+    expect(machine.calls()).not.toContain('reboot');
+  });
+
+  it('puts the previous version back when the installer of the launcher fails', () => {
+    const result = machine.update({ launcher: 'exit 1' });
+
+    expect(result.code).not.toBe(0);
+    expect(machine.status()).toBe('rolled-back the installer of the launcher failed');
+    expectPrevious();
+    expect(machine.calls()).toContain('systemctl start nas-os\n');
+  });
+
+  it('starts again a unit of the NAS that the new version had removed', () => {
+    const kept = machine.at('etc/systemd/system/nas-os-kept.service');
+    const link = machine.at('etc/systemd/system/multi-user.target.wants/nas-os-kept.service');
+    const result = machine.update({
+      launcher: `rm -f ${JSON.stringify(kept)} ${JSON.stringify(link)}; exit 1`,
+    });
+
+    expect(result.code).not.toBe(0);
+    expect(machine.read('etc/systemd/system/nas-os-kept.service')).toBe('kept unit\n');
+    expect(isLink(link)).toBe(true);
+    expect(machine.calls()).toContain('systemctl start --no-block nas-os-kept.service');
+    expectPrevious();
+  });
+
+  it('rolls back when the new launcher does not answer', () => {
+    const result = machine.update({
+      launcher: `rm -f ${JSON.stringify(machine.flag('launcher-up'))}`,
+    });
+
+    expect(result.code).not.toBe(0);
+    expect(machine.status()).toBe('rolled-back the launcher does not answer');
+    expectPrevious();
+  });
+
+  it('rolls back when the gateway stops answering', () => {
+    const result = machine.update({
+      launcher: `rm -f ${JSON.stringify(machine.flag('gateway-up'))}`,
+    });
+
+    expect(result.code).not.toBe(0);
+    expect(machine.status()).toMatch(/^rolled-back the gateway does not answer on port \d+$/);
+    expectPrevious();
+    expect(machine.calls()).toContain('systemctl try-restart nas-os-gateway');
+  });
+
+  it('rolls back when a network card loses its address', () => {
+    const result = machine.update({
+      launcher: `: > ${JSON.stringify(machine.at('etc/nas-os/network'))}`,
+    });
+
+    expect(result.code).not.toBe(0);
+    expect(machine.status()).toBe(
+      'rolled-back the interface eth0 lost its address, the default route is gone',
+    );
+    expect(machine.read('etc/nas-os/network')).toBe('eth0\n');
+    expectPrevious();
+  });
+
+  it('rolls back when the base firewall loses the HTTPS port, and loads the previous one', () => {
+    const result = machine.update({
+      firewall: true,
+      launcher: `rm -f ${JSON.stringify(machine.at('etc/nas-os/firewall'))}`,
+    });
+
+    expect(result.code).not.toBe(0);
+    expect(machine.status()).toBe('rolled-back the base firewall is not loaded');
+    expect(machine.calls()).toContain('old-firewall');
+    expectPrevious();
+  });
+
+  it('does not ask for what did not work before the update', () => {
+    rmSync(machine.at('etc/nas-os/network'));
+    const result = machine.update({ reboot: false });
+
+    expect(result.code).toBe(0);
+    expect(machine.status()).toBe('done launcher');
+  });
+
+  it('says so when the previous version does not work either', () => {
+    writeFileSync(machine.flag('old-broken'), '');
+    const result = machine.update({
+      launcher: `rm -f ${JSON.stringify(machine.flag('launcher-up'))}`,
+    });
+
+    expect(result.code).not.toBe(0);
+    expect(machine.status()).toBe(
+      'rollback-failed the launcher does not answer, and the previous version does not work either (the launcher does not answer)',
+    );
+    expect(machine.read('usr/local/bin/nas-os-axum')).toBe('old launcher\n');
+    expect(machine.there('var/lib/nas-os/update-verify')).toBe(false);
+  });
+
+  it('removes nothing when the backup cannot be read', () => {
+    const result = machine.update({
+      launcher: `for f in ${JSON.stringify(join(machine.state, 'backups'))}/*.tar.gz; do : > "$f"; done; exit 1`,
+    });
+
+    expect(result.code).not.toBe(0);
+    expect(machine.status()).toMatch(
+      /^rollback-failed the installer of the launcher failed, and the backup .+ could not be restored$/,
+    );
+    expect(machine.read('usr/local/bin/nas-os-axum')).toBe('new launcher\n');
+    expect(machine.read('etc/systemd/system/nas-os.service')).toBe('old unit\n');
+  });
+
+  it('gives up without touching the NAS after three rollbacks', () => {
+    machine.update();
+    const pending = machine.at('var/lib/nas-os/update-verify/pending');
+    writeFileSync(
+      pending,
+      readFileSync(pending, 'utf8')
+        .replace(/^attempts=\d+$/m, 'attempts=3')
+        .replace(/^reason=.*$/m, 'reason=the launcher does not answer'),
+    );
+    const result = machine.verify();
+
+    expect(result.code).not.toBe(0);
+    expect(machine.status()).toBe('rollback-failed the launcher does not answer');
+    expect(machine.read('usr/local/bin/nas-os-axum')).toBe('new launcher\n');
+    expect(machine.there('var/lib/nas-os/update-verify')).toBe(false);
+    expect(machine.calls()).toContain('systemctl start nas-os nas-os-gateway\n');
+  });
+
+  it('while the NAS shuts down, puts the files back and ends the rollback at the next start', () => {
+    const result = machine.update({
+      launcher: `touch ${JSON.stringify(machine.flag('stopping'))}; exit 1`,
+    });
+
+    expect(result.code).not.toBe(0);
+    expect(machine.status()).toBe('rolling-back the installer of the launcher failed');
+    expect(machine.read('usr/local/bin/nas-os-axum')).toBe('old launcher\n');
+    const pending = machine.read('var/lib/nas-os/update-verify/pending');
+    expect(pending).toContain('phase=rolling-back');
+    expect(pending).toContain('attempts=0');
+    expect(machine.there('etc/systemd/system/nas-os-update-verify.service')).toBe(true);
+    expect(machine.calls()).not.toContain('systemctl start nas-os\n');
+
+    rmSync(machine.flag('stopping'));
+    const boot = machine.verify();
+
+    expect(boot.code).not.toBe(0);
+    expect(machine.status()).toBe('rolled-back the installer of the launcher failed');
+    expectPrevious();
+    expect(machine.calls()).toContain('systemctl start nas-os\n');
+  });
+
+  it('disables the check and starts the launcher again when the check cannot be prepared', () => {
+    const units = machine.at('etc/systemd/system');
+    chmodSync(units, 0o555);
+    try {
+      const result = machine.update();
+
+      expect(result.code).not.toBe(0);
+      expect(machine.status()).toBe('failed the check after the update could not be prepared');
+    } finally {
+      chmodSync(units, 0o755);
+    }
+    expect(machine.read('usr/local/bin/nas-os-axum')).toBe('old launcher\n');
+    expect(machine.there('var/lib/nas-os/update-verify')).toBe(false);
+    expect(machine.backups()).toHaveLength(0);
+    const calls = machine.calls();
+    expect(calls).toContain('systemctl disable nas-os-update-verify.service');
     expect(calls).toContain('systemctl start nas-os\n');
     expect(calls).not.toContain('reboot');
   });
 
-  it('puts everything back when one component fails, the wizard included', () => {
-    const { result, status, wizard, gateway, calls } = update({
-      wizard: `printf 'new wizard\\n' > ${JSON.stringify(join(temp.path, 'wizard'))}`,
-      gateway: `printf 'half gateway\\n' > ${JSON.stringify(join(temp.path, 'gateway'))}; exit 1`,
-    });
+  it('refuses a new update while the previous one waits for its check', () => {
+    machine.update();
+    const before = machine.calls();
+    const result = machine.update();
 
     expect(result.code).not.toBe(0);
-    expect(status).toBe('rolled-back the installer of the gateway failed');
-    expect(wizard).toBe('old wizard\n');
-    expect(gateway).toBe('old gateway\n');
-    expect(calls).toContain('systemctl start nas-os-gateway');
-    expect(calls).not.toContain('reboot');
-  });
-
-  it('keeps the previous files and database in the backup', () => {
-    const { state, backups } = update();
-    const backup = join(state, 'backups', backups[0]!);
-    const listing = execFileSync('tar', ['--list', '--gzip', '--file', backup], {
-      encoding: 'utf8',
-    });
-
-    expect(listing).toContain('launcher.db');
-    expect(listing).toContain('installed');
-    expect(statSync(backup).mode & 0o777).toBe(0o600);
-  });
-
-  it('puts everything back and restarts the previous launcher when the installer fails', () => {
-    const { result, installed, status, calls } = update({
-      installer: `printf 'half written\\n' > ${JSON.stringify(join(temp.path, 'installed'))}; exit 1`,
-    });
-
-    expect(result.code).not.toBe(0);
-    expect(installed).toBe('old launcher\n');
-    expect(status).toBe('rolled-back the installer of the launcher failed');
-    expect(calls).toContain('systemctl start nas-os');
-    expect(calls).not.toContain('reboot');
-  });
-
-  it('rolls back when the new launcher does not answer', () => {
-    const { installed, status, calls } = update({ healthy: false });
-
-    expect(installed).toBe('old launcher\n');
-    expect(status).toBe('rolled-back the launcher does not answer');
-    expect(calls).not.toContain('reboot');
+    expect(machine.status()).toBe('failed the previous update has not been checked yet');
+    expect(machine.calls()).toBe(before);
   });
 
   it('refuses a release without an installer, and leaves the launcher running', () => {
-    const { result, status, calls, installed } = update({ installer: null });
+    const result = machine.update({ launcher: null });
 
     expect(result.code).not.toBe(0);
-    expect(status).toBe('failed the release of the launcher has no installer');
-    expect(calls).toBe('');
-    expect(installed).toBe('old launcher\n');
+    expect(machine.status()).toBe('failed the release of the launcher has no installer');
+    expect(machine.calls()).toBe('');
+    expect(machine.read('usr/local/bin/nas-os-axum')).toBe('old launcher\n');
   });
 
-  it('keeps only the three latest backups', () => {
-    const backups = join(temp.path, 'state', 'backups');
-    execFileSync('mkdir', ['-p', backups]);
+  it('keeps only the three latest backups once the update is checked', () => {
+    const backups = join(machine.state, 'backups');
+    mkdirSync(backups, { recursive: true });
     for (const name of ['20260101-000000', '20260102-000000', '20260103-000000']) {
       writeFileSync(join(backups, `${name}.tar.gz`), '');
     }
 
-    const { backups: left } = update();
+    machine.update();
+    expect(machine.backups()).toHaveLength(4);
+    machine.verify();
 
-    expect(left).toHaveLength(3);
-    expect(left).not.toContain('20260101-000000.tar.gz');
+    expect(machine.backups()).toHaveLength(3);
+    expect(machine.backups()).not.toContain('20260101-000000.tar.gz');
+  });
+
+  it('has nothing to do after a restart without an update', () => {
+    const result = run(script, {
+      args: ['--verify'],
+      env: { NAS_UPDATE_ROOT: machine.root, PATH: `${temp.path}:${process.env.PATH}` },
+    });
+
+    expect(result.code).toBe(0);
+    expect(machine.status()).toBe('');
   });
 
   it('says so when there is no release to install', () => {
-    const state = join(temp.path, 'state');
-    execFileSync('mkdir', ['-p', state]);
-    const result = run(script, { env: { NAS_STATE_DIR: state } });
+    const result = run(script, {
+      env: { NAS_UPDATE_ROOT: machine.root, PATH: `${temp.path}:${process.env.PATH}` },
+    });
 
     expect(result.code).not.toBe(0);
     expect(result.output).toContain('no release in');
@@ -719,6 +1078,8 @@ describe('factory-reset.sh', () => {
       update?: 'working' | 'broken';
       original?: boolean;
       nftFailure?: boolean;
+      pending?: boolean;
+      configureFailure?: boolean;
     } = {},
   ) {
     const root = join(temp.path, 'machine');
@@ -782,6 +1143,15 @@ describe('factory-reset.sh', () => {
       `${log}\n${options.nftFailure ? 'exit 1' : 'nft delete table inet nas_launcher\nnft delete table inet nas_base'}`,
     );
     fakeCommand(join(home, 'packages/os_configuration/scripts'), 'wifi.sh', log);
+    fakeCommand(
+      join(home, 'packages/os_configuration'),
+      'install.sh',
+      `${log}\n${options.configureFailure ? 'exit 1' : 'exit 0'}`,
+    );
+    if (options.pending) {
+      mkdirSync(path('var/lib/nas-os/update-verify'), { recursive: true });
+      writeFileSync(path('var/lib/nas-os/update-verify/pending'), 'phase=installed\n');
+    }
     fakeCommand(
       temp.path,
       'nft',
@@ -859,10 +1229,48 @@ describe('factory-reset.sh', () => {
     expect(calls).toContain('systemctl disable --now nas-os-storage.timer');
     expect(calls).toContain('uninstall.sh --remove-terminal-user valerio');
     expect(calls).toContain('nft delete table inet nas_launcher');
-    expect(calls).toContain('nft delete table inet nas_base');
-    expect(calls).toContain('wifi.sh --remove');
     expect(calls).toContain('uninstall.sh --restore');
     expect(calls.trim().split('\n').at(-1)).toBe('systemctl is-active --quiet nas-wizard.service');
+  });
+
+  it('ends as the entry script left the machine, firewall, wireless check and screen as installed', () => {
+    const { result, calls } = machine();
+
+    expect(result.code).toBe(0);
+    expect(calls).not.toContain('nft delete table inet nas_base');
+    expect(calls).not.toContain('firewall.sh --remove');
+    expect(calls).not.toContain('wifi.sh --remove');
+    for (const set of [
+      'nas_shares',
+      'nas_sync',
+      'nas_discovery',
+      'nas_apps_out',
+      'nas_smb_servers',
+    ]) {
+      expect(calls).toContain(`nft flush set inet nas_base ${set}\n`);
+    }
+    expect(calls).toContain('systemctl disable --now nas-os-screen.service');
+    const lines = calls.trim().split('\n');
+    const configured = lines.indexOf('install.sh ');
+    expect(configured).toBeGreaterThan(lines.indexOf('uninstall.sh --restore'));
+    expect(configured).toBeLessThan(lines.indexOf('systemctl enable --now nas-wizard.service'));
+  });
+
+  it('starts the wizard even when the configuration of the system cannot be applied again', () => {
+    const { result, calls } = machine({ configureFailure: true });
+
+    expect(result.code).toBe(0);
+    expect(calls).toContain('install.sh \n');
+    expect(calls.trim().split('\n').at(-1)).toBe('systemctl is-active --quiet nas-wizard.service');
+  });
+
+  it('removes nothing while an update waits for its check after the restart', () => {
+    const { result, exists, calls } = machine({ pending: true });
+
+    expect(result.code).not.toBe(0);
+    expect(result.stderr).toContain('an update waits for its check');
+    expect(exists('var/lib/nas-os/launcher.db')).toBe(true);
+    expect(calls).not.toContain('disable --now');
   });
 
   it('installs a newer wizard the launcher downloaded before anything is removed', () => {

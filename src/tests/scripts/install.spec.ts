@@ -1,4 +1,4 @@
-import { mkdirSync, copyFileSync, readFileSync, writeFileSync } from 'node:fs';
+import { mkdirSync, copyFileSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { fakeCommand, run, SYSTEM, workspace } from './helpers';
@@ -186,5 +186,43 @@ else printf '%s\\n' "$*" >> "${join(temp.path, 'calls')}"; fi`,
     expect(result.code).toBe(0);
     expect(result.output).toContain('stopped, disabled and unit removed');
     expect(readFileSync(join(temp.path, 'calls'), 'utf8')).toContain('disable --now nas-os');
+  });
+});
+
+describe('uninstall.sh against install.sh', () => {
+  const install = readFileSync(join(SYSTEM, 'install.sh'), 'utf8');
+  const uninstall = readFileSync(join(SYSTEM, 'scripts/uninstall.sh'), 'utf8');
+  const files = readdirSync(join(SYSTEM, 'files'));
+
+  it('removes every unit the installation writes', () => {
+    const units = files.filter((name) => /\.(service|socket|timer)$/.test(name));
+    expect(units.length).toBeGreaterThan(20);
+    for (const unit of units) {
+      expect(uninstall, unit).toContain(`/etc/systemd/system/${unit}`);
+    }
+  });
+
+  it('removes every polkit and udev rule the installation writes', () => {
+    for (const rule of files.filter((name) => name.endsWith('.rules'))) {
+      const target =
+        rule === '90-nas-os-storage-udev.rules'
+          ? '/etc/udev/rules.d/90-nas-os-storage.rules'
+          : `/etc/polkit-1/rules.d/${rule}`;
+      expect(install, rule).toContain(rule);
+      expect(uninstall, rule).toContain(target);
+    }
+  });
+
+  it('removes the folders of the launcher, the drop-in of freshclam and the update check', () => {
+    for (const path of [
+      'rm -rf /usr/local/lib/nas-os',
+      'rm -rf /usr/local/share/nas-os',
+      'rm -f /usr/local/bin/nas-os-axum',
+      'rm -f /etc/systemd/system/clamav-freshclam.service.d/nas-os-firewall.conf',
+      'stop_unit nas-os-update-verify.service disable --now',
+      '/etc/systemd/system/nas-os-update-verify.service',
+    ]) {
+      expect(uninstall).toContain(path);
+    }
   });
 });

@@ -3340,6 +3340,44 @@
         }
       }
     },
+    "/api/settings/discovery/status": {
+      "get": {
+        "summary": "Whether NAS Finder can reach the NAS, read from the machine without changing it",
+        "operationId": "getSettingsDiscoveryStatus",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DiscoveryStatus"
+                }
+              }
+            }
+          },
+          "4XX": {
+            "description": "The request was refused",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "5XX": {
+            "description": "The launcher or the machine could not answer",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/settings/power": {
       "get": {
         "operationId": "getSettingsPower",
@@ -5296,6 +5334,26 @@
         },
         "additionalProperties": false
       },
+      "DiscoveryStatus": {
+        "type": "object",
+        "description": "What the machine shows of the discovery, read without privileges and changing nothing.",
+        "required": ["port"],
+        "properties": {
+          "port": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "listening": {
+            "type": ["boolean", "null"],
+            "description": "Whether a responder holds the port, `None` when the sockets cannot be read."
+          },
+          "applied": {
+            "type": ["boolean", "null"],
+            "description": "Whether the last change of the firewall went through, `None` outside a NAS."
+          }
+        }
+      },
       "Disk": {
         "type": "object",
         "description": "A volume or a disk as the disk manager lists it.",
@@ -6443,7 +6501,7 @@
         "oneOf": [
           {
             "type": "object",
-            "description": "Erases a data disk and makes one volume on it, encrypted or not. An encrypted one opens\nwith the password, the automatic key, or both.",
+            "description": "Erases a data disk and makes one volume on it, encrypted or not. An encrypted one opens\nwith the password, the automatic key, or both. A locked volume on the disk is erased only\nwith `current`, its password or recovery key, or with the automatic key when it has no\nother.",
             "required": ["device", "identity", "label", "encrypt", "op"],
             "properties": {
               "device": {
@@ -6464,6 +6522,9 @@
               "password": {
                 "type": ["string", "null"]
               },
+              "current": {
+                "type": ["string", "null"]
+              },
               "op": {
                 "type": "string",
                 "enum": ["format"]
@@ -6472,14 +6533,14 @@
           },
           {
             "type": "object",
-            "description": "Opens a closed container with the password or the recovery key, and publishes it.",
-            "required": ["uuid", "password", "op"],
+            "description": "Opens a closed container with the password or the recovery key, or with the automatic key\nwhen `password` is missing, and publishes it.",
+            "required": ["uuid", "op"],
             "properties": {
               "uuid": {
                 "type": "string"
               },
               "password": {
-                "type": "string"
+                "type": ["string", "null"]
               },
               "op": {
                 "type": "string",

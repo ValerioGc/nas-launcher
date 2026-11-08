@@ -151,6 +151,29 @@ describe('launcher updates', () => {
     wrapper.unmount();
   });
 
+  it('checks again from the icon next to the update of everything', async () => {
+    vi.mocked(request)
+      .mockResolvedValueOnce(updates(null, '0.1.15'))
+      .mockResolvedValueOnce(updates('1.2.0', '0.1.15'))
+      .mockResolvedValueOnce(updates('1.2.0', '0.1.15'));
+    const wrapper = mount(LauncherUpdates);
+    await flushPromises();
+    const recheck = wrapper.get('[data-testid="launcher_recheck"]');
+    expect(recheck.attributes('aria-label')).toBe('Controlla aggiornamenti');
+
+    await recheck.trigger('click');
+    expect(wrapper.get('[data-testid="launcher_update"]').attributes('disabled')).toBeDefined();
+    await flushPromises();
+
+    expect(request).toHaveBeenCalledWith('/launcher/updates/check', {
+      method: 'POST',
+      body: '{}',
+    });
+    expect(versions(wrapper)).toEqual(['Launcher e interfaccia 1.0.0 1.2.0', 'Gateway - 0.1.15']);
+    expect(wrapper.get('[data-testid="launcher_update"]').attributes('disabled')).toBeUndefined();
+    wrapper.unmount();
+  });
+
   it('offers to update only when a newer release is there', async () => {
     vi.mocked(request).mockResolvedValue(configured);
     const current = mount(LauncherUpdates);

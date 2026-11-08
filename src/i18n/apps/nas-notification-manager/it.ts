@@ -117,6 +117,9 @@ export default {
   notice_launcherRolledBack_title: 'Aggiornamento del launcher annullato',
   notice_launcherRolledBack_message:
     'Aggiornamento non riuscito, ripristinata la versione precedente ({reason}).',
+  notice_launcherRollbackFailed_title: 'Aggiornamento del launcher non ripristinato',
+  notice_launcherRollbackFailed_message:
+    'Aggiornamento non riuscito e la versione precedente non è stata ripristinata del tutto ({reason}). Controlla il NAS dalla sua console.',
   notice_launcherUpdateFailed_title: 'Aggiornamento del launcher non riuscito',
   notice_launcherUpdateFailed_message:
     'Aggiornamento non avviato, nessuna modifica applicata ({reason}).',

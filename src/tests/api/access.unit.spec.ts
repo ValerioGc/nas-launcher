@@ -21,6 +21,7 @@ describe('what the security center may ask', () => {
     await accessCall('access-settings', undefined)?.();
     await accessCall('access-rules', undefined)?.();
     await accessCall('discovery-settings', undefined)?.();
+    await accessCall('discovery-status', undefined)?.();
     await expect(accessCall('sign-in-policy', undefined)?.()).resolves.toMatchObject({
       attempts: 5,
     });
@@ -28,6 +29,7 @@ describe('what the security center may ask', () => {
     expect(request).toHaveBeenCalledWith('/settings/access');
     expect(request).toHaveBeenCalledWith('/access/rules');
     expect(request).toHaveBeenCalledWith('/settings/discovery');
+    expect(request).toHaveBeenCalledWith('/settings/discovery/status');
   });
 
   it('saves only the fields the launcher takes', async () => {

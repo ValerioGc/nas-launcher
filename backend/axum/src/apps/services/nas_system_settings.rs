@@ -293,7 +293,10 @@ pub async fn load_access(db: &SqlitePool) -> Result<Access, ApiFailure> {
     settings::read(db, Section::Access).await
 }
 
-pub use discovery::{load as load_discovery, save as save_discovery, Discovery};
+pub use discovery::{
+    load as load_discovery, save as save_discovery, status as discovery_status, Discovery,
+    DiscoveryStatus,
+};
 
 pub async fn load_power(db: &SqlitePool) -> Result<Power, ApiFailure> {
     settings::read(db, Section::Power).await

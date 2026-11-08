@@ -23,6 +23,8 @@ use tokio::process::Command;
 /// The unit that installs the downloaded releases and restarts what they replaced, installed by
 /// `system/packages/ui_installation/`.
 const UPDATE_UNIT: &str = "nas-os-update.service";
+/// Written and enabled by the update helper before it installs, it checks the NAS after the restart.
+const VERIFY_UNIT: &str = "nas-os-update-verify.service";
 const COMMAND_TIMEOUT: Duration = Duration::from_secs(60);
 const VERSION_TIMEOUT: Duration = Duration::from_secs(5);
 
@@ -406,6 +408,16 @@ pub fn outcome(status: &str, version: &str) -> (Notice, Tone) {
             ),
             Tone::Error,
         ),
+        "rollback-failed" => (
+            Notice::new(
+                "launcherRollbackFailed",
+                "Launcher update not restored",
+                format!(
+                    "Update failed and the previous version could not be fully restored ({reason}). Check the NAS from its console."
+                ),
+            ),
+            Tone::Error,
+        ),
         "failed" => (
             Notice::new(
                 "launcherUpdateFailed",
@@ -434,16 +446,34 @@ const SETTLE_TRIES: u32 = 200;
 /// Terminal update steps distinguished from active or interrupted work.
 fn finished(status: &str) -> bool {
     let step = status.split_once(' ').map_or(status, |(step, _)| step);
-    matches!(step, "done" | "rolled-back" | "failed")
+    matches!(step, "done" | "rolled-back" | "rollback-failed" | "failed")
+}
+
+/// The unit whose journal tells how the update ended, the check after the restart when it was
+/// the one that put the previous version back.
+fn journal_of(status: &str) -> &'static str {
+    let reason = status.split_once(' ').map_or("", |(_, reason)| reason);
+    if reason.starts_with("after the restart") || reason.starts_with("the update was cut short") {
+        VERIFY_UNIT
+    } else {
+        UPDATE_UNIT
+    }
 }
 
 async fn update_running() -> bool {
-    utils::systemctl(
-        &["is-active", "--quiet", UPDATE_UNIT],
-        Duration::from_secs(5),
-    )
-    .await
-    .is_ok()
+    for check in [
+        ["is-active", "--quiet", UPDATE_UNIT],
+        ["is-active", "--quiet", VERIFY_UNIT],
+        ["is-enabled", "--quiet", VERIFY_UNIT],
+    ] {
+        if utils::systemctl(&check, Duration::from_secs(5))
+            .await
+            .is_ok()
+        {
+            return true;
+        }
+    }
+    false
 }
 
 /// Reports the last completed update after its unit exits, preserving active update state.
@@ -481,7 +511,9 @@ pub async fn settle<F, Running>(
         let _ = tokio::fs::remove_file(path).await;
         let (mut notice, tone) = outcome(&status, env!("CARGO_PKG_VERSION"));
         if matches!(tone, Tone::Error | Tone::Warning) {
-            notice = notice.detail("update", &status, Some(UPDATE_UNIT)).await;
+            notice = notice
+                .detail("update", &status, Some(journal_of(&status)))
+                .await;
         }
         mail_events::forward(&notice);
         notifications::record(db, "nas-system-settings", tone, notice).await;

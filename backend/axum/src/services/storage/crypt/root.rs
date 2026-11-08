@@ -521,6 +521,31 @@ pub(super) fn formattable(
     Ok(())
 }
 
+/// Checks that each locked volume of the disk opens with the key the person gave, or with the
+/// automatic key when the volume has no other, before anything is erased.
+fn opens_locked(disk: &Device, current: Option<&String>) -> Result<(), String> {
+    for container in super::locked(disk) {
+        let (Some(uuid), Some(path)) = (&container.uuid, &container.path) else {
+            return Err("a locked volume of the disk cannot be read".to_owned());
+        };
+        if let Some(current) = current {
+            if opens(path, &Secret::write("current", current.as_bytes())?, None) {
+                continue;
+            }
+        }
+        let only_automatic =
+            slots(path).is_ok_and(|present| present.iter().all(|slot| *slot == AUTOMATIC_SLOT));
+        if only_automatic && load_automatic(uuid).is_ok_and(|key| opens(path, &key, None)) {
+            continue;
+        }
+        return Err(
+            "the password does not open the locked volume of the disk, so nothing was erased"
+                .to_owned(),
+        );
+    }
+    Ok(())
+}
+
 async fn format(request: &Request) -> Result<Answer, String> {
     let Request::Format {
         device,
@@ -528,12 +553,14 @@ async fn format(request: &Request) -> Result<Answer, String> {
         encrypt,
         automatic,
         password,
+        current,
         ..
     } = request
     else {
         return Err("not a format".to_owned());
     };
     let disk = format_target(request)?;
+    opens_locked(&disk, current.as_ref())?;
     let log = log_path();
     if let Some(parent) = log.parent() {
         fs::create_dir_all(parent).map_err(|error| error.to_string())?;
@@ -614,13 +641,11 @@ fn encrypted(partition: &str, automatic: bool, password: Option<&str>) -> Result
     Ok(format!("/dev/mapper/{name}"))
 }
 
-async fn unlock(uuid: &str, password: &str) -> Result<Answer, String> {
+/// Opens the container with the key given, or with the automatic key of this NAS when none is.
+async fn unlock(uuid: &str, password: Option<&String>) -> Result<Answer, String> {
     let (device, path) = container(uuid)?;
     if device.children.is_none_or(|children| children.is_empty()) {
-        let key = Secret::write("unlock", password.as_bytes())?;
-        if !opens(&path, &key, None) {
-            return Err("the password does not open the volume".to_owned());
-        }
+        let key = current_key(uuid, &path, password)?;
         cryptsetup(&["open", "--key-file", key.arg(), &path, &mapper(uuid)])?;
     }
     set_held(uuid, false)?;
@@ -705,7 +730,7 @@ async fn run(request: &Request) -> Result<Answer, String> {
     validate(request)?;
     match request {
         Request::Format { .. } => format(request).await,
-        Request::Unlock { uuid, password } => unlock(uuid, password).await,
+        Request::Unlock { uuid, password } => unlock(uuid, password.as_ref()).await,
         Request::Lock { uuid } => lock(uuid).await,
         Request::Automatic {
             uuid,

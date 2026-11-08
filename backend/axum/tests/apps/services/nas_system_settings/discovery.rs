@@ -83,3 +83,22 @@ async fn the_request_says_on_while_the_option_is_on_and_is_gone_when_it_is_off()
 
     tokio::fs::remove_dir_all(&directory).await.expect("clean");
 }
+
+#[test]
+fn a_socket_bound_on_the_port_is_found_in_the_table_of_the_machine() {
+    let table = "  sl  local_address rem_address   st tx_queue rx_queue tr tm->when retrnsmt   uid  timeout inode ref pointer drops\n\
+   12: 00000000:9BC5 00000000:0000 07 00000000:00000000 00:00000000 00000000   998        0 41001 2 0000000000000000 0\n\
+   13: 0100007F:0035 00000000:0000 07 00000000:00000000 00:00000000 00000000   991        0 41002 2 0000000000000000 0\n";
+    assert!(holds_port(table, PORT));
+    assert!(holds_port(table, 53));
+    assert!(!holds_port(table, 39878));
+    assert!(!holds_port("  sl  local_address\n", PORT));
+    assert!(!holds_port("", PORT));
+}
+
+#[tokio::test]
+async fn the_status_names_the_port_and_reads_no_firewall_outside_a_nas() {
+    let status = status().await;
+    assert_eq!(status.port, 39877);
+    assert_eq!(status.applied, None);
+}

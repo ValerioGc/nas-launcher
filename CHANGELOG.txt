@@ -5,6 +5,19 @@ All notable changes to nas-os are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project
 uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.4]
+
+- Implemented tests in install.spec.ts to ensure uninstall.sh correctly removes all units, polkit, and udev rules created during installation.
+- Enhanced API types in api.ts to include new endpoint for discovery status.
+- Updated types in types.ts to support new access request for discovery status.
+- Expanded README.md in ui_installation to clarify disk formatting and unlocking processes.
+- Modified nas-os-update.service to include failure handling with nas-os-update-verify.service.
+- Changed install.sh to use try-reload-or-restart for the firewall service.
+- Updated uninstall.sh to remove additional files and directories related to the update helper.
+
+## [0.9.1 - 0.9.3]
+- Minor fixes and improvements
+
 ## [0.9.0]
 
 - Initial release of nas-os launcher.

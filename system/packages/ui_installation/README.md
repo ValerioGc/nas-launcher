@@ -211,6 +211,17 @@ key and TPM when present. Reconciliation unlocks them without crypttab, so a fai
 boot. User-locked volumes remain in `/var/lib/nas-os/storage-held` across restarts. Reconciliation
 records available keys in `/var/lib/nas-os/storage-crypt.json`.
 
+A disk that holds a locked volume is formatted only with `current`, a key that opens that volume.
+The launcher refuses the request without it unless the volume has only the automatic key, and the
+root unit tests the key with `cryptsetup open --test-passphrase` before erasing anything. A volume
+encrypted elsewhere without a known key cannot be formatted from the NAS.
+
+An unlock without `password` opens the volume with its automatic key, so a volume the person locked
+can be reopened from Disks even when it has no password. Without an automatic key the request is
+refused. The wizard no longer encrypts disks, it only initializes them. Encryption is set up in
+Disks over HTTPS, where a new encrypted volume always gets a password and, if asked for, the
+automatic key.
+
 Encryption is enabled by default, including on an unencrypted system. Set `NAS_ENCRYPTION_MODE=off`
 in `/etc/nas-os/nas-os.local.env` to disable it. The wizard records LUKS/TPM status in
 `/var/lib/nas-wizard/security`; the launcher reports `systemUnprotected` once and exposes
@@ -313,18 +324,30 @@ the backend reports `"simulated": true`, records the notification, and leaves th
 
 ## Launcher updates and rollback
 
-Settings > Updates downloads/verifies releases and starts `nas-os-update.service`, which backs up,
-installs, verifies readiness, and reboots when the launcher changes. Failure restores the backup
-and previous launcher; the next startup reports the outcome.
+Settings > Updates downloads and verifies the releases and starts `nas-os-update.service`. The
+helper records what works (launcher, gateway on HTTP and HTTPS, addresses, default route, base
+firewall, the way out to the internet), backs up every file of the NAS the installers write,
+installs, and checks that all of it still works. Otherwise it puts the backup back, removes what the
+new version added and restarts the previous services. A launcher update reboots, and
+`nas-os-update-verify.service` checks again after the restart and rolls back if needed. It also
+ends a rollback cut short by a shutdown or by a kill of the update unit. The next startup reports
+the outcome.
 
-Root-private backups in `/var/lib/nas-os/backups/` retain the latest three. To restore one manually,
-stop the launcher and remove the new WAL/SHM before extracting the backup.
+Root-private backups in `/var/lib/nas-os/backups/` retain the latest three. The check after the
+restart is turned off from the console with
 
 ```bash
-sudo systemctl stop nas-os
+sudo systemctl disable nas-os-update-verify.service && sudo rm -rf /var/lib/nas-os/update-verify
+```
+
+To restore a backup by hand, stop the launcher and the gateway, remove the new WAL and SHM, extract
+it and start them again. Files added by the newer version stay in place this way.
+
+```bash
+sudo systemctl stop nas-os nas-os-gateway
 sudo rm -f /var/lib/nas-os/launcher.db-wal /var/lib/nas-os/launcher.db-shm
-sudo tar -xpzf /var/lib/nas-os/backups/<date>.tar.gz -C /
-sudo systemctl daemon-reload && sudo systemctl start nas-os
+sudo tar -xpzf /var/lib/nas-os/backups/<date>.tar.gz --numeric-owner -C /
+sudo systemctl daemon-reload && sudo systemctl start nas-os nas-os-gateway
 ```
 
 ## Removal

@@ -133,10 +133,21 @@ the launcher itself. `reset/factory-reset.sh` performs the reset.
   `nas-os terminal` account comment.
 - Remove launcher, gateway, application, and wizard state, the release token, and network-disk
   passwords. Keep encrypted data disks' automatic keys.
-- Remove both NAS firewall tables and the wireless helper. Restore the original hostname,
-  networking, DNS, Samba, and service states from the wizard's protected initial backup. Keep
-  installed Debian package upgrades.
+- Remove the access list table and empty the sets of the base firewall the launcher fills
+  (shares, sync, discovery, network disks, applications). The base firewall itself stays loaded,
+  so the wizard is never open to more than its port and SSH. Turn the screen off.
+- Remove the Debian packages the applications added, never one a pre-existing package now needs.
+  Restore the original hostname, networking, DNS, Samba, and service states from the wizard's
+  protected initial backup. Keep installed Debian package upgrades.
+- Apply the configuration of the system again (`os_configuration/install.sh`), as the entry script
+  does before the first configuration. Its packages, the wireless check, the screen turned off,
+  `NetworkManager.conf` and the base firewall come back as they were then. A failure there only
+  warns, since the wizard applies it again before it installs the NAS.
 - Start the installed `nas-wizard.service` again.
+
+The machine ends as the entry script left it. The service user `nas-os`, its groups and the console
+tools in the home of the administrator stay, so the files on the data disks keep their owners. A
+reset is refused while an update or its check after the restart is pending.
 
 Only mounts introduced by the NAS are unmounted, and encrypted volumes opened by it are closed
 before package removal. Data-disk files remain intact. A NAS-added package now required by an
@@ -259,6 +270,11 @@ At startup, enabled discovery is reapplied after the firewall resets. Disabled d
 nothing so it cannot close the wizard's active responder. `setup/complete` records `discoveryOff`
 with instructions for enabling it. Outside real firewall mode, only the preference is saved.
 
+`GET /settings/discovery/status` (the `discovery-status` request of the security center) reads the
+state without privileges and changes nothing. It gives the port, whether a socket holds it in
+`/proc/net/udp`, and whether the last run of `nas-os-discovery.service` ended in `success`
+(`systemctl show`). Outside real firewall mode that last field is `null`.
+
 ## Application packages
 
 Real installations require `NAS_PACKAGES_MODE=real`. Use separate program arguments, and register
@@ -293,26 +309,47 @@ One update action downloads every selected component, requires valid checksums, 
 `<component>-update.tar` beside the database, and starts `nas-os-update.service`. A running service
 cannot replace itself.
 
-Root helper `install-launcher-update.sh` extracts packages, stops the launcher and any gateway
-being updated, and creates one backup in `/var/lib/nas-os/backups/`. It includes databases,
-`/etc/nas-os`, binaries, UI, helpers, units, polkit rules, and affected gateway/wizard files.
-It runs each package's own installer, in wizard, gateway, launcher order. Wizard `install.sh --update`
-reapplies OS configuration without launching setup. The gateway installer restarts it, followed
-by `/health` verification. The launcher uses `ui_installation/install.sh`.
+Root helper `install-launcher-update.sh` extracts the packages and first records what works on the
+NAS. That means the launcher on `127.0.0.1:3000/health`, the gateway on port 80 and on its HTTPS
+port, the IPv4 address of each network card and the default route, the `nas_https` set of the base
+firewall and a connection to `api.github.com:443` made as the `nas-os` user. It then stops the
+launcher and any gateway being updated and writes one backup in `/var/lib/nas-os/backups/`. The
+backup holds every path the three installers write (binaries, UI, helpers, `/etc/nas-os`, every
+`nas-*` unit and its `.wants` link, the polkit, udev and PAM files of the NAS, the configuration of
+the system installed by the wizard, the launcher database, and the gateway state when the gateway
+is updated) and no file of Debian. The archive is read back before anything is installed.
 
-After launcher readiness, a changed launcher triggers a machine reboot; otherwise only the
-launcher restarts. Any failure restores the complete backup, removes the new database WAL before
-restoring the old database, and restarts the previous launcher/gateway without rebooting.
-The update is atomic across components, and the last three backups are retained.
+Before any installer runs, the helper copies itself to `/var/lib/nas-os/update-verify/`, writes
+`nas-os-update-verify.service` and enables it. Each package then runs its own installer, in wizard,
+gateway, launcher order. Wizard `install.sh --update` reapplies the OS configuration without
+launching setup. Afterwards everything that worked before has to work again. Otherwise the rollback
+stops the units the new version added, removes every path of the NAS the update may have written,
+extracts the backup, loads the previous base firewall again and restarts the previous services. It
+then checks the NAS the same way and writes `rolled-back <reason>`, or `rollback-failed <reason>`
+when the backup could not be read or the previous version does not work either. A damaged archive
+changes nothing.
+
+A changed launcher reboots the machine. After the restart the verify unit runs the same check and
+either writes `done` or rolls back. It also rolls back at boot when the update was cut short (power,
+timeout, stop of the unit), and it gives up after three rollbacks so it can never loop. The unit and
+its folder go away once the NAS is checked. A stop of `nas-os-update.service` during the install
+rolls back too, within `TimeoutStopSec`. When the helper is killed before it is done, `OnFailure`
+of the update unit starts the verify unit at once, which ends the rollback left pending. When the
+NAS is shutting down, no service can start and nothing can be checked, so the helper stops the
+services, puts the files back, keeps the check pending, and the verify unit ends the rollback at the
+next start. The verify unit is `Type=exec`, so the boot and `multi-user.target` never wait for it.
+After three attempts it gives up and starts the launcher and the gateway with whatever is on disk.
+The last three backups are kept, pruned only after the check.
 
 Factory reset first tries to download the latest wizard through `reset::prepare_wizard`.
 `factory-reset.sh` installs it with `install.sh --update` before destructive work. If updating
 fails, reset continues with the installed wizard.
 
 `launcher-update.status` stores the outcome and updated component names. `updates::report_previous`
-turns it into a notification and removes the file, distinguishing success, rollback, rejection,
-and interrupted work. The newly installed launcher waits while `nas-os-update.service` remains
-active, avoiding false interruption reports. Checks finding no updates create no notification.
+turns it into a notification and removes the file, distinguishing success, rollback, a rollback
+that was not enough, rejection, and interrupted work. The newly installed launcher waits while
+`nas-os-update.service` or `nas-os-update-verify.service` is active, and while the verify unit is
+still enabled, avoiding false interruption reports. Checks finding no updates create no notification.
 
 `LauncherUpdateModal` confirms the reboot, stays open while work runs, follows download,
 verification, and installation, and waits for the launcher to disappear and return. A new version

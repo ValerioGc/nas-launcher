@@ -139,8 +139,12 @@ rm -f /etc/systemd/system/nas-os-firewall.service \
   /usr/local/lib/nas-os/apply-access-rules.sh
 
 say "Update helper"
+stop_unit nas-os-update.service stop
+stop_unit nas-os-update-verify.service disable --now
 rm -f /etc/systemd/system/nas-os-update.service \
+  /etc/systemd/system/nas-os-update-verify.service \
   /usr/local/lib/nas-os/install-launcher-update.sh
+rm -rf /var/lib/nas-os/update-verify /var/lib/nas-os/update-staging
 echo "   removed"
 
 say "Token helper"
@@ -181,9 +185,7 @@ echo "   polkit rules removed"
 say "Binary"
 rm -f /usr/local/bin/nas-os-axum /usr/local/bin/nas-os-axum.previous
 rm -rf /usr/local/share/nas-os
-rm -f /usr/local/lib/nas-os/check.sh /usr/local/lib/nas-os/uninstall.sh \
-  /usr/local/lib/nas-os/configure.sh
-rmdir /usr/local/lib/nas-os 2>/dev/null || true
+rm -rf /usr/local/lib/nas-os
 echo "   binary, interface and tools removed"
 
 if $purge; then

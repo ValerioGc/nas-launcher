@@ -115,6 +115,9 @@ export default {
   notice_launcherUpdated_message: 'Launcher updated to version {version}.',
   notice_launcherRolledBack_title: 'Launcher update rolled back',
   notice_launcherRolledBack_message: 'Update failed, previous version restored ({reason}).',
+  notice_launcherRollbackFailed_title: 'Launcher update not restored',
+  notice_launcherRollbackFailed_message:
+    'Update failed and the previous version could not be fully restored ({reason}). Check the NAS from its console.',
   notice_launcherUpdateFailed_title: 'Launcher update failed',
   notice_launcherUpdateFailed_message: 'Update not started, no changes applied ({reason}).',
   notice_launcherUpdateInterrupted_title: 'Launcher update interrupted',

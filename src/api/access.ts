@@ -99,6 +99,7 @@ function savePolicy(payload: unknown): Call | null {
 const CALLS: Record<AccessRequest, (payload: unknown) => Call | null> = {
   'access-settings': () => () => request('/settings/access'),
   'discovery-settings': () => () => request('/settings/discovery'),
+  'discovery-status': () => () => request('/settings/discovery/status'),
   'access-rules': () => () => request('/access/rules'),
   'sign-in-policy': () => () => signInPolicy(),
   'refused-sign-ins': () => refusedSignIns,

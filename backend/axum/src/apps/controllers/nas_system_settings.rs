@@ -8,7 +8,7 @@ use crate::{
     apps::services::nas_system_settings::{
         self,
         system_updates::{self, Job, SystemUpdates},
-        Access, Discovery, General, NasUpdates, Power,
+        Access, Discovery, DiscoveryStatus, General, NasUpdates, Power,
     },
     http::error::ApiFailure,
     http::extract::ValidJson,
@@ -68,6 +68,16 @@ section!(
     save_power,
     Power
 );
+
+/// Whether NAS Finder can reach the NAS, read from the machine without changing it
+#[utoipa::path(
+    get,
+    path = "/settings/discovery/status",
+    responses((status = OK, body = DiscoveryStatus))
+)]
+async fn discovery_status() -> Json<DiscoveryStatus> {
+    Json(nas_system_settings::discovery_status().await)
+}
 
 /// The Debian upgrades available and the job in progress
 #[utoipa::path(get, path = "/system/updates", responses((status = OK, body = SystemUpdates)))]
@@ -162,6 +172,7 @@ pub fn routes() -> OpenApiRouter<AppState> {
         .routes(routes!(general, save_general))
         .routes(routes!(access, save_access))
         .routes(routes!(discovery, save_discovery))
+        .routes(routes!(discovery_status))
         .routes(routes!(power, save_power))
         .routes(routes!(updates, apply_updates))
         .routes(routes!(refresh_updates))

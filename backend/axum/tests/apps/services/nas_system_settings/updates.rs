@@ -78,9 +78,34 @@ fn a_rolled_back_or_refused_update_says_why() {
     assert_eq!(notice.params["reason"], "the new launcher does not answer");
     assert_eq!(tone, Tone::Error);
 
+    let (notice, tone) = outcome(
+        "rollback-failed the launcher does not answer, and the previous version does not work either (the launcher does not answer)",
+        "0.1.6",
+    );
+    assert_eq!(notice.key, "launcherRollbackFailed");
+    assert!(notice.message.contains("could not be fully restored"));
+    assert!(notice.params["reason"].starts_with("the launcher does not answer, and"));
+    assert_eq!(tone, Tone::Error);
+
     let (notice, _) = outcome("failed the release has no installer", "0.1.6");
     assert_eq!(notice.key, "launcherUpdateFailed");
     assert_eq!(notice.params["reason"], "the release has no installer");
+}
+
+#[test]
+fn the_journal_of_the_check_after_the_restart_explains_a_rollback_it_made() {
+    assert_eq!(
+        journal_of("rolled-back after the restart the launcher does not answer"),
+        "nas-os-update-verify.service"
+    );
+    assert_eq!(
+        journal_of("rolled-back the update was cut short before it ended"),
+        "nas-os-update-verify.service"
+    );
+    assert_eq!(
+        journal_of("rolled-back the installer of the launcher failed"),
+        "nas-os-update.service"
+    );
 }
 
 #[test]

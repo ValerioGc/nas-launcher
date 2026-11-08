@@ -35,7 +35,9 @@ const MAX_PASSWORD: usize = 512;
 #[serde(tag = "op", rename_all = "camelCase", deny_unknown_fields)]
 pub enum Request {
     /// Erases a data disk and makes one volume on it, encrypted or not. An encrypted one opens
-    /// with the password, the automatic key, or both.
+    /// with the password, the automatic key, or both. A locked volume on the disk is erased only
+    /// with `current`, its password or recovery key, or with the automatic key when it has no
+    /// other.
     #[serde(rename_all = "camelCase")]
     Format {
         device: String,
@@ -46,9 +48,16 @@ pub enum Request {
         automatic: bool,
         #[serde(default)]
         password: Option<String>,
+        #[serde(default)]
+        current: Option<String>,
     },
-    /// Opens a closed container with the password or the recovery key, and publishes it.
-    Unlock { uuid: String, password: String },
+    /// Opens a closed container with the password or the recovery key, or with the automatic key
+    /// when `password` is missing, and publishes it.
+    Unlock {
+        uuid: String,
+        #[serde(default)]
+        password: Option<String>,
+    },
     /// Takes the volume off Explorer, unmounts it and closes the container, which stays closed.
     Lock { uuid: String },
     /// Adds or removes the automatic key. Adding it needs a key that opens the container.
@@ -81,11 +90,11 @@ impl Request {
     /// Requires an encrypted connection when an operation transfers a password or key.
     pub fn carries_secret(&self) -> bool {
         match self {
-            Self::Format { password, .. } | Self::Automatic { password, .. } => password.is_some(),
-            Self::Unlock { .. }
-            | Self::Password { .. }
-            | Self::Recovery { .. }
-            | Self::Header { .. } => true,
+            Self::Format {
+                password, current, ..
+            } => password.is_some() || current.is_some(),
+            Self::Automatic { password, .. } | Self::Unlock { password, .. } => password.is_some(),
+            Self::Password { .. } | Self::Recovery { .. } | Self::Header { .. } => true,
             Self::Lock { .. } => false,
         }
     }
@@ -159,7 +168,9 @@ pub fn validate(request: &Request) -> Result<(), String> {
             encrypt,
             automatic,
             password,
+            current,
         } => {
+            secret(current.as_ref(), "password of the locked volume")?;
             return validate_format(
                 device,
                 identity,
@@ -170,7 +181,7 @@ pub fn validate(request: &Request) -> Result<(), String> {
             );
         }
         Request::Unlock { uuid, password } => {
-            secret(Some(password), "password")?;
+            secret(password.as_ref(), "password")?;
             uuid
         }
         Request::Automatic {
@@ -292,7 +303,10 @@ pub async fn request(db: &SqlitePool, request: Request) -> Result<Answer, ApiFai
             "Disk encryption is not available on this installation.",
         ));
     }
-    let Request::Format { device, .. } = &request else {
+    let Request::Format {
+        device, current, ..
+    } = &request
+    else {
         return send(&request, time_for(&request))
             .await
             .map_err(ApiFailure::unavailable);
@@ -305,10 +319,13 @@ pub async fn request(db: &SqlitePool, request: Request) -> Result<Answer, ApiFai
         return Err(ApiFailure::bad("another disk is being formatted"));
     }
     let checked = request.clone();
-    tokio::task::spawn_blocking(move || root::format_target(&checked).map(|_| ()))
+    let disk = tokio::task::spawn_blocking(move || root::format_target(&checked))
         .await
         .map_err(|_| ApiFailure::unavailable("disk inspection failed"))?
         .map_err(ApiFailure::bad)?;
+    if current.is_none() && needs_key(&locked(&disk), &keys()) {
+        return Err(ApiFailure::bad(LOCKED_NEEDS_KEY));
+    }
     let task = tasks::register(
         db,
         NewTask {
@@ -343,6 +360,29 @@ pub async fn request(db: &SqlitePool, request: Request) -> Result<Answer, ApiFai
     Ok(Answer {
         task_id: Some(task.id),
         ..Answer::default()
+    })
+}
+
+const LOCKED_NEEDS_KEY: &str =
+    "the disk holds a locked encrypted volume, so its password or recovery key is needed to erase it";
+
+/// The encrypted volumes of a disk that are closed, with nothing opened from them.
+pub(super) fn locked(disk: &inventory::Device) -> Vec<&inventory::Device> {
+    inventory::containers(std::slice::from_ref(disk))
+        .into_iter()
+        .filter(|container| container.children.as_ref().is_none_or(Vec::is_empty))
+        .collect()
+}
+
+/// Whether erasing these locked volumes needs a key from the person. Only a volume this NAS knows
+/// to open with its automatic key alone goes without one.
+pub(super) fn needs_key(locked: &[&inventory::Device], keys: &HashMap<String, Keys>) -> bool {
+    locked.iter().any(|container| {
+        container
+            .uuid
+            .as_ref()
+            .and_then(|uuid| keys.get(&uuid.to_ascii_lowercase()))
+            .is_none_or(|keys| keys.password || keys.recovery || !keys.automatic)
     })
 }
 

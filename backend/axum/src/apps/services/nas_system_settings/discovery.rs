@@ -22,6 +22,11 @@ static APPLY: tokio::sync::Mutex<()> = tokio::sync::Mutex::const_new(());
 
 const UNIT: &str = "nas-os-discovery.service";
 const COMMAND_TIMEOUT: Duration = Duration::from_secs(30);
+const STATUS_TIMEOUT: Duration = Duration::from_secs(5);
+/// UDP port NAS Finder asks on, the same in the wizard, the gateway and the helper.
+pub const PORT: u16 = 39877;
+/// UDP sockets of the machine, readable without privileges.
+const SOCKETS: &str = "/proc/net/udp";
 /// The application the option lives in, which the notification names.
 const APP: &str = "nas-security-center";
 
@@ -29,6 +34,58 @@ const APP: &str = "nas-security-center";
 #[serde(deny_unknown_fields, rename_all = "camelCase")]
 pub struct Discovery {
     pub enabled: bool,
+}
+
+/// What the machine shows of the discovery, read without privileges and changing nothing.
+#[derive(Clone, Serialize, utoipa::ToSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct DiscoveryStatus {
+    pub port: u16,
+    /// Whether a responder holds the port, `None` when the sockets cannot be read.
+    pub listening: Option<bool>,
+    /// Whether the last change of the firewall went through, `None` outside a NAS.
+    pub applied: Option<bool>,
+}
+
+pub async fn status() -> DiscoveryStatus {
+    let listening = tokio::fs::read_to_string(SOCKETS)
+        .await
+        .ok()
+        .map(|table| holds_port(&table, PORT));
+    let applied = if utils::is_real(Mode::Firewall) {
+        last_result().await
+    } else {
+        None
+    };
+    DiscoveryStatus {
+        port: PORT,
+        listening,
+        applied,
+    }
+}
+
+/// Tells whether a table in the format of `/proc/net/udp` has a socket bound on `port`.
+pub fn holds_port(table: &str, port: u16) -> bool {
+    let wanted = format!("{port:04X}");
+    table.lines().skip(1).any(|line| {
+        line.split_whitespace()
+            .nth(1)
+            .and_then(|local| local.rsplit_once(':'))
+            .is_some_and(|(_, bound)| bound.eq_ignore_ascii_case(&wanted))
+    })
+}
+
+/// Reads the outcome systemd kept of the last run of the helper, `success` when it went through.
+async fn last_result() -> Option<bool> {
+    let command = tokio::process::Command::new("systemctl")
+        .args(["show", UNIT, "--property=Result", "--value"])
+        .output();
+    match tokio::time::timeout(STATUS_TIMEOUT, command).await {
+        Ok(Ok(output)) if output.status.success() => {
+            Some(String::from_utf8_lossy(&output.stdout).trim() == "success")
+        }
+        _ => None,
+    }
 }
 
 pub async fn load(db: &SqlitePool) -> Result<Discovery, ApiFailure> {

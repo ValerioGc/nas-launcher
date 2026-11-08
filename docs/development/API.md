@@ -217,7 +217,7 @@ networks stays there to see, and the page says why it joins none.
   `POST /network/wifi` and `POST /network/wired` refuse a card turned off with **400**.
 
 A request of `POST /storage/encryption` or `POST /storage/network` that carries a password or a
-key, or gives one back (a format with a password, unlock, password, recovery key, header backup,
+key, or gives one back (a format with a password, an unlock with a password, password, recovery key, header backup,
 the automatic key with a password, saving a network disk with its password, trying one) needs
 `x-nas-secure: 1`, which only the gateway sets, on a request that came over TLS or from the monitor
 of the NAS: otherwise **403** `a password or a key travels only over HTTPS`.

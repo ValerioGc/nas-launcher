@@ -2,6 +2,12 @@
 # Resets launcher, gateway, and application state before starting the setup wizard.
 # Removes the terminal account and home directory and clears private release tokens.
 # Preserves data disks, user storage under /srv, and encrypted data-disk keys.
+# The machine ends as the entry script of the wizard left it before the first configuration. That
+# is the original configuration of Debian, then the configuration of the system the wizard applies
+# again (its packages, the wireless check, the screen turned off and the base firewall), and the
+# wizard running. The packages the applications added go, upgrades of the system stay.
+# The service user, its groups and the console tools stay, the files on the data disks keep their
+# owners.
 # Runs as root through nas-os-reset.service after gateway password verification.
 # An available verified wizard update is installed first, with fallback to the
 # installed wizard. The launcher stops during reset and diagnostics remain in the journal.
@@ -27,6 +33,11 @@ readonly WIZARD_HOME=${NAS_WIZARD_HOME:-/usr/local/lib/nas-wizard}
 readonly RESTORE=${NAS_CONFIGURATION_HELPER:-$WIZARD_HOME/packages/os_configuration/scripts/uninstall.sh}
 readonly LAUNCHER_TOOLS=${NAS_LAUNCHER_TOOLS:-/usr/local/lib/nas-os}
 readonly GATEWAY_TOOLS=${NAS_GATEWAY_TOOLS:-/usr/local/lib/nas-os-gateway}
+readonly CONFIGURE=$WIZARD_HOME/packages/os_configuration/install.sh
+readonly PENDING_UPDATE=$STATE/update-verify/pending
+# The sets of the base firewall the launcher fills, emptied so nothing it opened stays open.
+readonly NAS_SETS=(nas_shares nas_sync nas_discovery nas_smb_servers nas_smb_servers6 nas_apps_out
+  nas_apps_smtp nas_apps_sync)
 
 say() { printf '\n== %s\n' "$1"; }
 fail() {
@@ -38,15 +49,19 @@ fail() {
 # Requires an installed wizard before any reset data is removed.
 [[ -f $WIZARD_UNIT ]] || fail "the wizard is not installed ($WIZARD_UNIT): nothing was removed"
 [[ -x $WIZARD_HOME/wizard/bin/nas-wizard && -x $RESTORE ]] || fail 'the wizard or system restoration helper is missing: nothing was removed'
-[[ -x $WIZARD_HOME/packages/os_configuration/scripts/firewall.sh ]] || fail 'the firewall removal helper is missing: nothing was removed'
-[[ -x $WIZARD_HOME/packages/os_configuration/scripts/wifi.sh ]] || fail 'the wireless removal helper is missing: nothing was removed'
+[[ -f $CONFIGURE ]] || fail 'the configuration of the system is missing, nothing was removed'
+if command -v nft >/dev/null; then
+  nft list tables >/dev/null || fail 'cannot inspect nftables rules, nothing was removed'
+fi
 [[ -x $LAUNCHER_TOOLS/uninstall.sh && -x $GATEWAY_TOOLS/uninstall.sh ]] || fail 'the launcher or gateway removal helper is missing: nothing was removed'
 "$RESTORE" --check
 busy=$(systemctl list-units --plain --no-legend --state=active,activating,deactivating,reloading \
-  'nas-os-update.service' 'nas-os-apt@*.service' 'nas-os-app-packages@*.service' \
+  'nas-os-update.service' 'nas-os-update-verify.service' 'nas-os-apt@*.service' 'nas-os-app-packages@*.service' \
   'nas-os-storage-initialize.service' 'nas-os-storage-rename.service' 'nas-os-storage-eject.service' \
   'nas-os-storage-crypt@*.service')
 [[ -z $busy ]] || fail 'wait for NAS updates, package installation or disk operations before resetting'
+# A check after an update would put the previous version back in the middle of the reset.
+[[ ! -e $PENDING_UPDATE ]] || fail 'an update waits for its check after the restart, restart the NAS first, nothing was removed'
 
 stop_unit() {
   local unit=$1 load
@@ -110,8 +125,22 @@ stop_unit nas-os-sync-ports.service stop
 stop_unit nas-os-discovery.service stop
 stop_unit smbd.service stop
 stop_unit nmbd.service stop
-"$WIZARD_HOME/packages/os_configuration/scripts/firewall.sh" --remove
-"$WIZARD_HOME/packages/os_configuration/scripts/wifi.sh" --remove
+# The base firewall stays loaded, as before the first configuration, so the wizard is never open
+# to more than its own port and SSH. Only what the launcher opened in it goes.
+if command -v nft >/dev/null; then
+  tables=$(nft list tables) || fail 'cannot inspect nftables rules'
+  if grep -qxF 'table inet nas_launcher' <<<"$tables"; then nft delete table inet nas_launcher; fi
+  if grep -qxF 'table inet nas_base' <<<"$tables"; then
+    for set in "${NAS_SETS[@]}"; do
+      nft flush set inet nas_base "$set" 2>/dev/null || true
+    done
+  fi
+fi
+
+say "Screen"
+# Off, as the configuration of the system installs it. tty1 goes back to its login.
+stop_unit nas-os-screen.service disable --now
+stop_unit nas-os-screen-browser.service stop
 
 say "User of the terminal"
 stop_unit nas-os-terminal.socket disable --now
@@ -147,6 +176,12 @@ rm -rf -- "$STATE" "${GATEWAY_STATES[@]}" "${APP_STATES[@]}" "$WIZARD_STATE" "$W
 rm -rf -- "$ANTIVIRUS_STATE" "${NAS_LOG_DIR:-/var/log/nas-os}" "$RUNTIME"
 rm -f -- "${RUNTIME%/*}/nas-os-antivirus.lock" "${RUNTIME%/*}/nas-os-cleanup.lock"
 echo "   launcher, gateway, applications, token and network disk passwords removed; the data disks are untouched"
+
+say "Configuration of the system"
+# Applied again over the original configuration, as the entry script does before the first
+# configuration. The wizard applies it once more before it installs the NAS, so a failure here
+# does not keep it from starting.
+bash "$CONFIGURE" || echo '   warning: the configuration of the system could not be applied again, the wizard applies it' >&2
 
 say "Wizard"
 systemctl daemon-reload

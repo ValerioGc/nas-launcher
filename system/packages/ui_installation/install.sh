@@ -142,7 +142,7 @@ if getent group nas-os-crypt >/dev/null; then
 else
   run groupadd --system nas-os-crypt
 fi
-run systemctl try-restart nas-os-base-firewall.service
+run systemctl try-reload-or-restart nas-os-base-firewall.service
 
 say "Binary"
 run install -m 0755 -o root -g root "$binary_source" "$BINARY_TARGET"

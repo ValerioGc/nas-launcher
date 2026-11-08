@@ -1027,6 +1027,23 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/settings/discovery/status': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Whether NAS Finder can reach the NAS, read from the machine without changing it */
+    get: operations['getSettingsDiscoveryStatus'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/settings/power': {
     parameters: {
       query?: never;
@@ -1594,6 +1611,15 @@ export interface components {
     Discovery: {
       enabled: boolean;
     };
+    /** @description What the machine shows of the discovery, read without privileges and changing nothing. */
+    DiscoveryStatus: {
+      /** Format: int32 */
+      port: number;
+      /** @description Whether a responder holds the port, `None` when the sockets cannot be read. */
+      listening?: boolean | null;
+      /** @description Whether the last change of the firewall went through, `None` outside a NAS. */
+      applied?: boolean | null;
+    };
     /** @description A volume or a disk as the disk manager lists it. */
     Disk: {
       id: string;
@@ -2009,12 +2035,13 @@ export interface components {
           encrypt: boolean;
           automatic?: boolean;
           password?: string | null;
+          current?: string | null;
           /** @enum {string} */
           op: 'format';
         }
       | {
           uuid: string;
-          password: string;
+          password?: string | null;
           /** @enum {string} */
           op: 'unlock';
         }
@@ -5278,6 +5305,44 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['Discovery'];
+        };
+      };
+      /** @description The request was refused */
+      '4XX': {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ApiError'];
+        };
+      };
+      /** @description The launcher or the machine could not answer */
+      '5XX': {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ApiError'];
+        };
+      };
+    };
+  };
+  getSettingsDiscoveryStatus: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['DiscoveryStatus'];
         };
       };
       /** @description The request was refused */

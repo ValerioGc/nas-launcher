@@ -780,7 +780,7 @@ export function useAppBridge() {
         openApp(message);
         break;
       case 'open-https':
-        openHttps(id);
+        await openHttps(id);
         break;
       case 'describe':
         post(id, {

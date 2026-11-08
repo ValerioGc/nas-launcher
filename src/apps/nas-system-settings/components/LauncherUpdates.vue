@@ -12,6 +12,7 @@ import CommonSpinner from '@/components/commons/CommonSpinner.vue';
 import CommonIcon from '@/components/commons/CommonIcon.vue';
 import successIcon from '@/assets/icons/status/success.svg';
 import infoIcon from '@/assets/icons/status/info.svg';
+import refreshIcon from '@/assets/icons/system/refresh.svg';
 import { failureMessage } from '@/utils/failureMessage';
 
 const { data, loading, error, load } = useResource<NasUpdates | null>('/launcher/updates', null);
@@ -54,16 +55,29 @@ async function check() {
   >
     <header class="settings_heading">
       <h2>{{ t('launcherUpdates') }}</h2>
-      <button
-        v-if="pending.length"
-        type="button"
-        class="primary"
-        :disabled="loading"
-        data-testid="launcher_update"
-        @click="updating = true"
-      >
-        {{ t('updateLauncher') }}
-      </button>
+      <!-- With updates found, the check is repeated from the icon next to the update. -->
+      <div v-if="pending.length" class="app_toolbar">
+        <button
+          type="button"
+          :disabled="loading || checking || !repository"
+          :aria-label="t('checkUpdates')"
+          :title="t('checkUpdates')"
+          data-testid="launcher_recheck"
+          @click="check"
+        >
+          <CommonSpinner v-if="checking" size="small" compact />
+          <CommonIcon v-else :src="refreshIcon" />
+        </button>
+        <button
+          type="button"
+          class="primary"
+          :disabled="loading || checking"
+          data-testid="launcher_update"
+          @click="updating = true"
+        >
+          {{ t('updateLauncher') }}
+        </button>
+      </div>
       <button
         v-else
         type="button"
