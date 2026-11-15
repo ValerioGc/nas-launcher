@@ -68,8 +68,7 @@ fn unit_of(id: &str) -> String {
 
 /// The drop-in the helper writes for an application.
 fn dropin_of(id: &str) -> PathBuf {
-    std::env::var_os("NAS_APP_DROPINS")
-        .map_or_else(|| PathBuf::from("/etc/systemd/system"), PathBuf::from)
+    utils::env_path("NAS_APP_DROPINS", "/etc/systemd/system")
         .join(format!("nas-app@{id}.service.d"))
         .join("grants.conf")
 }

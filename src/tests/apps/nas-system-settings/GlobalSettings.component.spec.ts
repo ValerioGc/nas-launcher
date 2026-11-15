@@ -25,7 +25,7 @@ describe('settings application', () => {
       'Rete',
       'Alimentazione',
       'Aggiornamenti',
-      'Ripristino e reset',
+      'Configurazione e ripristino',
     ]);
     for (const button of wrapper.findAll('.app_sections_nav button')) {
       expect(button.find('[data-testid="common_icon"]').exists()).toBe(true);

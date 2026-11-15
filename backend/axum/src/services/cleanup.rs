@@ -1,10 +1,6 @@
-//! Validated system cleanup operations exposed through `permissions.cleanup`.
-//!
-//! Requests select a fixed operation and numeric settings. The privileged executor
-//! uses predefined paths and commands in `nas-os-cleanup.service`. Preview requests
-//! measure usage without deleting files. Application caches use `services::caches`.
-//! Data disks, home directories, application state, quarantine, and backup rules
-//! are excluded from system cleanup.
+//! System cleanup behind `permissions.cleanup`, a fixed set of operations run by
+//! `nas-os-cleanup.service`. Data disks, homes, application state, quarantine and backup rules are
+//! never touched.
 
 pub mod executor;
 

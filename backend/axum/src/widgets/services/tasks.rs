@@ -8,19 +8,13 @@ use crate::{
 };
 use serde::{Deserialize, Serialize};
 use sqlx::SqlitePool;
-use std::path::PathBuf;
 
 const LIMIT: i64 = 30;
 
 const KEEP_FINISHED_MS: i64 = 24 * 60 * 60 * 1000;
 
 fn operation_log(name: &str) -> String {
-    std::env::var_os("NAS_LOG_DIR")
-        .map(PathBuf::from)
-        .unwrap_or_else(|| PathBuf::from("/var/log/nas-os"))
-        .join(name)
-        .display()
-        .to_string()
+    crate::utils::log_dir().join(name).display().to_string()
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, utoipa::ToSchema)]

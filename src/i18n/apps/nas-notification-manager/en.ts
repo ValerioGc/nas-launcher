@@ -33,7 +33,7 @@ export default {
   noticeValue_password: 'password',
   'noticeValue_backing-up': 'backup',
   noticeValue_installing: 'installation',
-  'noticeValue_installing-wizard': 'installation of the wizard',
+  'noticeValue_installing-wizard': 'installation of the setup wizard',
   'noticeValue_installing-gateway': 'installation of the gateway',
   'noticeValue_installing-launcher': 'installation of the launcher',
   noticeValue_general: 'general',

@@ -23,7 +23,7 @@ if [[ -f $CONNECTION ]]; then
   IFS= read -r port <"$CONNECTION" || fail 'cannot read the HTTPS port'
   [[ $port =~ ^[1-9][0-9]{0,4}$ ]] && ((port <= 65535)) || fail 'invalid HTTPS port'
   printf 'flush set inet nas_base nas_https\nadd element inet nas_base nas_https { %s }\n' "$port" | nft -f - ||
-    fail 'cannot update the HTTPS port: update the base firewall first'
+    fail 'cannot update the HTTPS port, update the base firewall first'
 fi
 if [[ ! -r $REQUEST ]]; then
   [[ -f $CONNECTION ]] && exit 0
@@ -48,7 +48,7 @@ done <"$REQUEST"
 
 if ((${#v4[@]} == 0 && ${#v6[@]} == 0)); then
   nft list table inet "$TABLE" >/dev/null 2>&1 && nft delete table inet "$TABLE"
-  printf 'access list empty: no restriction in place\n'
+  printf 'access list empty, no restriction in place\n'
   exit 0
 fi
 

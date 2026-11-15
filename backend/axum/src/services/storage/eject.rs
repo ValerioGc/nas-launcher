@@ -108,10 +108,7 @@ fn error_path() -> PathBuf {
 }
 
 fn log_path() -> PathBuf {
-    std::env::var_os("NAS_LOG_DIR")
-        .map(PathBuf::from)
-        .unwrap_or_else(|| PathBuf::from("/var/log/nas-os"))
-        .join("eject-storage.log")
+    utils::log_dir().join("eject-storage.log")
 }
 
 fn contains(block: &Device, name: &str) -> bool {

@@ -93,13 +93,11 @@ async function submit() {
       </label>
     </div>
 
-    <!-- Alert banners -->
     <AlertBanner v-if="failure" tone="error" compact>{{ failure }}</AlertBanner>
     <AlertBanner v-else-if="done" tone="success" compact>
       {{ t('accountUsernameChanged') }}
     </AlertBanner>
 
-    <!-- Submit button -->
     <div class="app_toolbar settings_actions">
       <button
         type="submit"

@@ -64,9 +64,8 @@ async function submit() {
         />
       </label>
 
-      <!-- New password field -->
       <label class="settings_field" for="account_new_password">
-        {{ t('accountNewPassword') }}
+        {{ t('passwordRecoveryNew') }}
         <CommonPasswordInput
           id="account_new_password"
           v-model="next"
@@ -79,9 +78,8 @@ async function submit() {
         <span class="muted">{{ t('fieldLength', { min: 8, max: 128 }) }}</span>
       </label>
 
-      <!-- Repeat new password field -->
       <label class="settings_field" for="account_repeat_password">
-        {{ t('accountRepeatPassword') }}
+        {{ t('passwordRecoveryRepeat') }}
         <CommonPasswordInput
           id="account_repeat_password"
           v-model="repeated"
@@ -93,7 +91,7 @@ async function submit() {
       </label>
     </div>
     <AlertBanner v-if="mismatch" tone="warning" compact>{{
-      t('accountPasswordMismatch')
+      t('passwordRecoveryMismatch')
     }}</AlertBanner>
     <AlertBanner v-if="failure" tone="error" compact>{{ failure }}</AlertBanner>
     <AlertBanner v-else-if="done" tone="success" compact>{{

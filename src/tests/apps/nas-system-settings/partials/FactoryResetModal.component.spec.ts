@@ -74,7 +74,9 @@ describe('FactoryResetModal', () => {
       body: '{}',
       headers: { 'X-NAS-Confirmation': 'c0de' },
     });
-    expect(byTestId('factory_reset_running')?.textContent).toContain('Ripristino in corso');
+    expect(byTestId('factory_reset_running')?.textContent).toContain(
+      'Ripristino di fabbrica in corso',
+    );
     expect(byTestId('common_modal_close')).toBeNull();
 
     await vi.advanceTimersByTimeAsync(2000);
@@ -85,6 +87,59 @@ describe('FactoryResetModal', () => {
     await flushPromises();
     expect(fetch).toHaveBeenCalledWith('/api/wizard', expect.anything());
     expect(assign).toHaveBeenCalledWith('/');
+    wrapper.unmount();
+  });
+
+  it('says when the reset unit refused to start, and can then be closed', async () => {
+    const assign = vi.fn();
+    vi.stubGlobal('location', { assign });
+    const state = { available: true, reason: null, running: false, failed: true };
+    const fetch = vi.fn((url: string) =>
+      url === '/api/system/reset'
+        ? Promise.resolve({ ok: true, json: () => Promise.resolve(state) })
+        : Promise.reject(new Error('down')),
+    );
+    vi.stubGlobal('fetch', fetch);
+    vi.mocked(request).mockResolvedValue({ ...state, failed: false });
+    const wrapper = mountModal();
+    await flushPromises();
+
+    await confirmWith('long enough');
+    expect(byTestId('factory_reset_running')).not.toBeNull();
+    await vi.advanceTimersByTimeAsync(2000);
+    await flushPromises();
+
+    expect(byTestId('factory_reset_refused')?.textContent).toContain('non è partito');
+    expect(byTestId('factory_reset_running')).toBeNull();
+    expect(byTestId('common_modal_close')).not.toBeNull();
+    expect(assign).not.toHaveBeenCalled();
+    byTestId('factory_reset_close')?.click();
+    await flushPromises();
+    expect(wrapper.emitted('update:modelValue')).toEqual([[false]]);
+    wrapper.unmount();
+  });
+
+  it('keeps waiting while the launcher does not answer or the reset goes on', async () => {
+    const state = { available: true, reason: null, running: true, failed: false };
+    vi.stubGlobal(
+      'fetch',
+      vi.fn((url: string) =>
+        url === '/api/system/reset'
+          ? Promise.resolve({ ok: true, json: () => Promise.resolve(state) })
+          : Promise.reject(new Error('down')),
+      ),
+    );
+    vi.mocked(request).mockResolvedValue(state);
+    const wrapper = mountModal();
+    await flushPromises();
+
+    await confirmWith('long enough');
+    await vi.advanceTimersByTimeAsync(4000);
+    await flushPromises();
+
+    expect(byTestId('factory_reset_running')).not.toBeNull();
+    expect(byTestId('factory_reset_refused')).toBeNull();
+    expect(byTestId('common_modal_close')).toBeNull();
     wrapper.unmount();
   });
 

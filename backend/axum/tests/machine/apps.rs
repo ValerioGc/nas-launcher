@@ -135,9 +135,26 @@ async fn stores_the_token_and_has_the_firewall_follow_the_allowed_addresses() {
     .await
     .expect("added");
     assert_eq!(rules.len(), 1);
-    assert!(access::allows(&db, "192.168.1.20".parse().expect("address")).await);
-    assert!(!access::allows(&db, "10.1.1.1".parse().expect("address")).await);
-    assert!(access::allows(&db, "127.0.0.1".parse().expect("address")).await);
+    let cached = access::AccessRules::default();
+    assert!(
+        cached
+            .allows(&db, "192.168.1.20".parse().expect("address"))
+            .await
+    );
+    assert!(
+        !cached
+            .allows(&db, "10.1.1.1".parse().expect("address"))
+            .await
+    );
+    assert!(
+        cached
+            .allows(&db, "127.0.0.1".parse().expect("address"))
+            .await
+    );
+    assert!(access::allowed(
+        &rules,
+        "192.168.1.20".parse().expect("address")
+    ));
     access::apply_saved(&db).await;
     access::record_failure(&db, Some("10.1.1.1".parse().expect("address")), "password").await;
     access::record_failure(&db, None, "username").await;

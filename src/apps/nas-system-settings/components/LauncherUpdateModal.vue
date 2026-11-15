@@ -36,7 +36,7 @@ const progress = computed(() =>
 
 const step = computed(() => {
   if (phase.value === 'restarting') {
-    return t('updateRestarting');
+    return t('restartInProgress');
   }
   const detail = task.value?.detail || 'downloading';
   const downloading = detail.match(/^downloading-(\w+)$/);

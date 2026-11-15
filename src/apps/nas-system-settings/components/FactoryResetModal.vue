@@ -23,16 +23,20 @@ const REMOVED = [
   'factoryResetSettings',
 ] as const;
 
-type Phase = 'confirm' | 'sending' | 'resetting';
+type Phase = 'confirm' | 'sending' | 'resetting' | 'refused';
 
 const phase = ref<Phase>('confirm');
 const password = ref('');
 const failure = ref('');
 
+const closable = computed(() => phase.value === 'confirm' || phase.value === 'refused');
 const shown = computed({
   get: () => open.value,
   set: (value: boolean) => {
-    if (phase.value === 'confirm') {
+    if (closable.value) {
+      if (!value) {
+        phase.value = 'confirm';
+      }
       open.value = value;
     }
   },
@@ -71,10 +75,27 @@ async function waitForWizard() {
   }
 }
 
+/**
+ * The reset unit refuses in its first checks while the launcher still answers. Once it goes on the
+ * launcher stops, so only an answer that says it failed counts.
+ */
+async function checkReset() {
+  try {
+    const answer = await fetch('/api/system/reset', { signal: AbortSignal.timeout(POLL_MS) });
+    const state: unknown = answer.ok ? await answer.json() : null;
+    if (typeof state === 'object' && state !== null && 'failed' in state && state.failed === true) {
+      phase.value = 'refused';
+    }
+  } catch {
+    // The launcher is stopping, or already gone.
+  }
+}
+
 usePolling(
   () => {
     if (phase.value === 'resetting') {
       waitForWizard();
+      checkReset();
     }
   },
   computed(() => POLL_MS),
@@ -83,12 +104,17 @@ usePolling(
 </script>
 
 <template>
-  <CommonModal
-    v-model="shown"
-    :title="t('factoryResetTitle')"
-    :hide-close-button="phase !== 'confirm'"
-  >
-    <div v-if="phase === 'resetting'" class="factory_reset_waiting" aria-live="polite">
+  <CommonModal v-model="shown" :title="t('factoryResetTitle')" :hide-close-button="!closable">
+    <AlertBanner
+      v-if="phase === 'refused'"
+      tone="error"
+      aria-live="polite"
+      data-testid="factory_reset_refused"
+    >
+      {{ t('factoryResetRefused') }}
+    </AlertBanner>
+
+    <div v-else-if="phase === 'resetting'" class="factory_reset_waiting" aria-live="polite">
       <CommonSpinner size="small" compact />
       <p data-testid="factory_reset_running">{{ t('factoryResetRunning') }}</p>
     </div>
@@ -132,7 +158,12 @@ usePolling(
       </AlertBanner>
     </form>
 
-    <template v-if="phase !== 'resetting'" #footer>
+    <template v-if="phase === 'refused'" #footer>
+      <button type="button" data-testid="factory_reset_close" @click="shown = false">
+        {{ t('close') }}
+      </button>
+    </template>
+    <template v-else-if="phase !== 'resetting'" #footer>
       <button type="button" :disabled="phase === 'sending'" @click="open = false">
         {{ t('cancel') }}
       </button>

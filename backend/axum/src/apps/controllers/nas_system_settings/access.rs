@@ -1,7 +1,7 @@
 //! Access rules and refused sign-ins.
 
 use crate::{
-    apps::services::nas_system_settings::access::{self, NewRule, Rule},
+    apps::services::nas_system_settings::access::{self, AccessRules, NewRule, Rule},
     http::{
         error::ApiFailure,
         extract::{Peer, ValidJson},
@@ -32,18 +32,24 @@ async fn list(State(db): State<SqlitePool>) -> Result<Json<Vec<Rule>>, ApiFailur
 )]
 async fn add(
     State(db): State<SqlitePool>,
+    State(rules): State<AccessRules>,
     ValidJson(input): ValidJson<NewRule>,
 ) -> Result<Json<Vec<Rule>>, ApiFailure> {
-    access::add(&db, input).await.map(Json)
+    let added = access::add(&db, input).await;
+    rules.changed();
+    added.map(Json)
 }
 
 /// Removes an allowed address and answers with the whole list
 #[utoipa::path(delete, path = "/access/rules/{id}", responses((status = OK, body = Vec<Rule>)))]
 async fn remove(
     State(db): State<SqlitePool>,
+    State(rules): State<AccessRules>,
     Path(id): Path<String>,
 ) -> Result<Json<Vec<Rule>>, ApiFailure> {
-    access::remove(&db, &id).await.map(Json)
+    let removed = access::remove(&db, &id).await;
+    rules.changed();
+    removed.map(Json)
 }
 
 #[derive(Deserialize, ToSchema)]

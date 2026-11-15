@@ -18,8 +18,8 @@ it('offers the export and the import, then the factory reset', async () => {
   const sections = wrapper
     .findAll('section[aria-label]')
     .map((section) => section.attributes('aria-label'));
-  expect(sections).toEqual(['Esporta e importa la configurazione', 'Ripristino']);
-  expect(wrapper.get('h1').text()).toBe('Ripristino e reset');
+  expect(sections).toEqual(['Esporta e importa la configurazione', 'Ripristino di fabbrica']);
+  expect(wrapper.get('h1').text()).toBe('Configurazione e ripristino');
   expect(
     wrapper.get('[data-testid="factory_reset_button"]').attributes('disabled'),
   ).toBeUndefined();

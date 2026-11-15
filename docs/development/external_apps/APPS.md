@@ -225,9 +225,10 @@ What that asks of you:
 - **Answer the launcher only.** Every application shares the group of the folder of the sockets,
   so the file lets any of them connect: check the user at the other end of each connection
   (`peer_cred`) and keep it only when it is root, the owner of the folder of the sockets (the
-  launcher) or your own user. The applications of nas-os do it in `launcher_only.rs`, a wrapper
-  of the `UnixListener` handed to `axum::serve`; without it another application could reach your
-  API with headers it made up.
+  launcher) or your own user. The applications of nas-os do it with `LauncherOnly` of the crate
+  `nas-app-core`, a wrapper of the `UnixListener` handed to `axum::serve`, which also gives
+  `prepare_socket` for a stale socket file and `serve_static` for the built interface. Without
+  the check another application could reach your API with headers it made up.
 - **Keep the path short.** A unix socket path is a fixed field of 108 bytes in the kernel: worth
   knowing when you point `NAS_APP_SOCKETS` at a development directory.
 - **Keep to your frame: copy `src/services/frameGuard.ts` and call `guardFrame()` first in your

@@ -1,5 +1,5 @@
-// Shell texts: header, search, desktop, menu, windows and widgets, with the entries shared by
-// several applications (save, cancel, loading).
+// Texts of the shell (header, search, desktop, menu, windows and widgets) and the entries shared
+// by several applications, such as save, cancel, loading and the password recovery.
 export default {
   systemTerminal: 'Terminal',
   logViewer: 'Log viewer',
@@ -145,7 +145,7 @@ export default {
   task_pending: 'Waiting',
   unconfiguredTitle: 'NAS not configured',
   unconfiguredIntro:
-    'The NAS is not configured yet. Once the configuration with the wizard ends, the page updates automatically.',
+    'The NAS is not configured yet. Once the setup wizard ends, the page updates automatically.',
   preparingTitle: 'Preparing the NAS',
   preparingIntro:
     'Completion of the configuration and installation of the system applications. This can take a few minutes.',
@@ -170,4 +170,6 @@ export default {
   passwordRecoveryRefused: 'Wrong or expired code.',
   passwordRecoveryMismatch: 'The two passwords do not match.',
   passwordRecoveryThrottled: 'Too many attempts. Retry in a few minutes.',
+  tokenConfigured: 'Token configured',
+  tokenNotConfigured: 'Token not configured',
 } as const;

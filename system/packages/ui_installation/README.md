@@ -355,6 +355,7 @@ sudo systemctl daemon-reload && sudo systemctl start nas-os nas-os-gateway
 ```bash
 sudo /usr/local/lib/nas-os/uninstall.sh            # Services, binary, and permissions; preserve data
 sudo /usr/local/lib/nas-os/uninstall.sh --purge    # Also remove database, application data, and user after confirmation
+sudo /usr/local/lib/nas-os/uninstall.sh --purge --yes  # The same, without asking
 ```
 
 Full NAS removal, including token, gateway, launcher, base firewall, and NAS-added Debian packages,

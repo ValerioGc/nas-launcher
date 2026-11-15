@@ -14,7 +14,7 @@ export function passwordFailure(error: unknown) {
     return t('tooManyPasswordAttempts');
   }
   if (error instanceof CodeRefused) {
-    return t('accountCodeRefused');
+    return t('passwordRecoveryRefused');
   }
   if (error instanceof MailNotSent) {
     return t('accountMailNotSent');

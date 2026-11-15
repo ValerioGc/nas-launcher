@@ -85,7 +85,7 @@ binary_source=""
 for argument in "$@"; do
   case $argument in
     --dry-run) dry_run=true ;;
-    -*) printf 'unknown option: %s\n' "$argument" >&2 && exit 2 ;;
+    -*) printf 'unknown option %s\n' "$argument" >&2 && exit 2 ;;
     *) binary_source=$argument ;;
   esac
 done
@@ -105,7 +105,7 @@ run() {
 }
 
 if ! $dry_run; then
-  [[ $EUID -eq 0 ]] || fail "it has to run as root: sudo $0"
+  [[ $EUID -eq 0 ]] || fail "it has to run as root, with sudo $0"
 fi
 [[ -f $binary_source ]] || fail "binary not found at $binary_source
   build it first:  cargo build --release --manifest-path backend/Cargo.toml
@@ -117,9 +117,9 @@ say "Required system packages"
 if command -v parted >/dev/null && command -v mkfs.ext4 >/dev/null; then
   echo "   parted and e2fsprogs present"
 elif $dry_run; then
-  echo "   parted and e2fsprogs missing: the wizard installs them before this script"
+  echo "   parted and e2fsprogs missing, the wizard installs them before this script"
 else
-  fail "parted and e2fsprogs are required: run the wizard, which configures the system first"
+  fail "parted and e2fsprogs are required. Run the wizard, which configures the system first"
 fi
 
 run install -d -m 0755 -o root -g root "$TOOLS_DIR"
@@ -161,7 +161,7 @@ if [[ -d $here/ui ]]; then
   run rm -rf -- "$UI_TARGET.old"
   echo "   $here/ui -> $UI_TARGET"
 else
-  echo "   no ui/ next to this script: the interface is left as it is"
+  echo "   no ui/ next to this script, the interface is left as it is"
 fi
 
 say "Power, network, firewall, update, application and package permissions (polkit)"
@@ -200,10 +200,10 @@ if [[ -d /etc/polkit-1/rules.d ]]; then
   # The wizard creates the user of the terminal now, as root: the launcher no longer asks for it.
   run rm -f /etc/polkit-1/rules.d/80-nas-os-terminal.rules
   run systemctl restart polkit
-  echo "   rules installed: power, network, access list, updates, applications, system packages,"
-  echo "   processes, storage, hostname, the reset and the release token allowed to $SERVICE_USER"
+  echo "   rules installed, $SERVICE_USER may use power, network, access list, updates, applications,"
+  echo "   system packages, processes, storage, hostname, the reset and the release token"
 else
-  echo "   polkit is not here (the wizard installs it first): power, network, the access list,"
+  echo "   polkit is not here (the wizard installs it first), so power, network, the access list,"
   echo "   updates, starting an application, system packages, processes, storage, hostname and the"
   echo "   release token will stay refused"
 fi
@@ -222,7 +222,7 @@ run install -d -m 0755 -o root -g root "$(dirname "$WAKE_SCRIPT_TARGET")"
 run install -m 0755 -o root -g root "$here/helpers/wake-alarm.sh" "$WAKE_SCRIPT_TARGET"
 run install -m 0644 -o root -g root "$here/files/nas-os-wake.service" "$WAKE_UNIT_TARGET"
 if [[ -e /sys/class/rtc/rtc0/wakealarm ]]; then
-  echo "   unit installed: the scheduled power-on will use /sys/class/rtc/rtc0/wakealarm"
+  echo "   unit installed, the scheduled power-on will use /sys/class/rtc/rtc0/wakealarm"
 else
   echo "   warning: this machine does not expose /sys/class/rtc/rtc0/wakealarm"
   echo "   the scheduled shutdown will work, the power-on will not"
@@ -232,7 +232,7 @@ say "Allowed addresses"
 run install -m 0755 -o root -g root "$here/helpers/apply-access-rules.sh" "$FIREWALL_SCRIPT_TARGET"
 run install -m 0644 -o root -g root "$here/files/nas-os-firewall.service" "$FIREWALL_UNIT_TARGET"
 if command -v nft >/dev/null; then
-  echo "   unit installed: the saved list will become an nftables set"
+  echo "   unit installed, the saved list will become an nftables set"
 else
   echo "   warning: nft is not installed (the wizard installs it first)"
   echo "   the list will hold inside the launcher only, without filtering the rest of the NAS"
@@ -241,7 +241,7 @@ fi
 say "Application packages"
 run install -d -m 0755 -o root -g root "$CONFIG_DIR"
 if [[ -f $CATALOGUE_TARGET ]]; then
-  echo "   catalogue already there: $CATALOGUE_TARGET (left as it is)"
+  echo "   catalogue already there in $CATALOGUE_TARGET, left as it is"
 else
   run install -m 0644 -o root -g root "$here/files/catalogue.json" "$CATALOGUE_TARGET"
   echo "   starter catalogue written to $CATALOGUE_TARGET"
@@ -259,7 +259,7 @@ if [[ -d $here/apps ]]; then
     id=${id%.tar.gz}
     [[ $id =~ ^[a-zA-Z0-9_-]{1,64}$ ]] || fail "invalid bundled application id: $id"
     if [[ -d $APPS_DIR/$id ]]; then
-      echo "   $id already installed: left as it is"
+      echo "   $id already installed, left as it is"
       continue
     fi
     staging="$APPS_DIR/.$id.bundled"
@@ -328,24 +328,24 @@ run install -m 0644 -o root -g root "$here/files/nas-os-storage-crypt@.service" 
 run install -m 0644 -o root -g root "$here/files/90-nas-os-storage-udev.rules" \
   "$STORAGE_UDEV_TARGET"
 run udevadm control --reload
-echo "   template installed: an application runs as nas-app@<id>.service"
+echo "   template installed, an application runs as nas-app@<id>.service"
 
 say "System packages"
 run install -m 0755 -o root -g root "$here/helpers/apt-updates.sh" "$APT_SCRIPT_TARGET"
 run install -m 0644 -o root -g root "$here/files/nas-os-apt@.service" "$APT_UNIT_TARGET"
-echo "   template installed: the index and the upgrades run as nas-os-apt@<job>.service"
+echo "   template installed, the index and the upgrades run as nas-os-apt@<job>.service"
 
 say "Processes"
 run install -m 0755 -o root -g root "$here/helpers/act-on-process.sh" "$PROCESS_SCRIPT_TARGET"
 run install -m 0644 -o root -g root "$here/files/nas-os-process@.service" "$PROCESS_UNIT_TARGET"
-echo "   template installed: each request runs as nas-os-process@<action>.service"
+echo "   template installed, each request runs as nas-os-process@<action>.service"
 
 say "Terminal"
 run install -m 0755 -o root -g root "$here/helpers/terminal-user.sh" "$TERMINAL_USER_SCRIPT_TARGET"
 run rm -f /etc/systemd/system/nas-os-terminal-user.service
 run install -m 0644 -o root -g root "$here/files/nas-os-terminal.socket" "$TERMINAL_SOCKET_TARGET"
 run install -m 0644 -o root -g root "$here/files/nas-os-terminal@.service" "$TERMINAL_UNIT_TARGET"
-echo "   units installed: each shell runs as the user of the terminal, never as $SERVICE_USER"
+echo "   units installed, each shell runs as the user of the terminal, never as $SERVICE_USER"
 
 say "Tools on the machine"
 run install -m 0755 -o root -g root "$here/scripts/check.sh" "$TOOLS_DIR/check.sh"
@@ -355,7 +355,7 @@ echo "   $TOOLS_DIR/check.sh, uninstall.sh and configure.sh"
 say "Settings"
 run install -d -m 0755 -o root -g root "$CONFIG_DIR"
 run install -m 0644 -o root -g root "$here/files/nas-os.env" "$SETTINGS_TARGET"
-echo "   settings written to $SETTINGS_TARGET (local changes: $CONFIG_DIR/nas-os.local.env)"
+echo "   settings written to $SETTINGS_TARGET, local changes go in $CONFIG_DIR/nas-os.local.env"
 
 say "Systemd unit"
 run install -m 0644 -o root -g root "$here/files/nas-os.service" "$UNIT_TARGET"
@@ -379,11 +379,11 @@ cat <<EOF
    sockets:    $SOCKETS_DIR  (created by systemd when the service starts)
    app units:  nas-app@<id>.service  (systemctl status 'nas-app@*')
 
-   An installed application is opened at /apps/<id>/, on the address this machine is reached at:
-   nothing to configure on the network.
+   An installed application is opened at /apps/<id>/, on the address this machine is reached at.
+   Nothing has to be configured on the network.
 
-   The launcher updates itself from NAS_LAUNCHER_REPOSITORY in the unit. For a private repository
-   it needs a token: the wizard stores it, encrypted; later sudo $TOOLS_DIR/configure.sh does.
+   The launcher updates itself from NAS_LAUNCHER_REPOSITORY in the unit. A private repository needs
+   a token, which the wizard stores encrypted and sudo $TOOLS_DIR/configure.sh replaces later.
 
    The scheduled power-on also depends on the BIOS: "wake on RTC" has to be enabled.
 EOF

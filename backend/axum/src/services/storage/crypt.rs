@@ -1,11 +1,6 @@
-//! LUKS2 operations for data disks through the privileged storage socket.
-//!
-//! The launcher sends validated requests to `nas-os-storage-crypt.socket`, restricted
-//! to the `nas-os-crypt` group. Secrets remain in memory or root-only runtime files.
-//! LUKS slots 0, 1, and 2 store the password, automatic key, and recovery key.
-//! Automatic keys use systemd encrypted credentials named `nas-os.luks-<uuid>`.
-//! Reconciliation opens eligible volumes at boot while respecting manual closures.
-//! Operations require `NAS_ENCRYPTION_MODE=real`.
+//! LUKS2 operations on data disks, sent as validated requests to the root socket
+//! `nas-os-storage-crypt.socket`. Requires `NAS_ENCRYPTION_MODE=real`. DEVELOPMENT.md describes the
+//! key slots and the reconciliation at boot.
 
 pub mod root;
 
@@ -244,10 +239,7 @@ fn validate_format(
 }
 
 fn socket_path() -> PathBuf {
-    std::env::var_os("NAS_STORAGE_CRYPT_SOCKET").map_or_else(
-        || PathBuf::from("/run/nas-os-storage-crypt.sock"),
-        PathBuf::from,
-    )
+    utils::env_path("NAS_STORAGE_CRYPT_SOCKET", "/run/nas-os-storage-crypt.sock")
 }
 
 /// Operation timeout covering formatting, unmounting, and header backup work.

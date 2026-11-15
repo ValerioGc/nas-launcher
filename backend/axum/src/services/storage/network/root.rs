@@ -20,9 +20,7 @@ use std::{
 const MOUNT_WITHIN: &str = "20";
 
 fn log_path() -> PathBuf {
-    std::env::var_os("NAS_LOG_DIR")
-        .map_or_else(|| PathBuf::from("/var/log/nas-os"), PathBuf::from)
-        .join("network-disks.log")
+    crate::utils::log_dir().join("network-disks.log")
 }
 
 fn credential_name(id: &str) -> String {

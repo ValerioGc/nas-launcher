@@ -102,17 +102,18 @@ async fn running_jobs() -> Vec<String> {
             unit.to_owned()
         }
     });
-    let command = Command::new("systemctl")
-        .args(["list-units", "--plain", "--no-legend", "--all"])
-        .arg("--state=activating,active,deactivating,reloading")
-        .args(&patterns)
-        .output();
-    match tokio::time::timeout(COMMAND_TIMEOUT, command).await {
-        Ok(Ok(output)) if output.status.success() => {
-            jobs_in(&String::from_utf8_lossy(&output.stdout))
-        }
-        _ => Vec::new(),
-    }
+    let mut listing = vec![
+        "list-units",
+        "--plain",
+        "--no-legend",
+        "--all",
+        "--state=activating,active,deactivating,reloading",
+    ];
+    listing.extend(patterns.iter().map(String::as_str));
+    utils::systemctl_output(&listing, COMMAND_TIMEOUT)
+        .await
+        .map(|listed| jobs_in(&listed))
+        .unwrap_or_default()
 }
 
 /// Application operations interrupted by shutdown and privileged jobs that block it.

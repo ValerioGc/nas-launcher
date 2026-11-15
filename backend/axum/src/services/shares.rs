@@ -1,10 +1,5 @@
-//! Application folder shares served through Samba.
-//!
-//! Applications request `permissions.shares` and data-disk access, then submit their
-//! complete share list through the application socket. The launcher validates and
-//! persists requests in `smb-shares/<id>`. A privileged helper revalidates them,
-//! configures Samba, and opens TCP 445 locally while shares are active.
-//! The gateway supplies account credentials directly to Samba for protected shares.
+//! The folder shares the applications ask for, validated here and applied by the root helper that
+//! configures Samba. DEVELOPMENT.md describes the flow.
 
 use crate::{
     http::error::ApiFailure,
@@ -221,8 +216,7 @@ pub async fn declare(id: &str, shares: &[Share]) -> Result<(), ApiFailure> {
 
 /// Whether Samba is on the NAS, and who signs in to a protected share.
 pub async fn sharing() -> Sharing {
-    let samba = std::env::var_os("NAS_SAMBA_SMBD")
-        .map_or_else(|| PathBuf::from("/usr/sbin/smbd"), PathBuf::from);
+    let samba = utils::env_path("NAS_SAMBA_SMBD", "/usr/sbin/smbd");
     Sharing {
         available: tokio::fs::try_exists(&samba).await.unwrap_or(false),
         user: storage::account_user().await.ok().flatten(),

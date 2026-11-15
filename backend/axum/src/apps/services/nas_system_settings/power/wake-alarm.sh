@@ -15,7 +15,7 @@ fail() {
 }
 
 [[ -r $REQUEST ]] || fail "no request in $REQUEST"
-[[ -w $RTC ]] || fail "$RTC is not writable: this machine does not expose the clock alarm"
+[[ -w $RTC ]] || fail "$RTC is not writable, this machine does not expose the clock alarm"
 
 at=$(tr -dc '0-9' <"$REQUEST")
 [[ -n $at ]] || fail "unreadable request in $REQUEST"

@@ -100,7 +100,6 @@ usePolling(
           <p v-if="task.detail" class="muted task_detail">{{ task.detail }}</p>
 
           <div class="task_progress">
-            <!-- Progress bar for active tasks -->
             <ProgressBar v-if="isActive(task)" :value="task.progress" :label="task.name" />
 
             <div class="app_toolbar task_actions">

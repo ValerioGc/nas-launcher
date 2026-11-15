@@ -1080,6 +1080,7 @@ describe('factory-reset.sh', () => {
       nftFailure?: boolean;
       pending?: boolean;
       configureFailure?: boolean;
+      broken?: string;
     } = {},
   ) {
     const root = join(temp.path, 'machine');
@@ -1168,7 +1169,7 @@ describe('factory-reset.sh', () => {
       execFileSync('tar', ['-cf', path('var/lib/nas-os/wizard-update.tar'), '-C', release, '.']);
     }
     for (const name of ['systemctl', 'userdel', 'pkill', 'udevadm']) {
-      fakeCommand(temp.path, name, log);
+      fakeCommand(temp.path, name, name === options.broken ? `${log}\nexit 1` : log);
     }
     const passwd =
       options.terminal ?? 'valerio:x:1001:1001:nas-os terminal:/home/valerio:/bin/bash';
@@ -1262,6 +1263,13 @@ describe('factory-reset.sh', () => {
     expect(result.code).toBe(0);
     expect(calls).toContain('install.sh \n');
     expect(calls.trim().split('\n').at(-1)).toBe('systemctl is-active --quiet nas-wizard.service');
+  });
+
+  it('says in the journal at which step a reset stopped', () => {
+    const { result } = machine({ broken: 'udevadm' });
+
+    expect(result.code).not.toBe(0);
+    expect(result.stderr).toContain('error: the reset stopped at "Launcher"');
   });
 
   it('removes nothing while an update waits for its check after the restart', () => {
@@ -1881,7 +1889,7 @@ describe('apply-smb-shares.sh', () => {
     });
 
     expect(result.code).toBe(0);
-    expect(result.stdout).toContain('is on a network disk: Rete is not shared');
+    expect(result.stdout).toContain('is on a network disk, Rete is not shared');
     expect(result.conf).not.toContain('[Rete]');
     expect(result.conf).toContain('[Altro]');
   });

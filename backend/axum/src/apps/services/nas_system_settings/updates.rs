@@ -93,7 +93,7 @@ impl Component {
                 "/usr/local/lib/nas-wizard/wizard/bin/nas-wizard",
             ),
         };
-        Some(std::env::var_os(variable).map_or_else(|| PathBuf::from(default), PathBuf::from))
+        Some(utils::env_path(variable, default))
     }
 
     /// Installed component state with an optional known version.

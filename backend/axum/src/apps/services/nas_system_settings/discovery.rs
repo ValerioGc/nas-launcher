@@ -77,15 +77,13 @@ pub fn holds_port(table: &str, port: u16) -> bool {
 
 /// Reads the outcome systemd kept of the last run of the helper, `success` when it went through.
 async fn last_result() -> Option<bool> {
-    let command = tokio::process::Command::new("systemctl")
-        .args(["show", UNIT, "--property=Result", "--value"])
-        .output();
-    match tokio::time::timeout(STATUS_TIMEOUT, command).await {
-        Ok(Ok(output)) if output.status.success() => {
-            Some(String::from_utf8_lossy(&output.stdout).trim() == "success")
-        }
-        _ => None,
-    }
+    let result = utils::systemctl_output(
+        &["show", UNIT, "--property=Result", "--value"],
+        STATUS_TIMEOUT,
+    )
+    .await
+    .ok()?;
+    Some(result.trim() == "success")
 }
 
 pub async fn load(db: &SqlitePool) -> Result<Discovery, ApiFailure> {

@@ -24,9 +24,9 @@ export default {
   macAddress: 'Indirizzo MAC',
   linkSpeed: 'Velocità',
   updates: 'Aggiornamenti',
-  recovery: 'Ripristino e reset',
+  recovery: 'Configurazione e ripristino',
   recoveryNote:
-    'Esportazione e importazione della configurazione del NAS e ripristino allo stato della prima installazione.',
+    'Esportazione e importazione della configurazione del NAS e ripristino di fabbrica allo stato della prima installazione.',
   configTransfer: 'Esporta e importa la configurazione',
   configTransferNote:
     'Le impostazioni del NAS e delle applicazioni selezionate vengono salvate in un file, cifrato se protetto da password, da importare in un secondo momento. Nome del NAS, rete, account e token restano esclusi.',
@@ -60,15 +60,15 @@ export default {
   filePasswordImportNote: 'File cifrato. È richiesta la password scelta durante l’esportazione.',
   configPasswordNote: 'Richiesta per autorizzare l’operazione.',
   accountPassword: 'Password dell’account',
-  factoryReset: 'Ripristino',
+  factoryReset: 'Ripristino di fabbrica',
   factoryResetNote:
     'Ripristina nome e configurazione di rete originali, rimuove le impostazioni del NAS e riavvia la configurazione guidata. I dischi dati e i relativi file restano invariati.',
   factoryResetAction: 'Ripristina il NAS',
   factoryReset_disabled: 'Ripristino non disponibile in questa installazione.',
-  factoryReset_noWizard: 'Ripristino non disponibile, il wizard non è installato.',
+  factoryReset_noWizard: 'Ripristino non disponibile, la configurazione guidata non è installata.',
   factoryReset_noOriginalState:
-    'Ripristino non disponibile: questa installazione non ha una copia della configurazione originale del sistema.',
-  factoryResetTitle: 'Ripristinare il NAS?',
+    'Ripristino non disponibile, questa installazione non ha una copia della configurazione originale del sistema.',
+  factoryResetTitle: 'Ripristinare il NAS alle impostazioni di fabbrica?',
   factoryResetIntro:
     'Launcher e gateway tornano allo stato della prima installazione e la configurazione guidata si avvia di nuovo.',
   factoryResetRemoves: 'Dati eliminati definitivamente',
@@ -79,11 +79,13 @@ export default {
     'Impostazioni del launcher, catalogo delle applicazioni e token delle release',
   factoryResetKeepsTitle: 'Dati conservati',
   factoryResetKeeps:
-    'I dischi dati e i relativi file restano invariati. Al termine il wizard richiede di nuovo account, tema, rete e token e installa le versioni più recenti.',
+    'I dischi dati e i relativi file restano invariati. Al termine la configurazione guidata richiede di nuovo account, tema, rete e token e installa le versioni più recenti.',
   factoryResetPasswordNote: 'Richiesta per confermare il ripristino.',
   factoryResetConfirm: 'Ripristina',
   factoryResetRunning:
-    'Ripristino in corso. Vengono ripristinati nome e configurazione di rete originali. Se la pagina si disconnette, riapri la configurazione guidata all’indirizzo ripristinato.',
+    'Ripristino di fabbrica in corso. Tornano il nome e la rete originali. Se la pagina si disconnette, riapri la configurazione guidata all’indirizzo di prima.',
+  factoryResetRefused:
+    'Il ripristino di fabbrica non è partito e nessun dato è stato rimosso. Il motivo è nel journal dell’unità nas-os-reset.service.',
   wrongAccountPassword: 'La password non è corretta.',
   tooManyPasswordAttempts: 'Troppi tentativi non riusciti. Riprovare tra qualche minuto.',
   gradient: 'Gradiente',
@@ -132,7 +134,7 @@ export default {
   launcherUpdates: 'Aggiornamenti del NAS',
   systemUpdates: 'Aggiornamenti di sistema',
   launcherUpdatesDescription:
-    'Launcher, gateway e wizard vengono controllati e aggiornati insieme.',
+    'Launcher, gateway e configurazione guidata vengono controllati e aggiornati insieme.',
   nasComponent_launcher: 'Launcher e interfaccia',
   nasComponent_gateway: 'Gateway',
   nasComponent_wizard: 'Wizard',
@@ -179,9 +181,7 @@ export default {
   topography: 'Curve di livello',
   mesh: 'Esagoni',
   launcherToken: 'Token repository',
-  launcherTokenSet: 'Token configurato',
   updatesIntro: 'Versioni disponibili per i componenti del NAS e per i pacchetti di sistema.',
-  launcherTokenMissing: 'Token non configurato',
   launcherNoRepository:
     'Nessun repository configurato per il launcher, aggiornamento non disponibile.',
   disconnectWifi: 'Disconnetti il Wi-Fi',
@@ -205,8 +205,6 @@ export default {
   updateStep_downloadingComponent: 'Scaricamento e verifica di {component} in corso',
   updateStep_verifying: 'Verifica dell’integrità del pacchetto in corso',
   updateStep_installing: 'Copia di sicurezza e installazione in corso',
-  updateRestarting:
-    'Riavvio del NAS in corso. La pagina si ricarica automaticamente quando il NAS torna raggiungibile.',
   launcherRolledBack:
     'Aggiornamento non riuscito e annullato. È attiva la versione precedente, il motivo è indicato nelle notifiche.',
   account: 'Account',
@@ -222,15 +220,11 @@ export default {
   accountCurrentPassword: 'Password attuale',
   accountUsernameChanged: 'Nome utente cambiato.',
   accountPasswordTitle: 'Password',
-  accountNewPassword: 'Nuova password',
-  accountRepeatPassword: 'Ripeti la nuova password',
   accountPasswordChanged: 'Password cambiata. Le altre sessioni sono state chiuse.',
-  accountPasswordMismatch: 'Le due password non coincidono.',
   accountEmail: 'Email di recupero',
   accountEmailNote:
     'Con il recupero attivo, l’indirizzo riceve il codice per reimpostare la password dalla pagina di accesso. L’indirizzo è valido solo dopo la verifica.',
   accountRecoverySwitch: 'Recupero della password via email',
-  accountRecoverySave: 'Salva',
   accountRecoveryOn:
     'Recupero via email attivo. Con un indirizzo verificato, la pagina di accesso consente di reimpostare la password.',
   accountRecoveryOff: 'Recupero via email disattivato. I codici già inviati non sono più validi.',
@@ -243,14 +237,11 @@ export default {
   accountOpenMail: 'Configura l’app Email',
   accountInstallMail: 'Apri il gestore applicazioni',
   accountNewEmail: 'Indirizzo email',
-  accountSendCode: 'Invia codice',
   accountCodeSent: 'Codice inviato a {email}, valido 15 minuti.',
-  accountCode: 'Codice',
   accountVerify: 'Verifica',
   accountEmailVerified: 'Indirizzo verificato e utilizzabile per il recupero della password.',
   accountRemoveEmail: 'Rimuovi indirizzo',
   accountEmailRemoved: 'Indirizzo di recupero rimosso.',
-  accountCodeRefused: 'Codice errato o scaduto.',
   accountMailNotSent:
     'Email con il codice non inviata. Verificare il server di posta nell’app Email.',
 } as const;

@@ -6643,8 +6643,8 @@
       },
       "ResetState": {
         "type": "object",
-        "description": "Whether the NAS can be reset here, and why not when it cannot.",
-        "required": ["available"],
+        "description": "Whether the NAS can be reset here, why not when it cannot, and how a requested reset goes.",
+        "required": ["available", "running", "failed"],
         "properties": {
           "available": {
             "type": "boolean"
@@ -6658,6 +6658,14 @@
                 "type": "null"
               }
             ]
+          },
+          "running": {
+            "type": "boolean",
+            "description": "The reset unit is running."
+          },
+          "failed": {
+            "type": "boolean",
+            "description": "The reset this launcher started stopped before it removed anything, the journal of the\nunit says why."
           }
         }
       },

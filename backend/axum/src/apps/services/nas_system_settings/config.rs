@@ -1,10 +1,5 @@
-//! Configuration export and import for launcher and application settings.
-//!
-//! Exports include supported preferences, access rules, schedules, widget refresh,
-//! shortcuts, and selected application settings. Network settings, the NAS name,
-//! account credentials, and release tokens are excluded. Encryption is handled
-//! by the browser using a separate file password. Both operations require gateway
-//! confirmation of the account password.
+//! Export and import of the launcher and application settings, both confirmed by the password of
+//! the account. Network, NAS name, account and tokens stay out, DEVELOPMENT.md lists the rest.
 
 use super::{
     access, power::schedule, Access, Background, DesktopIconSize, General, Language, Power, Theme,

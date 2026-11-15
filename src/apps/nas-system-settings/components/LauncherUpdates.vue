@@ -115,12 +115,11 @@ async function check() {
       <span class="muted">{{ t('launcherToken') }}</span>
       <CommonIcon
         :src="data.tokenConfigured ? successIcon : infoIcon"
-        :label="t(data.tokenConfigured ? 'launcherTokenSet' : 'launcherTokenMissing')"
+        :label="t(data.tokenConfigured ? 'tokenConfigured' : 'tokenNotConfigured')"
         size="small"
       />
     </p>
 
-    <!-- Status messages for loading and errors -->
     <SettingsStatus :loading="loading" :error="error || checkError" />
 
     <p v-if="data && !repository" class="muted" data-testid="launcher_no_source">

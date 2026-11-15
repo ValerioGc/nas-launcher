@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 #
-# Removes the launcher from the machine. The database in /var/lib/nas-os is not
-# deleted unless --purge asks for it, and even then a confirmation is required.
+# Removes the launcher from the machine. The database in /var/lib/nas-os stays unless --purge asks
+# for it. --purge asks to type 'delete' first, --yes next to it skips the question.
 #
-#   sudo scripts/uninstall.sh [--purge]
+#   sudo scripts/uninstall.sh [--purge [--yes]]
 
 set -euo pipefail
 
@@ -13,15 +13,25 @@ readonly STATE_DIR=/var/lib/nas-os
 readonly RESTORE=${NAS_CONFIGURATION_HELPER:-/usr/local/lib/nas-wizard/packages/os_configuration/scripts/uninstall.sh}
 terminal_user=$(sed -n 's/^User=//p' /etc/systemd/system/nas-os-terminal@.service.d/user.conf 2>/dev/null | tail -n 1) || terminal_user=''
 purge=false
-[[ ${1:-} == --purge ]] && purge=true
+confirmed=false
+for argument in "$@"; do
+  case $argument in
+    --purge) purge=true ;;
+    --yes) confirmed=true ;;
+    *) printf 'error: unknown option %s\n' "$argument" >&2 && exit 2 ;;
+  esac
+done
 
-say() { printf '\n== %s\n' "$1"; }
+say() {
+  step=$1
+  printf '\n== %s\n' "$1"
+}
 fail() {
   printf 'error: %s\n' "$1" >&2
   exit 1
 }
 
-[[ $EUID -eq 0 ]] || fail "it has to run as root: sudo $0 ${1:-}"
+[[ $EUID -eq 0 ]] || fail "it has to run as root, with sudo $0 $*"
 [[ -x $RESTORE ]] || fail 'the system restoration helper is missing'
 "$RESTORE" --check
 
@@ -32,9 +42,14 @@ stop_unit() {
   if [[ $load != not-found ]]; then systemctl "$@" "$unit"; fi
 }
 
+# Every step can be repeated, so a removal that stopped halfway is finished by running it again.
+step='the start'
+trap 'status=$?; ((status == 0)) || printf "error: the removal stopped at \"%s\", run it again to finish\n" "$step" >&2' EXIT
+
 say "Service"
-if systemctl list-unit-files --no-pager --no-legend | grep "^$SERVICE_NAME\.service[[:space:]]" >/dev/null; then
-  systemctl disable --now "$SERVICE_NAME"
+load=$(systemctl show "$SERVICE_NAME.service" --property=LoadState --value)
+if [[ $load != not-found ]]; then
+  systemctl disable --now "$SERVICE_NAME.service"
   rm -f /etc/systemd/system/nas-os.service
   systemctl daemon-reload
   echo "   stopped, disabled and unit removed"
@@ -132,7 +147,7 @@ if command -v nft >/dev/null; then
     echo "   nftables filter removed"
   fi
 elif [[ -f /etc/systemd/system/nas-os-firewall.service ]]; then
-  fail 'nft is missing: cannot verify removal of the access filter'
+  fail 'nft is missing, so the removal of the access filter cannot be verified'
 fi
 stop_unit nas-os-firewall.service stop
 rm -f /etc/systemd/system/nas-os-firewall.service \
@@ -151,14 +166,13 @@ say "Token helper"
 rm -f /etc/systemd/system/nas-os-token.service /usr/local/lib/nas-os/launcher-token.sh
 echo "   removed"
 
-
 say "Wake alarm"
 rm -f /etc/systemd/system/nas-os-wake.service /usr/local/lib/nas-os/wake-alarm.sh
 rmdir /usr/local/lib/nas-os 2>/dev/null || true
 systemctl daemon-reload
 if [[ -r /sys/class/rtc/rtc0/wakealarm && -s /sys/class/rtc/rtc0/wakealarm ]]; then
-  echo "   unit removed. Careful: there is still an alarm set in the clock"
-  echo "   to clear it:  echo 0 | sudo tee /sys/class/rtc/rtc0/wakealarm"
+  echo "   unit removed. Careful, there is still an alarm set in the clock"
+  echo "   clear it with   echo 0 | sudo tee /sys/class/rtc/rtc0/wakealarm"
 else
   echo "   unit removed"
 fi
@@ -192,7 +206,11 @@ if $purge; then
   say "Data and user"
   printf '   About to delete %s, %s, the data of the applications and the user %s.\n' \
     "$STATE_DIR" /etc/nas-os "$SERVICE_USER"
-  read -r -p "   Type 'delete' to confirm: " answer
+  if $confirmed; then
+    answer=delete
+  else
+    read -r -p "   Type 'delete' to confirm: " answer
+  fi
   if [[ $answer == delete ]]; then
     rm -rf "$STATE_DIR" /etc/nas-os /var/lib/nas-app /var/lib/private/nas-app
     rm -rf /var/lib/nas-os-antivirus /var/log/nas-os /run/nas-os
@@ -207,11 +225,11 @@ if $purge; then
     rm -f /etc/credstore.encrypted/nas-os.smb-*
     echo "   data and user removed"
   else
-    echo "   cancelled: data and user stay"
+    echo "   cancelled, data and user stay"
   fi
 else
   say "Data"
-  echo "   $STATE_DIR stays where it is. To remove it: sudo $0 --purge"
+  echo "   $STATE_DIR stays where it is, sudo $0 --purge removes it"
 fi
 
 printf '\nDone.\n'

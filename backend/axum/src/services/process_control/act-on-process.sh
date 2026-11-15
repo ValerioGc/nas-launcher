@@ -42,7 +42,7 @@ read -r -a fields <<<"${stat##*) }"
 parent=${fields[1]:-} start=${fields[19]:-}
 [[ $start == "$started" ]] || fail "process $pid is no longer the one shown"
 if ((pid <= 2 || parent == 2)); then
-  fail "process $pid belongs to the kernel or starts the system: it is left alone"
+  fail "process $pid belongs to the kernel or starts the system, it is left alone"
 fi
 
 # The first part of the cgroup path that is a service or a scope.
@@ -71,7 +71,7 @@ is_essential() {
 case $verb in
   terminate)
     if [[ -n $unit ]] && is_essential "$unit"; then
-      fail "$unit keeps the NAS working: it can only be restarted"
+      fail "$unit keeps the NAS working, it can only be restarted"
     fi
     if [[ $unit =~ ^nas-app@([a-zA-Z0-9_-]{1,64})\.service$ ]]; then
       systemctl stop -- "$unit"

@@ -158,6 +158,18 @@ returns `disabled` outside real reset mode. The root helper verifies backup inte
 changes and rejects concurrent updates, package installation, or disk operations. The browser
 may disconnect when the original hostname/address returns; reopen the wizard at that address.
 
+`GET /api/system/reset` also reports whether the unit is `running` and whether the reset this
+launcher asked for `failed`. A failure counts only for a run newer than the one systemd reported
+when the launcher started the unit (its `InvocationID`), so an older failure is never shown. While
+the modal waits for the wizard it asks for this state too, and when the helper refused in its first
+checks it says so and can be closed. The launcher refuses on its own the operations the helper
+waits for, and a pending update check.
+
+Once the reset is available, the first `GET` starts the download of a newer wizard in the
+background, once per process. The confirmed `POST` waits for it 5 seconds at most, then cancels it
+and removes the partial archive, so the helper goes on with the installed wizard and the request
+stays within the 10 seconds of the client.
+
 The gateway validates the account password through `POST /auth/confirm`, returning a single-use
 code valid for one minute. The browser includes it in `X-NAS-Confirmation` on
 `POST /api/system/reset`. The gateway consumes it and sets `X-NAS-Reauthenticated`; the launcher
@@ -203,6 +215,26 @@ A powered-off machine cannot execute a power-on rule. Before shutdown, `power/wa
 the next wake time beside the database and starts root-only `nas-os-wake.service`, which writes
 `/sys/class/rtc/rtc0/wakealarm`. Polkit grants only starting that unit. Failure still permits
 shutdown and creates a notification explaining the missing wake alarm.
+
+### Data disks, network disks and shares
+
+Encrypted data disks are LUKS2 containers handled by the root socket `nas-os-storage-crypt.socket`,
+open only to the `nas-os-crypt` group, with `NAS_ENCRYPTION_MODE=real`. Secrets stay in memory or
+in runtime files of root. Slots 0, 1 and 2 hold the password, the automatic key and the recovery
+key. Automatic keys are systemd encrypted credentials named `nas-os.luks-<uuid>`, and at boot the
+reconciliation opens the eligible volumes while respecting the ones closed by hand.
+
+SMB network disks, with `NAS_NETWORK_DISKS_MODE=real`, keep their settings in
+`/etc/nas-os/network-disks.json`, written by root, and their passwords as encrypted systemd
+credentials. They mount under `/srv/storage/<id>` with the account of the wizard, appear to the
+applications as network volumes, and the base firewall lets SMB reach only validated local
+addresses.
+
+Folder shares start from an application with `permissions.shares` and access to a data disk, which
+sends its whole list through its socket. The launcher validates it and keeps it in
+`smb-shares/<id>`. The root helper checks it again, configures Samba and opens TCP 445 to the local
+network while a share is active. The gateway hands the password of protected shares to Samba
+itself.
 
 ## Networking
 

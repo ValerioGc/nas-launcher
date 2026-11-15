@@ -31,7 +31,7 @@ async function fill(wrapper: ReturnType<typeof mount>, next: string, repeated: s
 it('asks for the same new password twice before changing it', async () => {
   const wrapper = mount(AccountPassword);
   await fill(wrapper, 'a new password', 'a new passwor');
-  expect(wrapper.text()).toContain(t('accountPasswordMismatch'));
+  expect(wrapper.text()).toContain(t('passwordRecoveryMismatch'));
   expect(wrapper.get('button[type="submit"]').attributes('disabled')).toBeDefined();
 
   await fill(wrapper, 'a new password', 'a new password');

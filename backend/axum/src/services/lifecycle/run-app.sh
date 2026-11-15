@@ -17,7 +17,7 @@ fi
 
 readonly manifest=$APPS_DIR/$id/nas-app.json
 if [[ ! -f $manifest ]]; then
-  printf 'no manifest in %s: nothing to run\n' "$APPS_DIR/$id" >&2
+  printf 'no manifest in %s, nothing to run\n' "$APPS_DIR/$id" >&2
   exit 3
 fi
 

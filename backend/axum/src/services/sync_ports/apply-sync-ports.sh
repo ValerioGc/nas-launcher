@@ -27,7 +27,7 @@ done
 
 nft flush set inet nas_base nas_sync || fail 'the set nas_sync is missing from the base firewall'
 if ((${#on[@]} == 0)); then
-  echo 'no sync on: ports closed'
+  echo 'no sync on, ports closed'
   exit 0
 fi
 nft add element inet nas_base nas_sync "{ $PORTS }" || fail 'nft refused the ports'

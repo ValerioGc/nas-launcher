@@ -79,7 +79,6 @@ onMounted(refresh);
         testid="preparing_spinner"
       />
 
-      <!-- Steps for each setup task -->
       <ul v-if="steps.length" class="app_list">
         <li
           v-for="step in steps"
@@ -99,7 +98,6 @@ onMounted(refresh);
         </li>
       </ul>
 
-      <!-- Actions for when the setup is ready -->
       <template v-if="ready" #actions>
         <button
           type="button"

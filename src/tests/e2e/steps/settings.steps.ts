@@ -133,7 +133,7 @@ When('I open the recovery section of the settings', async ({ page }) => {
   await openConsole(page);
   await page.getByTestId('header_menu_toggle').click();
   await page.getByTestId('app_menu_settings').click();
-  await page.getByRole('button', { name: 'Ripristino e reset', exact: true }).click();
+  await page.getByRole('button', { name: 'Configurazione e ripristino', exact: true }).click();
   await expect(page.getByTestId('factory_reset')).toBeVisible();
 });
 

@@ -2080,10 +2080,17 @@ export interface components {
      * @enum {string}
      */
     ResetBlock: 'disabled' | 'noWizard' | 'noOriginalState';
-    /** @description Whether the NAS can be reset here, and why not when it cannot. */
+    /** @description Whether the NAS can be reset here, why not when it cannot, and how a requested reset goes. */
     ResetState: {
       available: boolean;
       reason?: components['schemas']['ResetBlock'] | null;
+      /** @description The reset unit is running. */
+      running: boolean;
+      /**
+       * @description The reset this launcher started stopped before it removed anything, the journal of the
+       *     unit says why.
+       */
+      failed: boolean;
     };
     Rule: {
       id: string;

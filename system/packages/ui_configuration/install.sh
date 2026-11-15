@@ -27,20 +27,20 @@ fail() {
 }
 
 if [[ ! -x $HELPER ]]; then
-  fail "$HELPER is missing: install the launcher first (ui_installation)"
+  fail "$HELPER is missing, install the launcher first (ui_installation)"
 fi
 
 [[ ${1:-} == --user ]] || exec "$HELPER" "$@"
 
 name=${2:-}
 (($# == 2)) || fail 'usage: install.sh --user <name>, with the token on the input'
-[[ -x $TERMINAL_HELPER ]] || fail "$TERMINAL_HELPER is missing: install the launcher first"
+[[ -x $TERMINAL_HELPER ]] || fail "$TERMINAL_HELPER is missing, install the launcher first"
 
 token=$(cat)
 if [[ -n $token ]]; then
   printf '%s' "$token" | "$HELPER"
 else
-  echo 'no token: the private repositories stay unreachable until one is given'
+  echo 'no token, the private repositories stay unreachable until one is given'
 fi
 token=''
 

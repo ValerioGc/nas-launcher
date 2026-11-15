@@ -1,10 +1,8 @@
 import { t } from '@/i18n';
 
 /**
- * Sends an HTTP request to the specified API endpoint and returns the response data.
- * @param path - The API endpoint path.
- * @param options - The fetch options, such as method, headers, and body.
- * @returns A promise that resolves to the response data of type T.
+ * Gives up after 10 seconds unless the caller passes its own signal, and announces every
+ * successful change as a `nas:mutation` event so the open views can refresh.
  */
 export async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const response = await fetch(`/api${path}`, {

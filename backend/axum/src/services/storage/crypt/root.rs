@@ -25,12 +25,8 @@ use std::{
 const MAPPER_PREFIX: &str = "nas-luks-";
 const REQUEST_LIMIT: u64 = 64 * 1024;
 
-fn setting(name: &str, default: &str) -> PathBuf {
-    std::env::var_os(name).map_or_else(|| PathBuf::from(default), PathBuf::from)
-}
-
 fn log_path() -> PathBuf {
-    setting("NAS_LOG_DIR", "/var/log/nas-os").join("storage-crypt.log")
+    crate::utils::log_dir().join("storage-crypt.log")
 }
 
 /// The encrypted credential of the automatic key of a container.
@@ -40,7 +36,7 @@ fn credential(uuid: &str) -> PathBuf {
 
 /// Systemd encrypted-credential directory.
 pub(in crate::services::storage) fn credstore() -> PathBuf {
-    setting("NAS_CREDSTORE", "/etc/credstore.encrypted")
+    crate::utils::env_path("NAS_CREDSTORE", "/etc/credstore.encrypted")
 }
 
 fn credential_name(uuid: &str) -> String {
@@ -173,7 +169,7 @@ fn cryptsetup(arguments: &[&str]) -> Result<String, String> {
 
 /// The UUIDs /etc/crypttab opens for the system.
 fn crypttab_uuids() -> HashSet<String> {
-    fs::read_to_string(setting("NAS_CRYPTTAB", "/etc/crypttab"))
+    fs::read_to_string(crate::utils::env_path("NAS_CRYPTTAB", "/etc/crypttab"))
         .unwrap_or_default()
         .lines()
         .filter_map(|line| {

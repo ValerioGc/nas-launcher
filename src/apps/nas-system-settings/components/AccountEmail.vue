@@ -136,7 +136,7 @@ function remove() {
           {{ t('cancel') }}
         </button>
         <button type="submit" class="primary" :disabled="busy || !switchPassword">
-          {{ t('accountRecoverySave') }}
+          {{ t('save') }}
         </button>
       </div>
     </form>
@@ -147,7 +147,6 @@ function remove() {
       }}
     </p>
 
-    <!-- Mail configuration alert and actions -->
     <template v-if="!mail.sender">
       <AlertBanner tone="info" compact data-testid="account_email_unavailable">
         {{ mail.installed ? t('accountEmailUnavailable') : t('accountEmailNotInstalled') }}
@@ -163,7 +162,7 @@ function remove() {
     <form v-if="account.recovery && pending" class="settings_fields" @submit.prevent="verify">
       <p class="settings_full">{{ t('accountCodeSent', { email: pending }) }}</p>
       <label class="settings_field">
-        {{ t('accountCode') }}
+        {{ t('passwordRecoveryCode') }}
         <input
           v-model="code"
           name="account_email_code"
@@ -224,7 +223,7 @@ function remove() {
           :disabled="busy || !mail.sender || !email.trim() || !password"
           data-testid="account_send_code"
         >
-          {{ t('accountSendCode') }}
+          {{ t('passwordRecoverySend') }}
         </button>
       </div>
     </form>

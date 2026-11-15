@@ -95,19 +95,19 @@ for file in "$REQUESTS"/*; do
     seen+="$key "
     # A folder gone with its disk, or that a link would lead elsewhere, is left out until it is back.
     if [[ ! -d $path || $(realpath -e -- "$path" 2>/dev/null) != "$path" ]]; then
-      echo "warning: $path is not there: $name is not shared for now"
+      echo "warning: $path is not there, $name is not shared for now"
       continue
     fi
     # The folder of a disk that is not mounted is an empty one on the system, not the disk.
     disk=${path#"$STORAGE"/}
     if ! mountpoint -q -- "$STORAGE/${disk%%/*}"; then
-      echo "warning: the disk of $path is not mounted: $name is not shared for now"
+      echo "warning: the disk of $path is not mounted, $name is not shared for now"
       continue
     fi
     # Excludes network mounts from local Samba shares.
     case $(findmnt --noheadings --output FSTYPE --mountpoint "$STORAGE/${disk%%/*}" 2>/dev/null) in
       cifs | smb3 | nfs | nfs4 | fuse.sshfs)
-        echo "warning: $path is on a network disk: $name is not shared"
+        echo "warning: $path is on a network disk, $name is not shared"
         continue
         ;;
     esac
@@ -119,15 +119,15 @@ if ((${#shares[@]} == 0)); then
   close_port
   if command -v smbd >/dev/null && samba_is_ours; then
     systemctl disable --now smbd.service nmbd.service >/dev/null 2>&1 || true
-    echo 'no folder shared: Samba stopped and port 445 closed'
+    echo 'no folder shared, Samba stopped and port 445 closed'
   else
-    echo 'no folder shared: port 445 closed'
+    echo 'no folder shared, port 445 closed'
   fi
   exit 0
 fi
 
 command -v smbd >/dev/null || fail 'samba is not installed'
-command -v testparm >/dev/null || fail 'testparm is missing: samba is not installed completely'
+command -v testparm >/dev/null || fail 'testparm is missing, samba is not installed completely'
 user=$(sed -n 's/^User=//p' "$USER_CONF" 2>/dev/null | head -n 1) || user=''
 [[ $user =~ ^[a-z_][a-z0-9_-]{0,31}$ ]] && getent passwd "$user" >/dev/null ||
   fail 'the account of the NAS has no user on the machine yet'
@@ -199,5 +199,5 @@ systemctl disable --now nmbd.service >/dev/null 2>&1 || true
 systemctl enable smbd.service >/dev/null
 systemctl reload-or-restart smbd.service
 nft add element inet nas_base nas_shares "{ $PORT }" ||
-  fail 'the base firewall has no set nas_shares: Samba runs, but port 445 stays closed (update the NAS)'
+  fail 'the base firewall has no set nas_shares, so Samba runs but port 445 stays closed (update the NAS)'
 echo "${#shares[@]} folders shared on the local network, port 445 open to it"

@@ -307,8 +307,7 @@ fn publish(grants: &[Grant]) -> Result<bool, String> {
             grant.kind
         ));
     }
-    let registry = std::env::var_os("NAS_STORAGE_REGISTRY")
-        .map_or_else(|| PathBuf::from(REGISTRY), PathBuf::from);
+    let registry = utils::env_path("NAS_STORAGE_REGISTRY", REGISTRY);
     let registry = registry.as_path();
     if fs::read_to_string(registry).ok().as_deref() == Some(content.as_str()) {
         return Ok(false);
@@ -410,9 +409,7 @@ fn inspect_signatures(device: &str) -> Result<(), String> {
 /// Directory for privileged storage requests and results, overridden by `NAS_STORAGE_STATE_DIR`
 /// in tests.
 pub(crate) fn state_file(name: &str) -> PathBuf {
-    std::env::var_os("NAS_STORAGE_STATE_DIR")
-        .map_or_else(|| PathBuf::from("/var/lib/nas-os"), PathBuf::from)
-        .join(name)
+    utils::env_path("NAS_STORAGE_STATE_DIR", "/var/lib/nas-os").join(name)
 }
 
 fn request_path() -> PathBuf {
@@ -428,10 +425,7 @@ fn error_path() -> PathBuf {
 }
 
 fn log_path() -> PathBuf {
-    std::env::var_os("NAS_LOG_DIR")
-        .map(PathBuf::from)
-        .unwrap_or_else(|| PathBuf::from("/var/log/nas-os"))
-        .join("initialize-storage.log")
+    utils::log_dir().join("initialize-storage.log")
 }
 
 fn rename_request_path() -> PathBuf {
@@ -443,10 +437,7 @@ fn rename_error_path() -> PathBuf {
 }
 
 fn rename_log_path() -> PathBuf {
-    std::env::var_os("NAS_LOG_DIR")
-        .map(PathBuf::from)
-        .unwrap_or_else(|| PathBuf::from("/var/log/nas-os"))
-        .join("rename-storage.log")
+    utils::log_dir().join("rename-storage.log")
 }
 
 fn smart_request_path() -> PathBuf {
@@ -916,10 +907,7 @@ pub async fn initialize_reported(path: &Path) -> Result<(), String> {
 
 /// Returns the provisioned account that owns data disks, if available.
 pub async fn account_user() -> Result<Option<String>, String> {
-    let dropin = std::env::var_os("NAS_TERMINAL_DROPIN")
-        .map(PathBuf::from)
-        .unwrap_or_else(|| PathBuf::from(TERMINAL_DROPIN))
-        .join("user.conf");
+    let dropin = utils::env_path("NAS_TERMINAL_DROPIN", TERMINAL_DROPIN).join("user.conf");
     wizard_user(&dropin).await
 }
 

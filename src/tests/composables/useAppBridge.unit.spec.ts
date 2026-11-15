@@ -5,6 +5,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { MONITOR_WIDGET, useAppBridge } from '@/composables/useAppBridge';
 import { useAppsStore } from '@/stores/appsStore';
 import { useShellStore } from '@/stores/shellStore';
+import { useSettingsStore } from '@/apps/nas-system-settings/store';
+import type { GeneralSettings } from '@/apps/nas-system-settings/types/general';
 import { request } from '@/api/client';
 import { APP_PROTOCOL } from '@/types/types';
 import { setLocale } from '@/i18n';
@@ -707,6 +709,30 @@ describe('the bridge between the shell and an application', () => {
           locale: 'it',
         }),
       },
+      ORIGIN,
+    );
+    wrapper.unmount();
+  });
+
+  it('tells the open applications a new NAS name, and nothing for the rest of the settings', async () => {
+    const settings = useSettingsStore();
+    settings.general = {
+      nasName: 'nas',
+      background: { kind: 'solid' },
+    } as unknown as GeneralSettings;
+    const { api, wrapper } = bridge();
+    const { element, sent } = frame();
+    api.attach('ext', element);
+    await flushPromises();
+
+    (settings.general as unknown as { background: { kind: string } }).background.kind = 'image';
+    await flushPromises();
+    expect(sent.postMessage).not.toHaveBeenCalled();
+
+    settings.general.nasName = 'cantina';
+    await flushPromises();
+    expect(sent.postMessage).toHaveBeenCalledWith(
+      expect.objectContaining({ context: expect.objectContaining({ nasName: 'cantina' }) }),
       ORIGIN,
     );
     wrapper.unmount();

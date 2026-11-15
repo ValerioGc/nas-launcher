@@ -63,7 +63,7 @@ describe('preparation', () => {
     await flushPromises();
 
     expect(wrapper.get('h1').text()).toBe('NAS non configurato');
-    expect(wrapper.text()).toContain('configurazione con il wizard');
+    expect(wrapper.text()).toContain('Al termine della configurazione guidata');
     expect(wrapper.find('[data-testid="preparing_spinner"]').exists()).toBe(false);
 
     vi.mocked(request).mockResolvedValueOnce({ completed: true, ready: true, steps: [files] });

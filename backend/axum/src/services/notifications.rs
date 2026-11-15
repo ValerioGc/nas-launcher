@@ -13,9 +13,7 @@ const JOURNAL_TIMEOUT: Duration = Duration::from_secs(5);
 
 /// Diagnostic log directory shared with the NAS log manager.
 fn log_dir() -> PathBuf {
-    std::env::var_os("NAS_LOG_DIR")
-        .map(PathBuf::from)
-        .unwrap_or_else(|| PathBuf::from("/var/log/nas-os"))
+    crate::utils::log_dir()
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, utoipa::ToSchema)]

@@ -163,29 +163,71 @@ describe('install.sh', () => {
 });
 
 describe('uninstall.sh', () => {
-  it('stops the launcher even when the unit listing is larger than a pipe buffer', () => {
-    const source = readFileSync(join(SYSTEM, 'scripts/uninstall.sh'), 'utf8');
-    const service = source.slice(
-      source.indexOf('if systemctl list-unit-files'),
+  const source = readFileSync(join(SYSTEM, 'scripts/uninstall.sh'), 'utf8');
+
+  /** The section that stops the launcher, run with a systemctl that knows the unit or not. */
+  function service(loadState: string) {
+    const section = source.slice(
+      source.indexOf('load=$(systemctl show "$SERVICE_NAME.service"'),
       source.indexOf('stop_unit nas-os-hostname.service'),
     );
     const script = join(temp.path, 'service.sh');
-    writeFileSync(script, `set -euo pipefail\nSERVICE_NAME=nas-os\n${service}`);
+    writeFileSync(script, `set -euo pipefail\nSERVICE_NAME=nas-os\n${section}`);
     fakeCommand(
       temp.path,
       'systemctl',
-      `
-if [[ $1 == list-unit-files ]]; then
-  set -e
-  printf 'nas-os.service enabled\\n'
-  for ((n=0;n<10000;n++)); do printf 'other-%s.service disabled\\n' "$n"; done
-else printf '%s\\n' "$*" >> "${join(temp.path, 'calls')}"; fi`,
+      `if [[ $1 == show ]]; then echo ${loadState}; else printf '%s\\n' "$*" >> "${join(temp.path, 'calls')}"; fi`,
     );
     fakeCommand(temp.path, 'rm', ':');
-    const result = run(script, { env: { PATH: `${temp.path}:${process.env.PATH}` } });
+    return run(script, { env: { PATH: `${temp.path}:${process.env.PATH}` } });
+  }
+
+  it('stops, disables and removes the unit of the launcher when systemd knows it', () => {
+    const result = service('loaded');
+
     expect(result.code).toBe(0);
     expect(result.output).toContain('stopped, disabled and unit removed');
-    expect(readFileSync(join(temp.path, 'calls'), 'utf8')).toContain('disable --now nas-os');
+    expect(readFileSync(join(temp.path, 'calls'), 'utf8')).toContain(
+      'disable --now nas-os.service',
+    );
+  });
+
+  it('says the launcher was not installed when systemd does not know its unit', () => {
+    const result = service('not-found');
+
+    expect(result.code).toBe(0);
+    expect(result.output).toContain('it was not installed');
+  });
+
+  it('names the step where a removal stopped, since running it again finishes it', () => {
+    const say = source.slice(source.indexOf('say() {'), source.indexOf('fail() {'));
+    const trap = source.split('\n').find((line) => line.startsWith("trap '"));
+    const script = join(temp.path, 'stopped.sh');
+    writeFileSync(
+      script,
+      `set -euo pipefail\n${say}\nstep=''\n${trap}\nsay "Shared folders"\nfalse\n`,
+    );
+
+    const result = run(script);
+
+    expect(result.code).not.toBe(0);
+    expect(result.stderr).toContain('the removal stopped at "Shared folders", run it again');
+  });
+
+  it('refuses an option it does not know before it touches anything', () => {
+    const result = run(join(SYSTEM, 'scripts/uninstall.sh'), { args: ['--everything'] });
+
+    expect(result.code).toBe(2);
+    expect(result.output).toContain('unknown option --everything');
+  });
+
+  it('takes --yes next to --purge in any order, and asks only without it', () => {
+    expect(source).toMatch(/--purge\) purge=true ;;\n\s+--yes\) confirmed=true ;;/);
+    expect(source).toContain('for argument in "$@"; do');
+    const purge = source.slice(source.indexOf('if $purge; then'));
+    expect(purge).toMatch(
+      /if \$confirmed; then\n\s+answer=delete\n\s+else\n\s+read -r -p " {3}Type 'delete' to confirm: " answer\n\s+fi/,
+    );
   });
 });
 

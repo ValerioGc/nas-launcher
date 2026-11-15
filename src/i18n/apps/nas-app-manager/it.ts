@@ -22,8 +22,6 @@ export default {
   updateTo: 'Aggiorna a {version}',
   updateFailed: 'Aggiornamento di {name} non riuscito.',
   tokenLabel: 'Token per le release private',
-  tokenConfigured: 'Token configurato',
-  tokenNotConfigured: 'Token non configurato',
   notInstalled: 'Non installata',
   installFailed: 'Installazione di {name} non riuscita ({reason}).',
   installing: 'Installazione in corso',

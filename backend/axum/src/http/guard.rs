@@ -3,7 +3,7 @@
 //! this guard.
 
 use crate::{
-    apps::services::nas_system_settings::access,
+    apps::services::nas_system_settings::access::AccessRules,
     http::{error::ApiFailure, extract::peer_address},
 };
 use axum::{
@@ -14,12 +14,15 @@ use axum::{
 };
 use sqlx::SqlitePool;
 
-/// Enforces saved access rules using the peer address.
-/// Requests without peer information bypass this guard.
-pub async fn access_guard(State(db): State<SqlitePool>, request: Request, next: Next) -> Response {
+pub async fn access_guard(
+    State(db): State<SqlitePool>,
+    State(rules): State<AccessRules>,
+    request: Request,
+    next: Next,
+) -> Response {
     let allowed = match peer_address(request.extensions()) {
         None => true,
-        Some(address) => access::allows(&db, address).await,
+        Some(address) => rules.allows(&db, address).await,
     };
 
     if allowed {
@@ -32,3 +35,7 @@ pub async fn access_guard(State(db): State<SqlitePool>, request: Request, next: 
     )
     .into_response()
 }
+
+#[cfg(test)]
+#[path = "../../tests/http/guard.rs"]
+mod tests;

@@ -23,9 +23,9 @@ export default {
   macAddress: 'MAC address',
   linkSpeed: 'Speed',
   updates: 'Updates',
-  recovery: 'Recovery and reset',
+  recovery: 'Configuration and factory reset',
   recoveryNote:
-    'Export and import of the NAS configuration, and reset to the state of the first installation.',
+    'Export and import of the NAS configuration, and factory reset to the state of the first installation.',
   configTransfer: 'Export and import the configuration',
   configTransferNote:
     'The settings of the NAS and of the selected applications are saved in a file, encrypted when protected by a password, to import at a later time. NAS name, network, account and tokens are excluded.',
@@ -61,15 +61,15 @@ export default {
   accountPassword: 'Account password',
   factoryReset: 'Factory reset',
   factoryResetNote:
-    'Restores the original system name and network configuration, removes NAS settings and starts guided configuration again. Data disks and their files stay unchanged.',
+    'Restores the original system name and network configuration, removes NAS settings and starts the setup wizard again. Data disks and their files stay unchanged.',
   factoryResetAction: 'Reset the NAS',
-  factoryReset_disabled: 'Reset not available in this installation.',
-  factoryReset_noWizard: 'Reset not available, the wizard is not installed.',
+  factoryReset_disabled: 'Factory reset not available in this installation.',
+  factoryReset_noWizard: 'Factory reset not available, the setup wizard is not installed.',
   factoryReset_noOriginalState:
-    'Reset not available: this installation has no saved copy of the original system configuration.',
-  factoryResetTitle: 'Reset the NAS?',
+    'Factory reset not available, this installation has no saved copy of the original system configuration.',
+  factoryResetTitle: 'Reset the NAS to its factory settings?',
   factoryResetIntro:
-    'Launcher and gateway return to the state of the first installation and the guided configuration starts again.',
+    'Launcher and gateway return to the state of the first installation and the setup wizard starts again.',
   factoryResetRemoves: 'Data deleted permanently',
   factoryResetAccount: 'Account, sessions and access rules',
   factoryResetApps: 'Installed applications, with their data and settings',
@@ -77,11 +77,13 @@ export default {
   factoryResetSettings: 'Launcher settings, application catalogue and release token',
   factoryResetKeepsTitle: 'Data kept',
   factoryResetKeeps:
-    'Data disks and their files stay unchanged. At the end the wizard asks again for account, theme, network and token and installs the latest versions.',
+    'Data disks and their files stay unchanged. At the end the setup wizard asks again for account, theme, network and token and installs the latest versions.',
   factoryResetPasswordNote: 'Required to confirm the reset.',
   factoryResetConfirm: 'Reset',
   factoryResetRunning:
-    'Reset in progress. The original system name and network configuration are restored. If this page disconnects, reopen guided configuration at the restored address.',
+    'Factory reset in progress. The original name and network come back. If this page disconnects, reopen the setup wizard at the previous address.',
+  factoryResetRefused:
+    'The factory reset did not start and no data was removed. The reason is in the journal of the nas-os-reset.service unit.',
   wrongAccountPassword: 'The password is not correct.',
   tooManyPasswordAttempts: 'Too many failed attempts. Retry in a few minutes.',
   gradient: 'Gradient',
@@ -129,7 +131,8 @@ export default {
   sunday: 'Sunday',
   launcherUpdates: 'NAS updates',
   systemUpdates: 'System updates',
-  launcherUpdatesDescription: 'Launcher, gateway and wizard are checked and updated together.',
+  launcherUpdatesDescription:
+    'Launcher, gateway and setup wizard are checked and updated together.',
   nasComponent_launcher: 'Launcher and interface',
   nasComponent_gateway: 'Gateway',
   nasComponent_wizard: 'Wizard',
@@ -176,9 +179,7 @@ export default {
   topography: 'Contour lines',
   mesh: 'Hexagons',
   launcherToken: 'Repository token',
-  launcherTokenSet: 'Token configured',
   updatesIntro: 'Available versions of the NAS components and of the system packages.',
-  launcherTokenMissing: 'Token not configured',
   launcherNoRepository: 'No repository configured for the launcher, update not available.',
   disconnectWifi: 'Disconnect Wi-Fi',
   networkAdapters: 'Network cards',
@@ -201,8 +202,6 @@ export default {
   updateStep_downloadingComponent: 'Downloading and verifying {component}',
   updateStep_verifying: 'Verifying the integrity of the package',
   updateStep_installing: 'Backup and installation in progress',
-  updateRestarting:
-    'The NAS is restarting. The page reloads automatically once the NAS can be reached again.',
   launcherRolledBack:
     'Update failed and cancelled. The previous version is active, the reason is in the notifications.',
   account: 'Account',
@@ -218,15 +217,11 @@ export default {
   accountCurrentPassword: 'Current password',
   accountUsernameChanged: 'Username changed.',
   accountPasswordTitle: 'Password',
-  accountNewPassword: 'New password',
-  accountRepeatPassword: 'Repeat the new password',
   accountPasswordChanged: 'Password changed. The other sessions have been closed.',
-  accountPasswordMismatch: 'The two passwords do not match.',
   accountEmail: 'Recovery email',
   accountEmailNote:
     'With recovery on, the address receives the code to reset the password from the sign-in page. The address is valid only after verification.',
   accountRecoverySwitch: 'Password recovery by email',
-  accountRecoverySave: 'Save',
   accountRecoveryOn:
     'Email recovery on. With a verified address, the sign-in page allows resetting the password.',
   accountRecoveryOff: 'Email recovery off. Codes already sent are no longer valid.',
@@ -239,14 +234,11 @@ export default {
   accountOpenMail: 'Set up the Email app',
   accountInstallMail: 'Open the App Manager',
   accountNewEmail: 'Email address',
-  accountSendCode: 'Send code',
   accountCodeSent: 'Code sent to {email}, valid for 15 minutes.',
-  accountCode: 'Code',
   accountVerify: 'Verify',
   accountEmailVerified: 'Address verified and usable for password recovery.',
   accountRemoveEmail: 'Remove address',
   accountEmailRemoved: 'Recovery address removed.',
-  accountCodeRefused: 'Wrong or expired code.',
   accountMailNotSent:
     'Email with the code not sent. The mail server in the Email app needs checking.',
 } as const;

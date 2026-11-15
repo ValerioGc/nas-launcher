@@ -27,7 +27,7 @@ by the scheduler in the backend. The list of allowed addresses is enforced by th
 `NAS_FIREWALL_MODE=real`, by `nftables`. The updates are the one section that still lives in memory
 and resets when the backend restarts. No SSH rule is applied from here.
 
-The Recovery and reset tab (`RecoverySettingsTab.vue`, the last one) holds the export of the
+The Configuration and factory reset tab (`RecoverySettingsTab.vue`, the last one) holds the export of the
 configuration, shown with a disabled button and a note that says it is still to be built: there is
 no API behind it yet. The reset that brings the NAS back to the wizard is in the roadmap.
 

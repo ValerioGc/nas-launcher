@@ -25,7 +25,12 @@ async function mountWith(state: ResetState) {
 
 describe('FactoryReset', () => {
   it('says the data disks are not touched, and asks for a confirmation first', async () => {
-    const wrapper = await mountWith({ available: true, reason: null });
+    const wrapper = await mountWith({
+      available: true,
+      reason: null,
+      running: false,
+      failed: false,
+    });
 
     expect(wrapper.text()).toContain('I dischi dati e i relativi file restano invariati');
     expect(wrapper.find('[data-testid="factory_reset_unavailable"]').exists()).toBe(false);
@@ -42,10 +47,10 @@ describe('FactoryReset', () => {
 
   it.each([
     ['disabled', 'non disponibile in questa installazione'],
-    ['noWizard', 'il wizard non è installato'],
+    ['noWizard', 'la configurazione guidata non è installata'],
     ['noOriginalState', 'non ha una copia della configurazione originale'],
   ] as const)('explains why it cannot reset: %s', async (reason, text) => {
-    const wrapper = await mountWith({ available: false, reason });
+    const wrapper = await mountWith({ available: false, reason, running: false, failed: false });
 
     expect(wrapper.get('[data-testid="factory_reset_unavailable"]').text()).toContain(text);
     expect(

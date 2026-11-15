@@ -24,7 +24,7 @@ fi
 
 nft flush set inet nas_base nas_discovery || fail 'the set nas_discovery is missing from the base firewall'
 if ! $on; then
-  echo 'discovery off: port closed'
+  echo 'discovery off, port closed'
   exit 0
 fi
 nft add element inet nas_base nas_discovery "{ $PORT }" || fail 'nft refused the port'

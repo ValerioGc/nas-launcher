@@ -32,7 +32,7 @@ if [[ -f $request ]]; then
     [[ -z $line ]] && continue
     case $line in
       /srv/storage | /proc | /sys | /run/udev | network:smtp | network:sync | run:background) granted+=("$line") ;;
-      *) fail "$id asks for $line, which no application is given: nothing was changed" ;;
+      *) fail "$id asks for $line, which no application is given, nothing was changed" ;;
     esac
   done <"$request"
 fi

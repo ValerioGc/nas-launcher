@@ -1,16 +1,8 @@
 #!/usr/bin/env bash
-# Resets launcher, gateway, and application state before starting the setup wizard.
-# Removes the terminal account and home directory and clears private release tokens.
-# Preserves data disks, user storage under /srv, and encrypted data-disk keys.
-# The machine ends as the entry script of the wizard left it before the first configuration. That
-# is the original configuration of Debian, then the configuration of the system the wizard applies
-# again (its packages, the wireless check, the screen turned off and the base firewall), and the
-# wizard running. The packages the applications added go, upgrades of the system stay.
-# The service user, its groups and the console tools stay, the files on the data disks keep their
-# owners.
-# Runs as root through nas-os-reset.service after gateway password verification.
-# An available verified wizard update is installed first, with fallback to the
-# installed wizard. The launcher stops during reset and diagnostics remain in the journal.
+# Factory reset, run as root by nas-os-reset.service once the gateway has confirmed the password.
+# The machine goes back to how the entry script of the wizard left it, then the wizard starts. The
+# data disks, their keys, the service user and the console tools stay. A newer wizard the launcher
+# downloaded is installed first. DEVELOPMENT.md of the launcher lists every step.
 
 set -euo pipefail
 
@@ -39,22 +31,26 @@ readonly PENDING_UPDATE=$STATE/update-verify/pending
 readonly NAS_SETS=(nas_shares nas_sync nas_discovery nas_smb_servers nas_smb_servers6 nas_apps_out
   nas_apps_smtp nas_apps_sync)
 
-say() { printf '\n== %s\n' "$1"; }
+say() {
+  step=$1
+  printf '\n== %s\n' "$1"
+}
 fail() {
   printf 'error: %s\n' "$1" >&2
   exit 1
 }
 
-[[ $EUID -eq 0 || -n ${NAS_STATE_DIR:-} ]] || fail "it has to run as root: nas-os-reset.service runs it"
+[[ $EUID -eq 0 || -n ${NAS_STATE_DIR:-} ]] || fail "it has to run as root, nas-os-reset.service runs it"
 # Requires an installed wizard before any reset data is removed.
-[[ -f $WIZARD_UNIT ]] || fail "the wizard is not installed ($WIZARD_UNIT): nothing was removed"
-[[ -x $WIZARD_HOME/wizard/bin/nas-wizard && -x $RESTORE ]] || fail 'the wizard or system restoration helper is missing: nothing was removed'
+[[ -f $WIZARD_UNIT ]] || fail "the wizard is not installed ($WIZARD_UNIT), nothing was removed"
+[[ -x $WIZARD_HOME/wizard/bin/nas-wizard && -x $RESTORE ]] || fail 'the wizard or the system restoration helper is missing, nothing was removed'
 [[ -f $CONFIGURE ]] || fail 'the configuration of the system is missing, nothing was removed'
 if command -v nft >/dev/null; then
   nft list tables >/dev/null || fail 'cannot inspect nftables rules, nothing was removed'
 fi
-[[ -x $LAUNCHER_TOOLS/uninstall.sh && -x $GATEWAY_TOOLS/uninstall.sh ]] || fail 'the launcher or gateway removal helper is missing: nothing was removed'
+[[ -x $LAUNCHER_TOOLS/uninstall.sh && -x $GATEWAY_TOOLS/uninstall.sh ]] || fail 'the launcher or gateway removal helper is missing, nothing was removed'
 "$RESTORE" --check
+# Keep in step with uninstall.sh of the wizard and reset.rs.
 busy=$(systemctl list-units --plain --no-legend --state=active,activating,deactivating,reloading \
   'nas-os-update.service' 'nas-os-update-verify.service' 'nas-os-apt@*.service' 'nas-os-app-packages@*.service' \
   'nas-os-storage-initialize.service' 'nas-os-storage-rename.service' 'nas-os-storage-eject.service' \
@@ -70,6 +66,10 @@ stop_unit() {
   if [[ $load != not-found ]]; then systemctl "$@" "$unit"; fi
 }
 
+# From here on something is removed, and the journal has to say where a reset stopped.
+step='the start'
+trap 'status=$?; ((status == 0)) || printf "error: the reset stopped at \"%s\"\n" "$step" >&2' EXIT
+
 say "Update of the wizard"
 if [[ -r $WIZARD_UPDATE ]]; then
   staging=$(mktemp -d)
@@ -83,7 +83,7 @@ if [[ -r $WIZARD_UPDATE ]]; then
 else
   echo "   no newer wizard"
 fi
-[[ -x $WIZARD_HOME/wizard/bin/nas-wizard ]] || fail 'the wizard update left no executable wizard: reset cancelled'
+[[ -x $WIZARD_HOME/wizard/bin/nas-wizard ]] || fail 'the wizard update left no executable wizard, reset cancelled'
 "$RESTORE" --check
 
 say "Gateway"

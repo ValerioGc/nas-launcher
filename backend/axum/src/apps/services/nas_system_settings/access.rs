@@ -12,7 +12,11 @@ use crate::{
 };
 use serde::{Deserialize, Serialize};
 use sqlx::SqlitePool;
-use std::{net::IpAddr, time::Duration};
+use std::{
+    net::IpAddr,
+    sync::{Arc, RwLock},
+    time::Duration,
+};
 
 const FIREWALL_UNIT: &str = "nas-os-firewall.service";
 const COMMAND_TIMEOUT: Duration = Duration::from_secs(20);
@@ -177,16 +181,53 @@ pub async fn remove(db: &SqlitePool, id: &str) -> Result<Vec<Rule>, ApiFailure> 
     Ok(rules)
 }
 
-pub async fn allows(db: &SqlitePool, address: IpAddr) -> bool {
-    if address.is_loopback() {
-        return true;
+/// The saved rules as the guard checks them on every request. They are read once and read again
+/// only after a change, so a request costs no query.
+#[derive(Clone, Default)]
+pub struct AccessRules(Arc<RwLock<Cached>>);
+
+#[derive(Default)]
+struct Cached {
+    generation: u64,
+    rules: Option<Arc<Vec<Rule>>>,
+}
+
+impl AccessRules {
+    pub async fn allows(&self, db: &SqlitePool, address: IpAddr) -> bool {
+        if address.is_loopback() {
+            return true;
+        }
+        let (generation, cached) = match self.0.read() {
+            Ok(cache) => (cache.generation, cache.rules.clone()),
+            Err(_) => (0, None),
+        };
+        if let Some(rules) = cached {
+            return allowed(&rules, address);
+        }
+        // Unreadable rules let the request through, as an empty list does.
+        let Ok(rules) = list(db).await else {
+            return true;
+        };
+        let rules = Arc::new(rules);
+        if let Ok(mut cache) = self.0.write() {
+            if cache.generation == generation {
+                cache.rules = Some(Arc::clone(&rules));
+            }
+        }
+        allowed(&rules, address)
     }
 
-    let Ok(rules) = list(db).await else {
-        return true;
-    };
+    /// Drops the list after the rules changed in the database.
+    pub fn changed(&self) {
+        if let Ok(mut cache) = self.0.write() {
+            cache.generation += 1;
+            cache.rules = None;
+        }
+    }
+}
 
-    if rules.is_empty() {
+pub fn allowed(rules: &[Rule], address: IpAddr) -> bool {
+    if address.is_loopback() || rules.is_empty() {
         return true;
     }
 

@@ -1,10 +1,5 @@
-//! SMB network disks mounted through the privileged storage helper.
-//!
-//! Root stores share configuration in `/etc/nas-os/network-disks.json` and passwords
-//! as encrypted systemd credentials. Reconciliation mounts eligible shares under
-//! `/srv/storage/<id>` while respecting manual disconnects. Mounts use the wizard
-//! account and appear as network volumes to applications. The base firewall limits
-//! SMB traffic to validated local addresses. Requires `NAS_NETWORK_DISKS_MODE=real`.
+//! SMB network disks, mounted by the root storage helper under `/srv/storage/<id>`. Requires
+//! `NAS_NETWORK_DISKS_MODE=real`. DEVELOPMENT.md describes where settings and passwords live.
 
 pub mod root;
 
@@ -100,10 +95,7 @@ pub struct NetworkDisks {
 const MAX_DISKS: usize = 32;
 
 pub(super) fn definitions_path() -> PathBuf {
-    std::env::var_os("NAS_NETWORK_DISKS").map_or_else(
-        || PathBuf::from("/etc/nas-os/network-disks.json"),
-        PathBuf::from,
-    )
+    utils::env_path("NAS_NETWORK_DISKS", "/etc/nas-os/network-disks.json")
 }
 
 pub(super) fn definitions() -> Vec<Definition> {

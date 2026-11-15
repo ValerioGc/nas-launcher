@@ -1,6 +1,9 @@
 //! Helpers shared by the launcher, the applications and the widgets.
 
-use std::time::{Duration, SystemTime, UNIX_EPOCH};
+use std::{
+    path::PathBuf,
+    time::{Duration, SystemTime, UNIX_EPOCH},
+};
 use tokio::process::Command;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -60,22 +63,43 @@ pub fn now_ms() -> i64 {
         .unwrap_or(i64::MAX)
 }
 
+/// A path the tests can move with a variable, or where the installation puts it.
+pub fn env_path(variable: &str, default: &str) -> PathBuf {
+    std::env::var_os(variable).map_or_else(|| PathBuf::from(default), PathBuf::from)
+}
+
+/// The folder of the logs of the launcher and of its helpers.
+pub fn log_dir() -> PathBuf {
+    env_path("NAS_LOG_DIR", "/var/log/nas-os")
+}
+
 pub async fn systemctl(args: &[&str], timeout: Duration) -> Result<(), String> {
+    systemctl_output(args, timeout).await.map(drop)
+}
+
+/// Runs systemctl and returns what it printed, or the first line of its error.
+pub async fn systemctl_output(args: &[&str], timeout: Duration) -> Result<String, String> {
     let command = Command::new("systemctl").args(args).output();
     match tokio::time::timeout(timeout, command).await {
-        Ok(Ok(output)) if output.status.success() => Ok(()),
-        Ok(Ok(output)) => Err(String::from_utf8_lossy(&output.stderr)
-            .lines()
-            .next()
-            .unwrap_or("systemctl refused")
-            .trim()
-            .to_owned()),
+        Ok(Ok(output)) => answer(&output),
         Ok(Err(error)) => Err(format!("systemctl is not available: {error}")),
         Err(_) => Err(format!(
             "systemctl {} did not answer in time",
             args.join(" ")
         )),
     }
+}
+
+fn answer(output: &std::process::Output) -> Result<String, String> {
+    if output.status.success() {
+        return Ok(String::from_utf8_lossy(&output.stdout).into_owned());
+    }
+    Err(String::from_utf8_lossy(&output.stderr)
+        .lines()
+        .next()
+        .unwrap_or("systemctl refused")
+        .trim()
+        .to_owned())
 }
 
 #[cfg(test)]

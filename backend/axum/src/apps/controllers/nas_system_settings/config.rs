@@ -1,5 +1,8 @@
 use crate::{
-    apps::services::nas_system_settings::config::{self, Config},
+    apps::services::nas_system_settings::{
+        access::AccessRules,
+        config::{self, Config},
+    },
     http::{
         error::ApiFailure,
         extract::{Reauthenticated, ValidJson},
@@ -73,9 +76,12 @@ async fn export(
 async fn import(
     _: Reauthenticated,
     State(db): State<SqlitePool>,
+    State(rules): State<AccessRules>,
     ValidJson(input): ValidJson<Config>,
 ) -> Result<Json<Config>, ApiFailure> {
-    config::import(&db, input).await.map(Json)
+    let imported = config::import(&db, input).await;
+    rules.changed();
+    imported.map(Json)
 }
 
 pub fn routes() -> OpenApiRouter<AppState> {

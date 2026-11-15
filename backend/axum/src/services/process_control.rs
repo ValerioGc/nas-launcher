@@ -157,7 +157,7 @@ pub async fn act(id: u32, request: ProcessRequest) -> Result<ProcessResult, ApiF
     match request.action {
         Action::Terminate if !allowed.terminate => {
             return Err(ApiFailure::forbidden(format!(
-                "{} keeps the NAS working: it can only be restarted",
+                "{} keeps the NAS working, it can only be restarted",
                 unit.as_deref().unwrap_or(&seen.name)
             )));
         }

@@ -227,10 +227,7 @@ async fn begin_install(db: &SqlitePool, id: &str) -> Result<(CatalogueApp, Strin
 }
 
 fn install_log(task: &str) -> PathBuf {
-    std::env::var_os("NAS_LOG_DIR")
-        .map(PathBuf::from)
-        .unwrap_or_else(|| PathBuf::from("/var/log/nas-os"))
-        .join(format!("{task}.log"))
+    utils::log_dir().join(format!("{task}.log"))
 }
 
 async fn begin_log(path: &std::path::Path, app: &CatalogueApp) {

@@ -19,7 +19,7 @@ fail() {
   exit 1
 }
 
-[[ $EUID -eq 0 || -n ${NAS_CREDSTORE:-} ]] || fail "it has to run as root: sudo $0"
+[[ $EUID -eq 0 || -n ${NAS_CREDSTORE:-} ]] || fail "it has to run as root, with sudo $0"
 command -v systemd-creds >/dev/null || fail 'systemd-creds is not available on this machine'
 
 case ${1:-} in

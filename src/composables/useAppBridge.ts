@@ -849,7 +849,9 @@ export function useAppBridge() {
   }
 
   window.addEventListener('message', receiveMessage);
-  const stop = watch([locale, () => settings.general], broadcast, { deep: true });
+  // The appearance reaches the applications through the observer below, so only the name and the
+  // language are followed here.
+  const stop = watch([locale, () => settings.general?.nasName], broadcast);
   const appearance = new MutationObserver(broadcast);
   appearance.observe(document.documentElement, {
     attributes: true,
